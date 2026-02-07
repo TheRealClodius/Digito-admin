@@ -61,11 +61,11 @@ The dashboard writes data. The Flutter app and AI agent read it. No API layer ne
 
 | Layer | Choice | Rationale |
 |-------|--------|-----------|
-| **Framework** | Next.js 15 (App Router) | SSR, file-based routing, server components |
+| **Framework** | Next.js 16 (App Router) | SSR, file-based routing, server components, Turbopack default |
 | **UI Library** | shadcn/ui + Tailwind CSS 4 | Beautiful defaults, copy-paste components, no vendor lock |
-| **Firebase SDK** | `firebase` JS SDK v10 (client-side) | Direct Firestore/Storage/Auth access |
+| **Firebase SDK** | `firebase` JS SDK v12 (client-side) | Direct Firestore/Storage/Auth access |
 | **Auth** | Firebase Auth (email/password) | Same project, custom claims for admin role |
-| **Forms** | React Hook Form + Zod | Type-safe validation |
+| **Forms** | React Hook Form + Zod 4 | Type-safe validation |
 | **Date/Time** | `date-fns` | Lightweight, tree-shakable |
 | **File Upload** | Firebase Storage + `react-dropzone` | Drag-and-drop with preview |
 | **State** | React Server Components + `useSWR` or TanStack Query for client | Minimal client state, Firestore as source of truth |
@@ -791,18 +791,27 @@ digito-admin/
 
 ## 10. Implementation Phases
 
-### Phase 1 — Scaffold & Auth (Day 1-2)
+### Phase 1 — Scaffold & Auth ✅
 
-- [ ] Initialize Next.js 15 project with App Router
-- [ ] Install and configure Tailwind CSS 4 + shadcn/ui
-- [ ] Set up Firebase JS SDK (same project: `digito-poc`)
-- [ ] Build login page
-- [ ] Implement super-admin auth check (`superAdmins` collection)
-- [ ] Build root layout with sidebar shell
-- [ ] Build context selector (client + event dropdowns)
+- [x] Initialize Next.js 16 project with App Router (Turbopack)
+- [x] Install and configure Tailwind CSS 4 + shadcn/ui (18 components, manually created — registry blocked)
+- [x] Set up Firebase JS SDK v12 (placeholder `.env.local`, not yet connected)
+- [x] Build login page (email/password form → Firebase Auth)
+- [x] Implement super-admin auth check (`superAdmins` collection lookup)
+- [x] Build root layout with sidebar shell (`(dashboard)` route group + auth guard)
+- [x] Build context selector (client + event dropdowns)
+- [x] Create all TypeScript types (11 entity files with FormData variants)
+- [x] Create Zod 4 validation schemas for all entities
+- [x] Create custom hooks (useAuth, useAdminCheck, useCollection, useDocument, useUpload, useEventContext)
+- [x] Create EventContext provider (client + event selection state)
+- [x] Create page stubs for all 14 routes with loading/empty states
+- [x] Create reusable components (ImageUpload with drag-drop, StatsCard)
 - [ ] Deploy to Firebase Hosting (confirm it works end-to-end)
 
-### Phase 2 — Client & Event CRUD (Day 2-3)
+> **Note:** Firebase project access not yet configured. `.env.local` has placeholder values.
+> System font stack used instead of Google Fonts (Geist) due to environment restrictions.
+
+### Phase 2 — Client & Event CRUD
 
 - [ ] Clients list page with DataTable
 - [ ] Client create/edit form in Sheet
@@ -810,10 +819,10 @@ digito-admin/
 - [ ] Events list page (scoped to selected client)
 - [ ] Event create/edit form with DateTimePickers
 - [ ] Event delete with confirmation
-- [ ] Image upload component (reusable)
+- [ ] Image upload component (reusable) — _shell created, needs Storage wiring_
 - [ ] Wire up Firebase Storage uploads for logos/banners
 
-### Phase 3 — Core Event Content (Day 3-5)
+### Phase 3 — Core Event Content
 
 - [ ] Brands page: DataTable + create/edit Dialog + image/video upload
 - [ ] Sessions page: DataTable + create/edit Dialog + DateTimePickers
@@ -821,7 +830,7 @@ digito-admin/
 - [ ] Whitelist page: DataTable + add entry form + duplicate detection
 - [ ] Users page: Read-only DataTable with search
 
-### Phase 4 — New Entities (Day 5-6)
+### Phase 4 — New Entities
 
 - [ ] Stands page: DataTable + create/edit + brand assignment
 - [ ] Happenings page: DataTable + create/edit Dialog
@@ -829,20 +838,20 @@ digito-admin/
 - [ ] Wire up denormalization (participant → session speaker fields)
 - [ ] Wire up stand → brand.stallNumber sync
 
-### Phase 5 — Dashboard Home & Polish (Day 6-7)
+### Phase 5 — Dashboard Home & Polish
 
-- [ ] Dashboard overview page (stat cards, quick actions)
+- [ ] Dashboard overview page (stat cards, quick actions) — _stat cards created, needs live data_
 - [ ] Command palette (Cmd+K) for quick navigation and search
 - [ ] Toast notifications for all CRUD operations
-- [ ] Loading skeletons on all pages
-- [ ] Error boundaries and empty states
+- [ ] Loading skeletons on all pages — _skeletons in place on all page stubs_
+- [ ] Error boundaries and empty states — _empty states in place on all page stubs_
 - [ ] Delete confirmation dialogs everywhere
 - [ ] Update Firestore security rules (deploy via `firebase deploy --only firestore:rules`)
 - [ ] Update Storage security rules
 
-### Phase 6 — Settings & Deployment (Day 7)
+### Phase 6 — Settings & Deployment
 
-- [ ] Settings page (admin info, manage super admins)
+- [ ] Settings page (admin info, manage super admins) — _stub created_
 - [ ] Final Firebase Hosting deployment config
 - [ ] Test end-to-end: create client → event → brands/sessions → verify in Flutter app
 - [ ] Verify AI agent can read all new data via its Firestore tools
