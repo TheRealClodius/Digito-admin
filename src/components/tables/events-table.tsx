@@ -105,6 +105,7 @@ export function EventsTable({
                     variant="destructive"
                     size="icon"
                     className="ml-2 size-8"
+                    aria-label="Delete"
                     onClick={() => onDelete(event.id)}
                   >
                     <Trash2 className="size-4" />

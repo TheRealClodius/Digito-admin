@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ImageUpload } from "@/components/image-upload";
+import { useUpload } from "@/hooks/use-upload";
 
 type SubmitStatus = "idle" | "saving" | "success" | "error";
 
@@ -31,6 +32,7 @@ interface PostFormProps {
   onSubmit: (data: PostFormValues) => void;
   onCancel: () => void;
   submitStatus?: SubmitStatus;
+  storagePath?: string;
 }
 
 export function PostForm({
@@ -38,8 +40,10 @@ export function PostForm({
   onSubmit,
   onCancel,
   submitStatus = "idle",
+  storagePath,
 }: PostFormProps) {
   const isSubmitting = submitStatus === "saving";
+  const { upload } = useUpload({ basePath: storagePath ?? "" });
   const {
     register,
     handleSubmit,
@@ -68,6 +72,7 @@ export function PostForm({
         <ImageUpload
           value={imageUrlValue || null}
           onChange={(url) => setValue("imageUrl", url ?? "", { shouldValidate: true })}
+          uploadFn={storagePath ? (file) => upload(file, `image_${Date.now()}_${file.name}`) : undefined}
           disabled={isSubmitting}
         />
         {(errors.imageUrl || isImageEmpty) && (
@@ -80,6 +85,7 @@ export function PostForm({
         <ImageUpload
           value={authorAvatarUrlValue || null}
           onChange={(url) => setValue("authorAvatarUrl", url)}
+          uploadFn={storagePath ? (file) => upload(file, `avatar_${Date.now()}_${file.name}`) : undefined}
           disabled={isSubmitting}
         />
       </div>

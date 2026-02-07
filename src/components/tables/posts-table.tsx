@@ -94,6 +94,7 @@ export function PostsTable({ posts, onEdit, onDelete }: PostsTableProps) {
                       variant="destructive"
                       size="icon"
                       className="ml-2 size-8"
+                      aria-label="Delete"
                       onClick={() => onDelete(post.id)}
                     >
                       <Trash2 className="size-4" />

@@ -89,6 +89,7 @@ export function ClientsTable({ clients, onEdit, onDelete }: ClientsTableProps) {
                       variant="destructive"
                       size="icon"
                       className="ml-2 size-8"
+                      aria-label="Delete"
                       onClick={() => onDelete(client.id)}
                     >
                       <Trash2 className="size-4" />

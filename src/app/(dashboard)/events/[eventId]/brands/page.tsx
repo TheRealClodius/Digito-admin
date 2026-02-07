@@ -139,6 +139,7 @@ export default function BrandsPage({
               onSubmit={handleSubmit}
               onCancel={() => setSheetOpen(false)}
               submitStatus={submitStatus}
+              storagePath={collectionPath}
             />
           </div>
         </SheetContent>

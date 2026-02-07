@@ -137,6 +137,7 @@ export default function ClientsPage() {
               onSubmit={handleSubmit}
               onCancel={() => setSheetOpen(false)}
               submitStatus={submitStatus}
+              storagePath="clients"
             />
           </div>
         </SheetContent>

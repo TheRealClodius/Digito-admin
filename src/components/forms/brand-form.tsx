@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { ImageUpload } from "@/components/image-upload";
+import { useUpload } from "@/hooks/use-upload";
 
 type SubmitStatus = "idle" | "saving" | "success" | "error";
 
@@ -40,6 +41,7 @@ interface BrandFormProps {
   onSubmit: (data: BrandFormValues) => void;
   onCancel: () => void;
   submitStatus?: SubmitStatus;
+  storagePath?: string;
 }
 
 export function BrandForm({
@@ -47,8 +49,10 @@ export function BrandForm({
   onSubmit,
   onCancel,
   submitStatus = "idle",
+  storagePath,
 }: BrandFormProps) {
   const isSubmitting = submitStatus === "saving";
+  const { upload } = useUpload({ basePath: storagePath ?? "" });
   const {
     register,
     handleSubmit,
@@ -119,6 +123,7 @@ export function BrandForm({
         <ImageUpload
           value={logoUrlValue || null}
           onChange={(url) => setValue("logoUrl", url)}
+          uploadFn={storagePath ? (file) => upload(file, `logo_${Date.now()}_${file.name}`) : undefined}
           disabled={isSubmitting}
         />
       </div>
@@ -128,6 +133,7 @@ export function BrandForm({
         <ImageUpload
           value={imageUrlValue || null}
           onChange={(url) => setValue("imageUrl", url)}
+          uploadFn={storagePath ? (file) => upload(file, `image_${Date.now()}_${file.name}`) : undefined}
           disabled={isSubmitting}
         />
       </div>

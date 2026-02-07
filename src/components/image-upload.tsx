@@ -2,7 +2,7 @@
 
 import { useCallback, useState } from "react";
 import { useDropzone } from "react-dropzone";
-import { Upload, X } from "lucide-react";
+import { Loader2, Upload, X } from "lucide-react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 interface ImageUploadProps {
   value?: string | null;
   onChange: (url: string | null) => void;
-  onFileSelect?: (file: File) => void;
+  uploadFn?: (file: File) => Promise<string>;
   disabled?: boolean;
   className?: string;
   maxSize?: number;
@@ -20,27 +20,37 @@ interface ImageUploadProps {
 export function ImageUpload({
   value,
   onChange,
-  onFileSelect,
+  uploadFn,
   disabled,
   className,
   maxSize = 10 * 1024 * 1024, // 10MB
   accept = { "image/*": [".jpg", ".jpeg", ".png", ".webp", ".gif"] },
 }: ImageUploadProps) {
   const [preview, setPreview] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
 
   const onDrop = useCallback(
-    (acceptedFiles: File[]) => {
+    async (acceptedFiles: File[]) => {
       const file = acceptedFiles[0];
       if (!file) return;
 
       const objectUrl = URL.createObjectURL(file);
       setPreview(objectUrl);
 
-      if (onFileSelect) {
-        onFileSelect(file);
+      if (uploadFn) {
+        setUploading(true);
+        try {
+          const downloadUrl = await uploadFn(file);
+          onChange(downloadUrl);
+        } catch (err) {
+          console.error("Upload failed:", err);
+          setPreview(null);
+        } finally {
+          setUploading(false);
+        }
       }
     },
-    [onFileSelect]
+    [uploadFn, onChange]
   );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -48,7 +58,7 @@ export function ImageUpload({
     accept,
     maxSize,
     maxFiles: 1,
-    disabled,
+    disabled: disabled || uploading,
   });
 
   const displayUrl = preview || value;
@@ -69,13 +79,18 @@ export function ImageUpload({
             height={200}
             className="rounded-md border object-cover"
           />
+          {uploading && (
+            <div className="absolute inset-0 flex items-center justify-center rounded-md bg-background/60">
+              <Loader2 className="size-6 animate-spin text-muted-foreground" />
+            </div>
+          )}
           <Button
             type="button"
             variant="destructive"
             size="icon"
             className="absolute -right-2 -top-2 size-6"
             onClick={handleRemove}
-            disabled={disabled}
+            disabled={disabled || uploading}
           >
             <X className="size-3" />
           </Button>
@@ -86,7 +101,7 @@ export function ImageUpload({
           className={cn(
             "flex cursor-pointer flex-col items-center justify-center rounded-md border border-dashed p-6 transition-colors hover:border-primary/50 hover:bg-muted/50",
             isDragActive && "border-primary bg-muted/50",
-            disabled && "cursor-not-allowed opacity-50"
+            (disabled || uploading) && "cursor-not-allowed opacity-50"
           )}
         >
           <input {...getInputProps()} />

@@ -117,6 +117,7 @@ export default function PostsPage({
               onSubmit={handleSubmit}
               onCancel={() => setSheetOpen(false)}
               submitStatus={submitStatus}
+              storagePath={collectionPath}
             />
           </div>
         </SheetContent>

@@ -99,6 +99,7 @@ export function WhitelistTable({ entries, onEdit, onDelete }: WhitelistTableProp
                       variant="destructive"
                       size="icon"
                       className="ml-2 size-8"
+                      aria-label="Delete"
                       onClick={() => onDelete(entry.id)}
                     >
                       <Trash2 className="size-4" />

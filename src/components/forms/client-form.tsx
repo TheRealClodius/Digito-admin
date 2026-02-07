@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { ImageUpload } from "@/components/image-upload";
+import { useUpload } from "@/hooks/use-upload";
 
 type SubmitStatus = "idle" | "saving" | "success" | "error";
 
@@ -29,6 +30,7 @@ interface ClientFormProps {
   onSubmit: (data: ClientFormValues) => void;
   onCancel: () => void;
   submitStatus?: SubmitStatus;
+  storagePath?: string;
 }
 
 export function ClientForm({
@@ -36,8 +38,10 @@ export function ClientForm({
   onSubmit,
   onCancel,
   submitStatus = "idle",
+  storagePath,
 }: ClientFormProps) {
   const isSubmitting = submitStatus === "saving";
+  const { upload } = useUpload({ basePath: storagePath ?? "" });
   const {
     register,
     handleSubmit,
@@ -86,6 +90,7 @@ export function ClientForm({
         <ImageUpload
           value={logoUrlValue || null}
           onChange={(url) => setValue("logoUrl", url)}
+          uploadFn={storagePath ? (file) => upload(file, `logo_${Date.now()}_${file.name}`) : undefined}
           disabled={isSubmitting}
         />
       </div>
