@@ -61,11 +61,11 @@ The dashboard writes data. The Flutter app and AI agent read it. No API layer ne
 
 | Layer | Choice | Rationale |
 |-------|--------|-----------|
-| **Framework** | Next.js 15 (App Router) | SSR, file-based routing, server components |
+| **Framework** | Next.js 16 (App Router) | SSR, file-based routing, server components, Turbopack default |
 | **UI Library** | shadcn/ui + Tailwind CSS 4 | Beautiful defaults, copy-paste components, no vendor lock |
-| **Firebase SDK** | `firebase` JS SDK v10 (client-side) | Direct Firestore/Storage/Auth access |
+| **Firebase SDK** | `firebase` JS SDK v12 (client-side) | Direct Firestore/Storage/Auth access |
 | **Auth** | Firebase Auth (email/password) | Same project, custom claims for admin role |
-| **Forms** | React Hook Form + Zod | Type-safe validation |
+| **Forms** | React Hook Form + Zod 4 | Type-safe validation |
 | **Date/Time** | `date-fns` | Lightweight, tree-shakable |
 | **File Upload** | Firebase Storage + `react-dropzone` | Drag-and-drop with preview |
 | **State** | React Server Components + `useSWR` or TanStack Query for client | Minimal client state, Firestore as source of truth |
