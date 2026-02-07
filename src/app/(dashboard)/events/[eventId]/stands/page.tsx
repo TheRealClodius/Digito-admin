@@ -27,7 +27,7 @@ export default function StandsPage({
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Stands</h1>
+          <h1 className="text-xl font-medium">Stands</h1>
           <p className="text-muted-foreground">Manage booth locations for this event</p>
         </div>
         <Button>

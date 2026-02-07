@@ -71,7 +71,7 @@ export default function EventOverviewPage({
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Event Overview</h1>
+        <h1 className="text-xl font-medium">Event Overview</h1>
         <p className="text-muted-foreground">
           Summary of event data and quick actions
         </p>

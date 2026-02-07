@@ -90,7 +90,7 @@ export default function HappeningsPage({
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Happenings</h1>
+          <h1 className="text-xl font-medium">Happenings</h1>
           <p className="text-muted-foreground">Manage demos, performances, and activations</p>
         </div>
         <Button onClick={handleNew}>

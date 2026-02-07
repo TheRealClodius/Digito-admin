@@ -22,12 +22,12 @@ export function Header() {
     : "AD";
 
   return (
-    <header className="flex h-14 items-center justify-end border-b bg-background px-6">
+    <header className="flex h-12 items-center justify-end border-b border-border/60 bg-background px-6">
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="relative size-8 rounded-full">
-            <Avatar className="size-8">
-              <AvatarFallback>{initials}</AvatarFallback>
+          <Button variant="ghost" className="relative size-7 rounded-full">
+            <Avatar className="size-7">
+              <AvatarFallback className="text-xs">{initials}</AvatarFallback>
             </Avatar>
           </Button>
         </DropdownMenuTrigger>

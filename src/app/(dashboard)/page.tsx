@@ -9,7 +9,7 @@ export default function DashboardHome() {
   if (!selectedClientId || !selectedEventId) {
     return (
       <div className="flex min-h-[calc(100vh-8rem)] flex-col items-center justify-center gap-4">
-        <h1 className="text-2xl font-bold tracking-tight">Welcome to Digito Admin</h1>
+        <h1 className="text-xl font-medium">Welcome to Digito Admin</h1>
         <p className="text-muted-foreground">
           Select a client and event from the sidebar to get started.
         </p>
@@ -20,7 +20,7 @@ export default function DashboardHome() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
+        <h1 className="text-xl font-medium">Dashboard</h1>
         <p className="text-muted-foreground">
           {selectedClientName} &mdash; {selectedEventName}
         </p>

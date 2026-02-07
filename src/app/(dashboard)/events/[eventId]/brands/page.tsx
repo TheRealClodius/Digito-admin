@@ -95,7 +95,7 @@ export default function BrandsPage({
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Brands</h1>
+          <h1 className="text-xl font-medium">Brands</h1>
           <p className="text-muted-foreground">Manage brands for this event</p>
         </div>
         <Button onClick={handleNew}>

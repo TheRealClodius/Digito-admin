@@ -80,7 +80,7 @@ export default function PostsPage({
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Posts</h1>
+          <h1 className="text-xl font-medium">Posts</h1>
           <p className="text-muted-foreground">Manage event posts and announcements</p>
         </div>
         <Button onClick={handleNew}>

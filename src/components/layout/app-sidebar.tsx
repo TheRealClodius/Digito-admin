@@ -47,30 +47,31 @@ export function AppSidebar() {
   const { selectedEventId } = useEventContext();
 
   return (
-    <aside className="flex h-screen w-64 flex-col border-r bg-sidebar text-sidebar-foreground">
-      <div className="flex h-14 items-center border-b px-4">
-        <Link href="/" className="flex items-center gap-2 font-semibold">
-          <LayoutDashboard className="size-5" />
+    <aside className="flex h-screen w-60 flex-col border-r border-border/60 bg-sidebar text-sidebar-foreground">
+      <div className="flex h-12 items-center px-4">
+        <Link href="/" className="flex items-center gap-2 text-sm font-medium">
+          <LayoutDashboard className="size-4 text-muted-foreground" />
           <span>Digito Admin</span>
         </Link>
       </div>
 
-      <div className="px-3 py-3">
+      <div className="px-2 pb-2">
         <ContextSelector />
       </div>
 
-      <Separator />
+      <Separator className="opacity-60" />
 
-      <ScrollArea className="flex-1 px-3 py-2">
-        <nav className="flex flex-col gap-1">
+      <ScrollArea className="flex-1 px-2 py-2">
+        <nav className="flex flex-col gap-0.5">
           {mainNav.map((item) => (
             <Link
               key={item.href}
               href={item.href}
               className={cn(
-                "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-                pathname === item.href &&
-                  "bg-sidebar-accent text-sidebar-accent-foreground"
+                "flex items-center gap-2.5 rounded-sm px-2 py-1.5 text-sm transition-colors duration-100 hover:bg-sidebar-accent",
+                pathname === item.href
+                  ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                  : "text-muted-foreground"
               )}
             >
               <item.icon className="size-4" />
@@ -81,11 +82,11 @@ export function AppSidebar() {
 
         {selectedEventId && (
           <>
-            <Separator className="my-3" />
-            <p className="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            <Separator className="my-2 opacity-60" />
+            <p className="mb-1 px-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
               Event
             </p>
-            <nav className="flex flex-col gap-1">
+            <nav className="flex flex-col gap-0.5">
               {eventNav.map((item) => {
                 const href = `/events/${selectedEventId}${item.href}`;
                 const isActive =
@@ -97,9 +98,10 @@ export function AppSidebar() {
                     key={item.href}
                     href={href}
                     className={cn(
-                      "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-                      isActive &&
-                        "bg-sidebar-accent text-sidebar-accent-foreground"
+                      "flex items-center gap-2.5 rounded-sm px-2 py-1.5 text-sm transition-colors duration-100 hover:bg-sidebar-accent",
+                      isActive
+                        ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                        : "text-muted-foreground"
                     )}
                   >
                     <item.icon className="size-4" />
@@ -112,15 +114,16 @@ export function AppSidebar() {
         )}
       </ScrollArea>
 
-      <Separator />
+      <Separator className="opacity-60" />
 
-      <div className="flex flex-col gap-1 p-3">
+      <div className="flex flex-col gap-0.5 p-2">
         <Link
           href="/settings"
           className={cn(
-            "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-            pathname === "/settings" &&
-              "bg-sidebar-accent text-sidebar-accent-foreground"
+            "flex items-center gap-2.5 rounded-sm px-2 py-1.5 text-sm transition-colors duration-100 hover:bg-sidebar-accent",
+            pathname === "/settings"
+              ? "bg-sidebar-accent text-sidebar-accent-foreground"
+              : "text-muted-foreground"
           )}
         >
           <Settings className="size-4" />
@@ -128,7 +131,7 @@ export function AppSidebar() {
         </Link>
         <Button
           variant="ghost"
-          className="justify-start gap-3 px-3 text-sm font-medium text-muted-foreground"
+          className="h-auto justify-start gap-2.5 rounded-sm px-2 py-1.5 text-sm font-normal text-muted-foreground"
           onClick={() => signOut()}
         >
           <LogOut className="size-4" />

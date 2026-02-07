@@ -40,14 +40,14 @@ export function ContextSelector() {
   });
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-1.5">
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline" className="w-full justify-between text-xs">
+          <Button variant="ghost" className="w-full justify-between rounded-sm px-2 text-xs font-normal text-muted-foreground hover:text-foreground">
             <span className="truncate">
               {selectedClientName || "Select Client"}
             </span>
-            <ChevronDown className="size-3.5 opacity-50" />
+            <ChevronDown className="size-3 opacity-50" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent className="w-56">
@@ -70,11 +70,11 @@ export function ContextSelector() {
       {selectedClientId && (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="w-full justify-between text-xs">
+            <Button variant="ghost" className="w-full justify-between rounded-sm px-2 text-xs font-normal text-muted-foreground hover:text-foreground">
               <span className="truncate">
                 {selectedEventName || "Select Event"}
               </span>
-              <ChevronDown className="size-3.5 opacity-50" />
+              <ChevronDown className="size-3 opacity-50" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent className="w-56">
