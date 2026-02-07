@@ -17,6 +17,8 @@ export const eventSchema = z.object({
   bannerUrl: z.string().nullable().optional(),
   websiteUrl: z.string().url().nullable().optional().or(z.literal("")),
   instagramUrl: z.string().url().nullable().optional().or(z.literal("")),
+  chatPrompt: z.string().nullable().optional(),
+  imageUrls: z.array(z.string()).optional().default([]),
   isActive: z.boolean().default(true),
 });
 
@@ -27,6 +29,7 @@ export const brandSchema = z.object({
   imageUrl: z.string().nullable().optional(),
   videoUrl: z.string().nullable().optional(),
   websiteUrl: z.string().url().nullable().optional().or(z.literal("")),
+  instagramUrl: z.string().url().nullable().optional().or(z.literal("")),
   stallNumber: z.string().nullable().optional(),
   isHighlighted: z.boolean().default(false),
 });

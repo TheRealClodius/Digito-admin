@@ -1,10 +1,34 @@
 "use client";
 
-import { use } from "react";
+import { use, useState } from "react";
 import { Plus } from "lucide-react";
+import { Timestamp } from "firebase/firestore";
+import { toast } from "sonner";
+
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from "@/components/ui/sheet";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+
 import { useCollection } from "@/hooks/use-collection";
+import { addDocument, updateDocument, deleteDocument } from "@/lib/firestore";
+import { EventsTable } from "@/components/tables/events-table";
+import { EventForm } from "@/components/forms/event-form";
 import type { Event } from "@/types/event";
 
 export default function EventsPage({
@@ -13,11 +37,78 @@ export default function EventsPage({
   params: Promise<{ clientId: string }>;
 }) {
   const { clientId } = use(params);
-  const { data: events, loading } = useCollection<Event & { id: string }>({
-    path: `clients/${clientId}/events`,
+  const collectionPath = `clients/${clientId}/events`;
+
+  const { data: events, loading } = useCollection<Event>({
+    path: collectionPath,
     orderByField: "startDate",
     orderDirection: "desc",
   });
+
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [editingEvent, setEditingEvent] = useState<Event | null>(null);
+  const [deletingEventId, setDeletingEventId] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  function handleNew() {
+    setEditingEvent(null);
+    setSheetOpen(true);
+  }
+
+  function handleEdit(event: Event) {
+    setEditingEvent(event);
+    setSheetOpen(true);
+  }
+
+  async function handleSubmit(data: Record<string, unknown>) {
+    setIsSubmitting(true);
+    try {
+      // Convert date fields to Firestore Timestamps
+      const firestoreData = {
+        ...data,
+        startDate: data.startDate instanceof Date ? Timestamp.fromDate(data.startDate) : data.startDate,
+        endDate: data.endDate instanceof Date ? Timestamp.fromDate(data.endDate) : data.endDate,
+      };
+
+      if (editingEvent) {
+        await updateDocument(collectionPath, editingEvent.id, firestoreData);
+        toast.success("Event updated");
+      } else {
+        await addDocument(collectionPath, firestoreData);
+        toast.success("Event created");
+      }
+      setSheetOpen(false);
+      setEditingEvent(null);
+    } catch (err) {
+      toast.error("Failed to save event");
+      console.error(err);
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  async function handleToggleActive(eventId: string, isActive: boolean) {
+    try {
+      await updateDocument(collectionPath, eventId, { isActive });
+      toast.success(isActive ? "Event activated" : "Event deactivated");
+    } catch (err) {
+      toast.error("Failed to update event status");
+      console.error(err);
+    }
+  }
+
+  async function handleDelete() {
+    if (!deletingEventId) return;
+    try {
+      await deleteDocument(collectionPath, deletingEventId);
+      toast.success("Event deleted");
+    } catch (err) {
+      toast.error("Failed to delete event");
+      console.error(err);
+    } finally {
+      setDeletingEventId(null);
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -28,7 +119,7 @@ export default function EventsPage({
             Manage events for this client
           </p>
         </div>
-        <Button>
+        <Button onClick={handleNew}>
           <Plus className="mr-2 size-4" />
           New Event
         </Button>
@@ -39,23 +130,75 @@ export default function EventsPage({
           <Skeleton className="h-12 w-full" />
           <Skeleton className="h-12 w-full" />
         </div>
-      ) : events.length === 0 ? (
-        <div className="flex min-h-[400px] flex-col items-center justify-center rounded-md border border-dashed">
-          <p className="text-muted-foreground">No events yet</p>
-          <Button variant="outline" className="mt-4">
-            <Plus className="mr-2 size-4" />
-            Create first event
-          </Button>
-        </div>
       ) : (
-        <div className="rounded-md border">
-          <div className="p-4">
-            <p className="text-sm text-muted-foreground">
-              {events.length} event(s) found
-            </p>
-          </div>
-        </div>
+        <EventsTable
+          events={events}
+          onEdit={handleEdit}
+          onDelete={(id) => setDeletingEventId(id)}
+          onToggleActive={handleToggleActive}
+        />
       )}
+
+      {/* Create / Edit Sheet */}
+      <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
+        <SheetContent className="overflow-y-auto sm:max-w-lg">
+          <SheetHeader>
+            <SheetTitle>{editingEvent ? "Edit Event" : "New Event"}</SheetTitle>
+            <SheetDescription>
+              {editingEvent
+                ? "Update the event details below."
+                : "Fill in the details to create a new event."}
+            </SheetDescription>
+          </SheetHeader>
+          <div className="mt-6">
+            <EventForm
+              clientId={clientId}
+              defaultValues={
+                editingEvent
+                  ? {
+                      name: editingEvent.name,
+                      description: editingEvent.description ?? null,
+                      venue: editingEvent.venue ?? null,
+                      startDate: editingEvent.startDate?.toDate(),
+                      endDate: editingEvent.endDate?.toDate(),
+                      websiteUrl: editingEvent.websiteUrl ?? null,
+                      instagramUrl: editingEvent.instagramUrl ?? null,
+                      chatPrompt: editingEvent.chatPrompt ?? null,
+                      imageUrls: editingEvent.imageUrls ?? [],
+                      isActive: editingEvent.isActive,
+                      logoUrl: editingEvent.logoUrl ?? null,
+                      bannerUrl: editingEvent.bannerUrl ?? null,
+                    }
+                  : undefined
+              }
+              onSubmit={handleSubmit}
+              onCancel={() => setSheetOpen(false)}
+              isSubmitting={isSubmitting}
+            />
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      {/* Delete Confirmation */}
+      <AlertDialog
+        open={!!deletingEventId}
+        onOpenChange={(open) => !open && setDeletingEventId(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Event</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this event? This action cannot be
+              undone and will remove all data (brands, sessions, etc.) under
+              this event.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

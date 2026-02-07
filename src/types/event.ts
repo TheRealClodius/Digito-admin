@@ -12,6 +12,8 @@ export interface Event {
   bannerUrl?: string | null;
   websiteUrl?: string | null;
   instagramUrl?: string | null;
+  chatPrompt?: string | null;
+  imageUrls?: string[] | null;
   isActive: boolean;
   createdAt: Timestamp;
 }

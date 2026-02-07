@@ -1,17 +1,89 @@
 "use client";
 
+import { useState } from "react";
 import { Plus } from "lucide-react";
+import { toast } from "sonner";
+
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from "@/components/ui/sheet";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+
 import { useCollection } from "@/hooks/use-collection";
+import { addDocument, updateDocument, deleteDocument } from "@/lib/firestore";
+import { ClientsTable } from "@/components/tables/clients-table";
+import { ClientForm } from "@/components/forms/client-form";
 import type { Client } from "@/types/client";
 
 export default function ClientsPage() {
-  const { data: clients, loading } = useCollection<Client & { id: string }>({
+  const { data: clients, loading } = useCollection<Client>({
     path: "clients",
     orderByField: "name",
     orderDirection: "asc",
   });
+
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [editingClient, setEditingClient] = useState<Client | null>(null);
+  const [deletingClientId, setDeletingClientId] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  function handleNew() {
+    setEditingClient(null);
+    setSheetOpen(true);
+  }
+
+  function handleEdit(client: Client) {
+    setEditingClient(client);
+    setSheetOpen(true);
+  }
+
+  async function handleSubmit(data: { name: string; description?: string | null; logoUrl?: string | null }) {
+    setIsSubmitting(true);
+    try {
+      if (editingClient) {
+        await updateDocument("clients", editingClient.id, data);
+        toast.success("Client updated");
+      } else {
+        await addDocument("clients", data);
+        toast.success("Client created");
+      }
+      setSheetOpen(false);
+      setEditingClient(null);
+    } catch (err) {
+      toast.error("Failed to save client");
+      console.error(err);
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  async function handleDelete() {
+    if (!deletingClientId) return;
+    try {
+      await deleteDocument("clients", deletingClientId);
+      toast.success("Client deleted");
+    } catch (err) {
+      toast.error("Failed to delete client");
+      console.error(err);
+    } finally {
+      setDeletingClientId(null);
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -22,7 +94,7 @@ export default function ClientsPage() {
             Manage your client organizations
           </p>
         </div>
-        <Button>
+        <Button onClick={handleNew}>
           <Plus className="mr-2 size-4" />
           New Client
         </Button>
@@ -34,24 +106,63 @@ export default function ClientsPage() {
           <Skeleton className="h-12 w-full" />
           <Skeleton className="h-12 w-full" />
         </div>
-      ) : clients.length === 0 ? (
-        <div className="flex min-h-[400px] flex-col items-center justify-center rounded-md border border-dashed">
-          <p className="text-muted-foreground">No clients yet</p>
-          <Button variant="outline" className="mt-4">
-            <Plus className="mr-2 size-4" />
-            Add your first client
-          </Button>
-        </div>
       ) : (
-        <div className="rounded-md border">
-          {/* DataTable will be implemented here */}
-          <div className="p-4">
-            <p className="text-sm text-muted-foreground">
-              {clients.length} client(s) found
-            </p>
-          </div>
-        </div>
+        <ClientsTable
+          clients={clients}
+          onEdit={handleEdit}
+          onDelete={(id) => setDeletingClientId(id)}
+        />
       )}
+
+      {/* Create / Edit Sheet */}
+      <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
+        <SheetContent className="overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle>{editingClient ? "Edit Client" : "New Client"}</SheetTitle>
+            <SheetDescription>
+              {editingClient
+                ? "Update the client details below."
+                : "Fill in the details to create a new client."}
+            </SheetDescription>
+          </SheetHeader>
+          <div className="mt-6">
+            <ClientForm
+              defaultValues={
+                editingClient
+                  ? {
+                      name: editingClient.name,
+                      description: editingClient.description ?? null,
+                      logoUrl: editingClient.logoUrl ?? null,
+                    }
+                  : undefined
+              }
+              onSubmit={handleSubmit}
+              onCancel={() => setSheetOpen(false)}
+              isSubmitting={isSubmitting}
+            />
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      {/* Delete Confirmation */}
+      <AlertDialog
+        open={!!deletingClientId}
+        onOpenChange={(open) => !open && setDeletingClientId(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Client</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this client? This action cannot be
+              undone and will also remove all events under this client.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

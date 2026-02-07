@@ -811,16 +811,20 @@ digito-admin/
 > **Note:** Firebase project access not yet configured. `.env.local` has placeholder values.
 > System font stack used instead of Google Fonts (Geist) due to environment restrictions.
 
-### Phase 2 — Client & Event CRUD
+### Phase 2 — Client & Event CRUD ✅
 
-- [ ] Clients list page with DataTable
-- [ ] Client create/edit form in Sheet
-- [ ] Client delete with confirmation
-- [ ] Events list page (scoped to selected client)
-- [ ] Event create/edit form with DateTimePickers
-- [ ] Event delete with confirmation
+- [x] Clients list page with DataTable
+- [x] Client create/edit form in Sheet
+- [x] Client delete with confirmation
+- [x] Events list page (scoped to selected client)
+- [x] Event create/edit form with DateTimePickers
+- [x] Event delete with confirmation
 - [ ] Image upload component (reusable) — _shell created, needs Storage wiring_
 - [ ] Wire up Firebase Storage uploads for logos/banners
+
+> **Note:** Testing infrastructure set up (Vitest + Testing Library). 198 tests passing.
+> Schema gaps fixed: brand `instagramUrl`, event `chatPrompt`, event `imageUrls`.
+> Image uploads shell exists but needs Firebase Storage credentials to wire up.
 
 ### Phase 3 — Core Event Content
 
