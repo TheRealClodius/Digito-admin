@@ -1,11 +1,24 @@
 "use client";
 
-import { use } from "react";
+import { use, useState } from "react";
 import { Plus } from "lucide-react";
+import { toast } from "sonner";
+
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription,
+} from "@/components/ui/sheet";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+
 import { useCollection } from "@/hooks/use-collection";
 import { useEventContext } from "@/hooks/use-event-context";
+import { addDocument, updateDocument, deleteDocument } from "@/lib/firestore";
+import { WhitelistTable } from "@/components/tables/whitelist-table";
+import { WhitelistForm } from "@/components/forms/whitelist-form";
 import type { WhitelistEntry } from "@/types/whitelist-entry";
 
 export default function WhitelistPage({
@@ -15,13 +28,57 @@ export default function WhitelistPage({
 }) {
   const { eventId } = use(params);
   const { selectedClientId } = useEventContext();
-  const { data: entries, loading } = useCollection<WhitelistEntry & { id: string }>({
-    path: selectedClientId
-      ? `clients/${selectedClientId}/events/${eventId}/whitelist`
-      : "",
+  const collectionPath = selectedClientId
+    ? `clients/${selectedClientId}/events/${eventId}/whitelist`
+    : "";
+
+  const { data: entries, loading } = useCollection<WhitelistEntry>({
+    path: collectionPath,
     orderByField: "addedAt",
     orderDirection: "desc",
   });
+
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [editingEntry, setEditingEntry] = useState<WhitelistEntry | null>(null);
+  const [deletingEntryId, setDeletingEntryId] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  function handleNew() { setEditingEntry(null); setSheetOpen(true); }
+  function handleEdit(entry: WhitelistEntry) { setEditingEntry(entry); setSheetOpen(true); }
+
+  async function handleSubmit(data: Record<string, unknown>) {
+    if (!collectionPath) return;
+    setIsSubmitting(true);
+    try {
+      if (editingEntry) {
+        await updateDocument(collectionPath, editingEntry.id, data);
+        toast.success("Whitelist entry updated");
+      } else {
+        await addDocument(collectionPath, data);
+        toast.success("Whitelist entry added");
+      }
+      setSheetOpen(false);
+      setEditingEntry(null);
+    } catch (err) {
+      toast.error("Failed to save whitelist entry");
+      console.error(err);
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  async function handleDelete() {
+    if (!deletingEntryId || !collectionPath) return;
+    try {
+      await deleteDocument(collectionPath, deletingEntryId);
+      toast.success("Whitelist entry removed");
+    } catch (err) {
+      toast.error("Failed to delete entry");
+      console.error(err);
+    } finally {
+      setDeletingEntryId(null);
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -30,7 +87,7 @@ export default function WhitelistPage({
           <h1 className="text-2xl font-bold tracking-tight">Whitelist</h1>
           <p className="text-muted-foreground">Manage pre-approved attendees</p>
         </div>
-        <Button>
+        <Button onClick={handleNew}>
           <Plus className="mr-2 size-4" />
           Add Entry
         </Button>
@@ -42,23 +99,50 @@ export default function WhitelistPage({
           <Skeleton className="h-12 w-full" />
           <Skeleton className="h-12 w-full" />
         </div>
-      ) : entries.length === 0 ? (
-        <div className="flex min-h-[400px] flex-col items-center justify-center rounded-md border border-dashed">
-          <p className="text-muted-foreground">No whitelist entries yet</p>
-          <Button variant="outline" className="mt-4">
-            <Plus className="mr-2 size-4" />
-            Add first entry
-          </Button>
-        </div>
       ) : (
-        <div className="rounded-md border">
-          <div className="p-4">
-            <p className="text-sm text-muted-foreground">
-              {entries.length} entry(ies) found
-            </p>
-          </div>
-        </div>
+        <WhitelistTable
+          entries={entries}
+          onEdit={handleEdit}
+          onDelete={(id) => setDeletingEntryId(id)}
+        />
       )}
+
+      <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
+        <SheetContent className="overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle>{editingEntry ? "Edit Entry" : "New Whitelist Entry"}</SheetTitle>
+            <SheetDescription>
+              {editingEntry ? "Update the whitelist entry." : "Add a new pre-approved attendee."}
+            </SheetDescription>
+          </SheetHeader>
+          <div className="mt-6">
+            <WhitelistForm
+              defaultValues={editingEntry ? {
+                email: editingEntry.email,
+                accessTier: editingEntry.accessTier,
+                company: editingEntry.company ?? null,
+                lockedFields: editingEntry.lockedFields ?? [],
+              } : undefined}
+              onSubmit={handleSubmit}
+              onCancel={() => setSheetOpen(false)}
+              isSubmitting={isSubmitting}
+            />
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      <AlertDialog open={!!deletingEntryId} onOpenChange={(open) => !open && setDeletingEntryId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove Entry</AlertDialogTitle>
+            <AlertDialogDescription>Remove this person from the whitelist?</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete}>Remove</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

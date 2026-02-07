@@ -8,6 +8,7 @@ export interface Brand {
   imageUrl?: string | null;
   videoUrl?: string | null;
   websiteUrl?: string | null;
+  instagramUrl?: string | null;
   stallNumber?: string | null;
   isHighlighted: boolean;
   createdAt: Timestamp;
