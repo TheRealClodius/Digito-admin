@@ -48,20 +48,22 @@ export default function EventsPage({
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
   const [deletingEventId, setDeletingEventId] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitStatus, setSubmitStatus] = useState<"idle" | "saving" | "success" | "error">("idle");
 
   function handleNew() {
     setEditingEvent(null);
+    setSubmitStatus("idle");
     setSheetOpen(true);
   }
 
   function handleEdit(event: Event) {
     setEditingEvent(event);
+    setSubmitStatus("idle");
     setSheetOpen(true);
   }
 
   async function handleSubmit(data: Record<string, unknown>) {
-    setIsSubmitting(true);
+    setSubmitStatus("saving");
     try {
       // Convert date fields to Firestore Timestamps
       const firestoreData = {
@@ -72,18 +74,14 @@ export default function EventsPage({
 
       if (editingEvent) {
         await updateDocument(collectionPath, editingEvent.id, firestoreData);
-        toast.success("Event updated");
       } else {
         await addDocument(collectionPath, firestoreData);
-        toast.success("Event created");
       }
-      setSheetOpen(false);
-      setEditingEvent(null);
+      setSubmitStatus("success");
     } catch (err) {
+      setSubmitStatus("error");
       toast.error("Failed to save event");
       console.error(err);
-    } finally {
-      setIsSubmitting(false);
     }
   }
 
@@ -141,7 +139,7 @@ export default function EventsPage({
 
       {/* Create / Edit Sheet */}
       <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-        <SheetContent className="overflow-y-auto sm:max-w-lg">
+        <SheetContent className="overflow-y-auto">
           <SheetHeader>
             <SheetTitle>{editingEvent ? "Edit Event" : "New Event"}</SheetTitle>
             <SheetDescription>
@@ -173,7 +171,7 @@ export default function EventsPage({
               }
               onSubmit={handleSubmit}
               onCancel={() => setSheetOpen(false)}
-              isSubmitting={isSubmitting}
+              submitStatus={submitStatus}
             />
           </div>
         </SheetContent>

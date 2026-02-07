@@ -279,13 +279,13 @@ describe("EventForm", () => {
     expect(activeToggle).not.toBeChecked();
   });
 
-  // ---- isSubmitting disables the submit button ----
+  // ---- submitStatus disables the submit button ----
 
-  it("disables the submit button when isSubmitting is true", () => {
+  it("disables the submit button when submitStatus is saving", () => {
     render(
       <EventForm
         {...defaultProps}
-        isSubmitting={true}
+        submitStatus="saving"
         defaultValues={{
           name: "Some Event",
           startDate: new Date("2026-06-15"),

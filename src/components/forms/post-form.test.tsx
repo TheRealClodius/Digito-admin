@@ -266,13 +266,13 @@ describe("PostForm", () => {
   // ----- Loading / submitting state -----
 
   describe("loading state", () => {
-    it("disables the submit button when isSubmitting is true", () => {
+    it("disables the submit button when submitStatus is saving", () => {
       render(
         <PostForm
           defaultValues={{ imageUrl: "https://example.com/photo.jpg" }}
           onSubmit={vi.fn()}
           onCancel={vi.fn()}
-          isSubmitting={true}
+          submitStatus="saving"
         />,
       );
 
@@ -282,13 +282,13 @@ describe("PostForm", () => {
       expect(submitButton).toBeDisabled();
     });
 
-    it("shows a loading indicator on the submit button when isSubmitting is true", () => {
+    it("shows a loading indicator on the submit button when submitStatus is saving", () => {
       render(
         <PostForm
           defaultValues={{ imageUrl: "https://example.com/photo.jpg" }}
           onSubmit={vi.fn()}
           onCancel={vi.fn()}
-          isSubmitting={true}
+          submitStatus="saving"
         />,
       );
 
@@ -297,13 +297,13 @@ describe("PostForm", () => {
       ).toBeInTheDocument();
     });
 
-    it("does not show loading state when isSubmitting is false", () => {
+    it("does not show loading state when submitStatus is idle", () => {
       render(
         <PostForm
           defaultValues={{ imageUrl: "https://example.com/photo.jpg" }}
           onSubmit={vi.fn()}
           onCancel={vi.fn()}
-          isSubmitting={false}
+          submitStatus="idle"
         />,
       );
 
@@ -312,13 +312,13 @@ describe("PostForm", () => {
       ).not.toBeInTheDocument();
     });
 
-    it("disables the cancel button when isSubmitting is true", () => {
+    it("disables the cancel button when submitStatus is saving", () => {
       render(
         <PostForm
           defaultValues={{ imageUrl: "https://example.com/photo.jpg" }}
           onSubmit={vi.fn()}
           onCancel={vi.fn()}
-          isSubmitting={true}
+          submitStatus="saving"
         />,
       );
 

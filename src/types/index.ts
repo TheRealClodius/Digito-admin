@@ -7,4 +7,3 @@ export * from "./happening";
 export * from "./participant";
 export * from "./post";
 export * from "./whitelist-entry";
-export * from "./user-profile";

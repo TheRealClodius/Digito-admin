@@ -1,11 +1,14 @@
 "use client";
 
 import { useForm } from "react-hook-form";
+import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import type { HappeningType } from "@/types/happening";
+
+type SubmitStatus = "idle" | "saving" | "success" | "error";
 
 interface HappeningFormDefaultValues {
   title?: string | null;
@@ -23,7 +26,7 @@ interface HappeningFormProps {
   defaultValues?: HappeningFormDefaultValues;
   onSubmit: (data: Record<string, unknown>) => void;
   onCancel: () => void;
-  isSubmitting?: boolean;
+  submitStatus?: SubmitStatus;
 }
 
 function formatDateForInput(date: Date | null | undefined): string {
@@ -61,8 +64,9 @@ export function HappeningForm({
   defaultValues,
   onSubmit,
   onCancel,
-  isSubmitting = false,
+  submitStatus = "idle",
 }: HappeningFormProps) {
+  const isSubmitting = submitStatus === "saving";
   const {
     register,
     handleSubmit,
@@ -95,8 +99,7 @@ export function HappeningForm({
   };
 
   return (
-    <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-6">
-      {/* Title */}
+    <form onSubmit={handleSubmit(onFormSubmit)} className="grid grid-cols-2 gap-x-4 gap-y-6">
       <div className="space-y-2">
         <Label htmlFor="title">Title</Label>
         <Input
@@ -109,51 +112,6 @@ export function HappeningForm({
         )}
       </div>
 
-      {/* Description */}
-      <div className="space-y-2">
-        <Label htmlFor="description">Description</Label>
-        <Textarea
-          id="description"
-          aria-label="Description"
-          {...register("description")}
-        />
-      </div>
-
-      {/* Start Time */}
-      <div className="space-y-2">
-        <Label htmlFor="startTime">Start Time</Label>
-        <input
-          type="datetime-local"
-          id="startTime"
-          aria-label="Start Time"
-          className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-          {...register("startTime")}
-        />
-      </div>
-
-      {/* End Time */}
-      <div className="space-y-2">
-        <Label htmlFor="endTime">End Time</Label>
-        <input
-          type="datetime-local"
-          id="endTime"
-          aria-label="End Time"
-          className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-          {...register("endTime")}
-        />
-      </div>
-
-      {/* Location */}
-      <div className="space-y-2">
-        <Label htmlFor="location">Location</Label>
-        <Input
-          id="location"
-          aria-label="Location"
-          {...register("location")}
-        />
-      </div>
-
-      {/* Type */}
       <div className="space-y-2">
         <Label htmlFor="type">Type</Label>
         <select
@@ -170,7 +128,46 @@ export function HappeningForm({
         </select>
       </div>
 
-      {/* Host Name */}
+      <div className="col-span-2 space-y-2">
+        <Label htmlFor="description">Description</Label>
+        <Textarea
+          id="description"
+          aria-label="Description"
+          {...register("description")}
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="startTime">Start Time</Label>
+        <input
+          type="datetime-local"
+          id="startTime"
+          aria-label="Start Time"
+          className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+          {...register("startTime")}
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="endTime">End Time</Label>
+        <input
+          type="datetime-local"
+          id="endTime"
+          aria-label="End Time"
+          className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+          {...register("endTime")}
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="location">Location</Label>
+        <Input
+          id="location"
+          aria-label="Location"
+          {...register("location")}
+        />
+      </div>
+
       <div className="space-y-2">
         <Label htmlFor="hostName">Host Name</Label>
         <Input
@@ -180,7 +177,6 @@ export function HappeningForm({
         />
       </div>
 
-      {/* Is Highlighted */}
       <div className="flex items-center space-x-2">
         <input
           type="checkbox"
@@ -194,7 +190,6 @@ export function HappeningForm({
         <Label htmlFor="isHighlighted">Highlighted</Label>
       </div>
 
-      {/* Requires Access */}
       <div className="flex items-center space-x-2">
         <input
           type="checkbox"
@@ -208,14 +203,22 @@ export function HappeningForm({
         <Label htmlFor="requiresAccess">Requires Access</Label>
       </div>
 
-      {/* Buttons */}
-      <div className="flex gap-4">
+      <div className="col-span-2 flex items-center gap-4">
         <Button type="submit" disabled={isSubmitDisabled}>
           {isSubmitting ? "Saving..." : "Save"}
         </Button>
         <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
           Cancel
         </Button>
+        {submitStatus === "success" && (
+          <span className="flex items-center gap-1 text-sm text-green-600">
+            <Check className="size-4" />
+            Saved
+          </span>
+        )}
+        {submitStatus === "error" && (
+          <p className="text-sm text-destructive">Failed to save</p>
+        )}
       </div>
     </form>
   );

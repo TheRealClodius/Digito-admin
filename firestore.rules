@@ -1,0 +1,53 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper: check if user is a super admin (via custom claim set by seed-admins script)
+    function isSuperAdmin() {
+      return request.auth != null
+        && request.auth.token.admin == true;
+    }
+
+    // Super admin collection — only readable by self
+    match /superAdmins/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if isSuperAdmin();
+    }
+
+    // Users can read/write their own root profile
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Clients — read for all authed, write for admins
+    match /clients/{clientId} {
+      allow read: if request.auth != null;
+      allow write: if isSuperAdmin();
+
+      match /events/{eventId} {
+        allow read: if request.auth != null;
+        allow write: if isSuperAdmin();
+
+        // Whitelist — read for all authed (needed for auth flow), write for admins
+        match /whitelist/{whitelistId} {
+          allow read: if request.auth != null;
+          allow write: if isSuperAdmin();
+        }
+
+        // Event content (brands, posts, sessions, stands, happenings, participants)
+        // Read for all authed, write for admins
+        match /{subcollection}/{docId} {
+          allow read: if request.auth != null;
+          allow write: if isSuperAdmin();
+        }
+
+        // User data — owned by the user, read-only for admins
+        match /users/{userId}/{document=**} {
+          allow read, write: if request.auth != null && request.auth.uid == userId;
+          allow read: if isSuperAdmin();
+        }
+      }
+    }
+  }
+}

@@ -11,6 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
+import { Trash2 } from "lucide-react";
 
 interface EventsTableProps {
   events: Event[];
@@ -42,7 +43,7 @@ export function EventsTable({
             <TableHead>Dates</TableHead>
             <TableHead>Status</TableHead>
             <TableHead>Active</TableHead>
-            <TableHead>Actions</TableHead>
+            <TableHead className="w-40">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -63,7 +64,7 @@ export function EventsTable({
           <TableHead>Dates</TableHead>
           <TableHead>Status</TableHead>
           <TableHead>Active</TableHead>
-          <TableHead>Actions</TableHead>
+          <TableHead className="w-40">Actions</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -92,20 +93,23 @@ export function EventsTable({
                 />
               </TableCell>
               <TableCell>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => onEdit(event)}
-                >
-                  Edit
-                </Button>
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={() => onDelete(event.id)}
-                >
-                  Delete
-                </Button>
+                <div className="flex items-center">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onEdit(event)}
+                  >
+                    Edit
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    size="icon"
+                    className="ml-2 size-8"
+                    onClick={() => onDelete(event.id)}
+                  >
+                    <Trash2 className="size-4" />
+                  </Button>
+                </div>
               </TableCell>
             </TableRow>
           );

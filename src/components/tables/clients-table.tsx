@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Trash2 } from "lucide-react";
 import type { Client } from "@/types/client";
 
 interface ClientsTableProps {
@@ -55,7 +56,7 @@ export function ClientsTable({ clients, onEdit, onDelete }: ClientsTableProps) {
             <TableHead>Name</TableHead>
             <TableHead>Description</TableHead>
             <TableHead>Created</TableHead>
-            <TableHead>Actions</TableHead>
+            <TableHead className="w-40">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -76,21 +77,23 @@ export function ClientsTable({ clients, onEdit, onDelete }: ClientsTableProps) {
                   title={formatDate(client)}
                 />
                 <TableCell>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => onEdit(client)}
-                  >
-                    Edit
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    className="ml-2"
-                    onClick={() => onDelete(client.id)}
-                  >
-                    Delete
-                  </Button>
+                  <div className="flex items-center">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onEdit(client)}
+                    >
+                      Edit
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="icon"
+                      className="ml-2 size-8"
+                      onClick={() => onDelete(client.id)}
+                    >
+                      <Trash2 className="size-4" />
+                    </Button>
+                  </div>
                 </TableCell>
               </TableRow>
             ))

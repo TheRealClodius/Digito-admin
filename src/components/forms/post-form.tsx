@@ -3,11 +3,14 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ImageUpload } from "@/components/image-upload";
+
+type SubmitStatus = "idle" | "saving" | "success" | "error";
 
 const postFormSchema = z.object({
   imageUrl: z.string().min(1, "Image is required"),
@@ -27,15 +30,16 @@ interface PostFormProps {
   };
   onSubmit: (data: PostFormValues) => void;
   onCancel: () => void;
-  isSubmitting?: boolean;
+  submitStatus?: SubmitStatus;
 }
 
 export function PostForm({
   defaultValues,
   onSubmit,
   onCancel,
-  isSubmitting = false,
+  submitStatus = "idle",
 }: PostFormProps) {
+  const isSubmitting = submitStatus === "saving";
   const {
     register,
     handleSubmit,
@@ -58,7 +62,7 @@ export function PostForm({
   const isImageEmpty = !imageUrlValue || imageUrlValue.trim() === "";
 
   return (
-    <form onSubmit={handleSubmit((data) => onSubmit(data))} className="space-y-6">
+    <form onSubmit={handleSubmit((data) => onSubmit(data))} className="grid grid-cols-2 gap-x-4 gap-y-6">
       <div className="space-y-2">
         <Label>Image</Label>
         <ImageUpload
@@ -72,22 +76,6 @@ export function PostForm({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="description">Description</Label>
-        <Textarea
-          id="description"
-          {...register("description")}
-        />
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="authorName">Author Name</Label>
-        <Input
-          id="authorName"
-          {...register("authorName")}
-        />
-      </div>
-
-      <div className="space-y-2">
         <Label>Author Avatar</Label>
         <ImageUpload
           value={authorAvatarUrlValue || null}
@@ -96,7 +84,23 @@ export function PostForm({
         />
       </div>
 
-      <div className="flex gap-2">
+      <div className="col-span-2 space-y-2">
+        <Label htmlFor="description">Description</Label>
+        <Textarea
+          id="description"
+          {...register("description")}
+        />
+      </div>
+
+      <div className="col-span-2 space-y-2">
+        <Label htmlFor="authorName">Author Name</Label>
+        <Input
+          id="authorName"
+          {...register("authorName")}
+        />
+      </div>
+
+      <div className="col-span-2 flex items-center gap-2">
         <Button
           type="submit"
           disabled={isImageEmpty || isSubmitting}
@@ -111,6 +115,15 @@ export function PostForm({
         >
           Cancel
         </Button>
+        {submitStatus === "success" && (
+          <span className="flex items-center gap-1 text-sm text-green-600">
+            <Check className="size-4" />
+            Saved
+          </span>
+        )}
+        {submitStatus === "error" && (
+          <p className="text-sm text-destructive">Failed to save</p>
+        )}
       </div>
     </form>
   );

@@ -1,10 +1,13 @@
 "use client";
 
 import { useForm } from "react-hook-form";
+import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+
+type SubmitStatus = "idle" | "saving" | "success" | "error";
 
 interface EventFormDefaultValues {
   name?: string | null;
@@ -26,7 +29,7 @@ interface EventFormProps {
   defaultValues?: EventFormDefaultValues;
   onSubmit: (data: Record<string, unknown>) => void;
   onCancel: () => void;
-  isSubmitting?: boolean;
+  submitStatus?: SubmitStatus;
 }
 
 function formatDateForInput(date: Date | null | undefined): string {
@@ -58,8 +61,9 @@ export function EventForm({
   defaultValues,
   onSubmit,
   onCancel,
-  isSubmitting = false,
+  submitStatus = "idle",
 }: EventFormProps) {
+  const isSubmitting = submitStatus === "saving";
   const {
     register,
     handleSubmit,
@@ -96,8 +100,7 @@ export function EventForm({
   };
 
   return (
-    <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-6">
-      {/* Name */}
+    <form onSubmit={handleSubmit(onFormSubmit)} className="grid grid-cols-2 gap-x-4 gap-y-6">
       <div className="space-y-2">
         <Label htmlFor="name">Name</Label>
         <Input
@@ -110,17 +113,6 @@ export function EventForm({
         )}
       </div>
 
-      {/* Description */}
-      <div className="space-y-2">
-        <Label htmlFor="description">Description</Label>
-        <Textarea
-          id="description"
-          aria-label="Description"
-          {...register("description")}
-        />
-      </div>
-
-      {/* Venue */}
       <div className="space-y-2">
         <Label htmlFor="venue">Venue</Label>
         <Input
@@ -130,7 +122,15 @@ export function EventForm({
         />
       </div>
 
-      {/* Start Date */}
+      <div className="col-span-2 space-y-2">
+        <Label htmlFor="description">Description</Label>
+        <Textarea
+          id="description"
+          aria-label="Description"
+          {...register("description")}
+        />
+      </div>
+
       <div className="space-y-2">
         <Label htmlFor="startDate">Start Date</Label>
         <input
@@ -145,7 +145,6 @@ export function EventForm({
         )}
       </div>
 
-      {/* End Date */}
       <div className="space-y-2">
         <Label htmlFor="endDate">End Date</Label>
         <input
@@ -160,7 +159,6 @@ export function EventForm({
         )}
       </div>
 
-      {/* Website URL */}
       <div className="space-y-2">
         <Label htmlFor="websiteUrl">Website URL</Label>
         <Input
@@ -170,7 +168,6 @@ export function EventForm({
         />
       </div>
 
-      {/* Instagram URL */}
       <div className="space-y-2">
         <Label htmlFor="instagramUrl">Instagram URL</Label>
         <Input
@@ -180,8 +177,7 @@ export function EventForm({
         />
       </div>
 
-      {/* Chat Prompt */}
-      <div className="space-y-2">
+      <div className="col-span-2 space-y-2">
         <Label htmlFor="chatPrompt">Chat Prompt</Label>
         <Input
           id="chatPrompt"
@@ -191,8 +187,7 @@ export function EventForm({
         />
       </div>
 
-      {/* Is Active */}
-      <div className="flex items-center space-x-2">
+      <div className="col-span-2 flex items-center space-x-2">
         <input
           type="checkbox"
           role="switch"
@@ -205,7 +200,6 @@ export function EventForm({
         <Label htmlFor="isActive">Active</Label>
       </div>
 
-      {/* Logo */}
       <div className="space-y-2">
         <Label>Logo</Label>
         <div className="rounded-md border border-dashed p-6 text-center text-sm text-muted-foreground">
@@ -213,7 +207,6 @@ export function EventForm({
         </div>
       </div>
 
-      {/* Banner */}
       <div className="space-y-2">
         <Label>Banner</Label>
         <div className="rounded-md border border-dashed p-6 text-center text-sm text-muted-foreground">
@@ -221,14 +214,22 @@ export function EventForm({
         </div>
       </div>
 
-      {/* Buttons */}
-      <div className="flex gap-4">
+      <div className="col-span-2 flex items-center gap-4">
         <Button type="submit" disabled={isSubmitDisabled}>
           {isSubmitting ? "Saving..." : "Save"}
         </Button>
         <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
           Cancel
         </Button>
+        {submitStatus === "success" && (
+          <span className="flex items-center gap-1 text-sm text-green-600">
+            <Check className="size-4" />
+            Saved
+          </span>
+        )}
+        {submitStatus === "error" && (
+          <p className="text-sm text-destructive">Failed to save</p>
+        )}
       </div>
     </form>
   );

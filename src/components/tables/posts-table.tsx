@@ -1,5 +1,6 @@
 import { format } from "date-fns";
 import Image from "next/image";
+import { Trash2 } from "lucide-react";
 
 import {
   Table,
@@ -53,7 +54,7 @@ export function PostsTable({ posts, onEdit, onDelete }: PostsTableProps) {
             <TableHead>Description</TableHead>
             <TableHead>Author</TableHead>
             <TableHead>Created</TableHead>
-            <TableHead>Actions</TableHead>
+            <TableHead className="w-40">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -81,21 +82,23 @@ export function PostsTable({ posts, onEdit, onDelete }: PostsTableProps) {
                 <TableCell>{post.authorName ?? ""}</TableCell>
                 <TableCell>{formatDate(post)}</TableCell>
                 <TableCell>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => onEdit(post)}
-                  >
-                    Edit
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    className="ml-2"
-                    onClick={() => onDelete(post.id)}
-                  >
-                    Delete
-                  </Button>
+                  <div className="flex items-center">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onEdit(post)}
+                    >
+                      Edit
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="icon"
+                      className="ml-2 size-8"
+                      onClick={() => onDelete(post.id)}
+                    >
+                      <Trash2 className="size-4" />
+                    </Button>
+                  </div>
                 </TableCell>
               </TableRow>
             ))

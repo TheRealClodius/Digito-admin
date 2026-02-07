@@ -13,9 +13,10 @@ import {
   Users,
   FileImage,
   ListChecks,
-  UserCircle,
   Settings,
   LogOut,
+  ChevronsUp,
+  ChevronsDown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useEventContext } from "@/hooks/use-event-context";
@@ -39,20 +40,42 @@ const eventNav = [
   { label: "Participants", href: "/participants", icon: Users },
   { label: "Posts", href: "/posts", icon: FileImage },
   { label: "Whitelist", href: "/whitelist", icon: ListChecks },
-  { label: "Users", href: "/users", icon: UserCircle },
 ];
 
-export function AppSidebar() {
+interface AppSidebarProps {
+  collapsed?: boolean;
+  onToggleCollapse?: () => void;
+}
+
+export function AppSidebar({ collapsed = false, onToggleCollapse }: AppSidebarProps) {
   const pathname = usePathname();
   const { selectedEventId } = useEventContext();
 
   return (
-    <aside className="flex h-screen w-64 flex-col border-r bg-sidebar text-sidebar-foreground">
-      <div className="flex h-14 items-center border-b px-4">
+    <aside
+      className={cn(
+        "flex w-64 flex-col overflow-hidden rounded-xl border border-sidebar-border bg-sidebar text-sidebar-foreground shadow-sm transition-all duration-300 ease-in-out",
+        collapsed ? "h-14" : "h-[calc(100vh-1rem)]"
+      )}
+    >
+      <div className="flex h-14 shrink-0 items-center px-4">
         <Link href="/" className="flex items-center gap-2 font-semibold">
           <LayoutDashboard className="size-5" />
           <span>Digito Admin</span>
         </Link>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="ml-auto size-7 shrink-0 text-muted-foreground hover:text-foreground"
+          onClick={onToggleCollapse}
+          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+        >
+          {collapsed ? (
+            <ChevronsDown className="size-4" />
+          ) : (
+            <ChevronsUp className="size-4" />
+          )}
+        </Button>
       </div>
 
       <div className="px-3 py-3">

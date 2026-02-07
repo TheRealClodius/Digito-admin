@@ -179,13 +179,13 @@ describe("HappeningForm", () => {
     expect(onCancel).toHaveBeenCalledTimes(1);
   });
 
-  // ---- isSubmitting disables the submit button ----
+  // ---- submitStatus disables the submit button ----
 
-  it("disables the submit button when isSubmitting is true", () => {
+  it("disables the submit button when submitStatus is saving", () => {
     render(
       <HappeningForm
         {...defaultProps}
-        isSubmitting={true}
+        submitStatus="saving"
         defaultValues={{
           title: "Some Happening",
         }}

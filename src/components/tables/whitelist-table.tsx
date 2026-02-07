@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Trash2 } from "lucide-react";
 import type { WhitelistEntry, WhitelistAccessTier } from "@/types/whitelist-entry";
 
 interface WhitelistTableProps {
@@ -51,7 +52,7 @@ export function WhitelistTable({ entries, onEdit, onDelete }: WhitelistTableProp
             <TableHead>Company</TableHead>
             <TableHead>Locked Fields</TableHead>
             <TableHead>Added</TableHead>
-            <TableHead>Actions</TableHead>
+            <TableHead className="w-40">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -86,21 +87,23 @@ export function WhitelistTable({ entries, onEdit, onDelete }: WhitelistTableProp
                 </TableCell>
                 <TableCell>{formatDate(entry)}</TableCell>
                 <TableCell>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => onEdit(entry)}
-                  >
-                    Edit
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    className="ml-2"
-                    onClick={() => onDelete(entry.id)}
-                  >
-                    Delete
-                  </Button>
+                  <div className="flex items-center">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onEdit(entry)}
+                    >
+                      Edit
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="icon"
+                      className="ml-2 size-8"
+                      onClick={() => onDelete(entry.id)}
+                    >
+                      <Trash2 className="size-4" />
+                    </Button>
+                  </div>
                 </TableCell>
               </TableRow>
             ))

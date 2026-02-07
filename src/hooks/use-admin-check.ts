@@ -1,24 +1,26 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { type User } from "firebase/auth";
 import { checkSuperAdmin } from "@/lib/auth";
 
-export function useAdminCheck(uid: string | undefined) {
+export function useAdminCheck(user: User | null) {
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!uid) {
+    if (!user) {
       setIsAdmin(null);
       setLoading(false);
       return;
     }
 
-    checkSuperAdmin(uid)
+    setLoading(true);
+    checkSuperAdmin(user)
       .then(setIsAdmin)
       .catch(() => setIsAdmin(false))
       .finally(() => setLoading(false));
-  }, [uid]);
+  }, [user]);
 
   return { isAdmin, loading };
 }

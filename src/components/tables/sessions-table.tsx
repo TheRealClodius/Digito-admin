@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Trash2 } from "lucide-react";
 
 interface SessionsTableProps {
   sessions: Session[];
@@ -35,7 +36,7 @@ export function SessionsTable({
             <TableHead>Time</TableHead>
             <TableHead>Location</TableHead>
             <TableHead>Speaker</TableHead>
-            <TableHead>Actions</TableHead>
+            <TableHead className="w-40">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -60,7 +61,7 @@ export function SessionsTable({
             <TableHead>Time</TableHead>
             <TableHead>Location</TableHead>
             <TableHead>Speaker</TableHead>
-            <TableHead>Actions</TableHead>
+            <TableHead className="w-40">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -81,20 +82,23 @@ export function SessionsTable({
                 <TableCell>{session.location ?? "-"}</TableCell>
                 <TableCell>{session.speakerName ?? "-"}</TableCell>
                 <TableCell>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => onEdit(session)}
-                  >
-                    Edit
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => onDelete(session.id)}
-                  >
-                    Delete
-                  </Button>
+                  <div className="flex items-center">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onEdit(session)}
+                    >
+                      Edit
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="icon"
+                      className="ml-2 size-8"
+                      onClick={() => onDelete(session.id)}
+                    >
+                      <Trash2 className="size-4" />
+                    </Button>
+                  </div>
                 </TableCell>
               </TableRow>
             );

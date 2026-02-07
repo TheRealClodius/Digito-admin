@@ -1,11 +1,15 @@
 "use client";
 
 import { useAuth } from "@/hooks/use-auth";
+import { useTheme } from "@/contexts/theme-context";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
 
 export default function SettingsPage() {
   const { user } = useAuth();
+  const { theme, toggleTheme } = useTheme();
 
   return (
     <div className="space-y-6">
@@ -27,6 +31,25 @@ export default function SettingsPage() {
           <div>
             <p className="text-sm font-medium">UID</p>
             <p className="text-sm text-muted-foreground">{user?.uid}</p>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Separator />
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Appearance</CardTitle>
+          <CardDescription>Customize how the dashboard looks</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between">
+            <Label htmlFor="dark-mode">Dark mode</Label>
+            <Switch
+              id="dark-mode"
+              checked={theme === "dark"}
+              onCheckedChange={toggleTheme}
+            />
           </div>
         </CardContent>
       </Card>

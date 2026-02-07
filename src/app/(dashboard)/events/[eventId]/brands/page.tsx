@@ -41,29 +41,25 @@ export default function BrandsPage({
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editingBrand, setEditingBrand] = useState<Brand | null>(null);
   const [deletingBrandId, setDeletingBrandId] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitStatus, setSubmitStatus] = useState<"idle" | "saving" | "success" | "error">("idle");
 
-  function handleNew() { setEditingBrand(null); setSheetOpen(true); }
-  function handleEdit(brand: Brand) { setEditingBrand(brand); setSheetOpen(true); }
+  function handleNew() { setEditingBrand(null); setSubmitStatus("idle"); setSheetOpen(true); }
+  function handleEdit(brand: Brand) { setEditingBrand(brand); setSubmitStatus("idle"); setSheetOpen(true); }
 
   async function handleSubmit(data: Record<string, unknown>) {
     if (!collectionPath) return;
-    setIsSubmitting(true);
+    setSubmitStatus("saving");
     try {
       if (editingBrand) {
         await updateDocument(collectionPath, editingBrand.id, data);
-        toast.success("Brand updated");
       } else {
         await addDocument(collectionPath, data);
-        toast.success("Brand created");
       }
-      setSheetOpen(false);
-      setEditingBrand(null);
+      setSubmitStatus("success");
     } catch (err) {
+      setSubmitStatus("error");
       toast.error("Failed to save brand");
       console.error(err);
-    } finally {
-      setIsSubmitting(false);
     }
   }
 
@@ -120,7 +116,7 @@ export default function BrandsPage({
       )}
 
       <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-        <SheetContent className="overflow-y-auto sm:max-w-lg">
+        <SheetContent className="overflow-y-auto">
           <SheetHeader>
             <SheetTitle>{editingBrand ? "Edit Brand" : "New Brand"}</SheetTitle>
             <SheetDescription>
@@ -142,7 +138,7 @@ export default function BrandsPage({
               } : undefined}
               onSubmit={handleSubmit}
               onCancel={() => setSheetOpen(false)}
-              isSubmitting={isSubmitting}
+              submitStatus={submitStatus}
             />
           </div>
         </SheetContent>

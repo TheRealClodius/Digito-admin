@@ -37,29 +37,25 @@ export default function PostsPage({
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editingPost, setEditingPost] = useState<Post | null>(null);
   const [deletingPostId, setDeletingPostId] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitStatus, setSubmitStatus] = useState<"idle" | "saving" | "success" | "error">("idle");
 
-  function handleNew() { setEditingPost(null); setSheetOpen(true); }
-  function handleEdit(post: Post) { setEditingPost(post); setSheetOpen(true); }
+  function handleNew() { setEditingPost(null); setSubmitStatus("idle"); setSheetOpen(true); }
+  function handleEdit(post: Post) { setEditingPost(post); setSubmitStatus("idle"); setSheetOpen(true); }
 
   async function handleSubmit(data: Record<string, unknown>) {
     if (!collectionPath) return;
-    setIsSubmitting(true);
+    setSubmitStatus("saving");
     try {
       if (editingPost) {
         await updateDocument(collectionPath, editingPost.id, data);
-        toast.success("Post updated");
       } else {
         await addDocument(collectionPath, data);
-        toast.success("Post created");
       }
-      setSheetOpen(false);
-      setEditingPost(null);
+      setSubmitStatus("success");
     } catch (err) {
+      setSubmitStatus("error");
       toast.error("Failed to save post");
       console.error(err);
-    } finally {
-      setIsSubmitting(false);
     }
   }
 
@@ -103,7 +99,7 @@ export default function PostsPage({
       )}
 
       <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-        <SheetContent className="overflow-y-auto sm:max-w-lg">
+        <SheetContent className="overflow-y-auto">
           <SheetHeader>
             <SheetTitle>{editingPost ? "Edit Post" : "New Post"}</SheetTitle>
             <SheetDescription>
@@ -120,7 +116,7 @@ export default function PostsPage({
               } : undefined}
               onSubmit={handleSubmit}
               onCancel={() => setSheetOpen(false)}
-              isSubmitting={isSubmitting}
+              submitStatus={submitStatus}
             />
           </div>
         </SheetContent>

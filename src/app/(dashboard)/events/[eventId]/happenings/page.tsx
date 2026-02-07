@@ -42,14 +42,14 @@ export default function HappeningsPage({
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editingHappening, setEditingHappening] = useState<Happening | null>(null);
   const [deletingHappeningId, setDeletingHappeningId] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitStatus, setSubmitStatus] = useState<"idle" | "saving" | "success" | "error">("idle");
 
-  function handleNew() { setEditingHappening(null); setSheetOpen(true); }
-  function handleEdit(happening: Happening) { setEditingHappening(happening); setSheetOpen(true); }
+  function handleNew() { setEditingHappening(null); setSubmitStatus("idle"); setSheetOpen(true); }
+  function handleEdit(happening: Happening) { setEditingHappening(happening); setSubmitStatus("idle"); setSheetOpen(true); }
 
   async function handleSubmit(data: Record<string, unknown>) {
     if (!collectionPath) return;
-    setIsSubmitting(true);
+    setSubmitStatus("saving");
     try {
       const firestoreData = {
         ...data,
@@ -58,18 +58,14 @@ export default function HappeningsPage({
       };
       if (editingHappening) {
         await updateDocument(collectionPath, editingHappening.id, firestoreData);
-        toast.success("Happening updated");
       } else {
         await addDocument(collectionPath, firestoreData);
-        toast.success("Happening created");
       }
-      setSheetOpen(false);
-      setEditingHappening(null);
+      setSubmitStatus("success");
     } catch (err) {
+      setSubmitStatus("error");
       toast.error("Failed to save happening");
       console.error(err);
-    } finally {
-      setIsSubmitting(false);
     }
   }
 
@@ -113,7 +109,7 @@ export default function HappeningsPage({
       )}
 
       <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-        <SheetContent className="overflow-y-auto sm:max-w-lg">
+        <SheetContent className="overflow-y-auto">
           <SheetHeader>
             <SheetTitle>{editingHappening ? "Edit Happening" : "New Happening"}</SheetTitle>
             <SheetDescription>
@@ -135,7 +131,7 @@ export default function HappeningsPage({
               } : undefined}
               onSubmit={handleSubmit}
               onCancel={() => setSheetOpen(false)}
-              isSubmitting={isSubmitting}
+              submitStatus={submitStatus}
             />
           </div>
         </SheetContent>

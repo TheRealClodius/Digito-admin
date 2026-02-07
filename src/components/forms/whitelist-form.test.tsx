@@ -357,13 +357,13 @@ describe("WhitelistForm", () => {
   // ----- Loading / submitting state -----
 
   describe("loading state", () => {
-    it("disables the submit button when isSubmitting is true", () => {
+    it("disables the submit button when submitStatus is saving", () => {
       render(
         <WhitelistForm
           defaultValues={{ email: "user@test.com", accessTier: "regular" }}
           onSubmit={vi.fn()}
           onCancel={vi.fn()}
-          isSubmitting={true}
+          submitStatus="saving"
         />,
       );
 
@@ -371,39 +371,39 @@ describe("WhitelistForm", () => {
       expect(submitButton).toBeDisabled();
     });
 
-    it("shows a loading indicator on the submit button when isSubmitting is true", () => {
+    it("shows a loading indicator on the submit button when submitStatus is saving", () => {
       render(
         <WhitelistForm
           defaultValues={{ email: "user@test.com", accessTier: "regular" }}
           onSubmit={vi.fn()}
           onCancel={vi.fn()}
-          isSubmitting={true}
+          submitStatus="saving"
         />,
       );
 
       expect(screen.getByText(/saving|submitting|loading/i)).toBeInTheDocument();
     });
 
-    it("does not show loading state when isSubmitting is false", () => {
+    it("does not show loading state when submitStatus is idle", () => {
       render(
         <WhitelistForm
           defaultValues={{ email: "user@test.com", accessTier: "regular" }}
           onSubmit={vi.fn()}
           onCancel={vi.fn()}
-          isSubmitting={false}
+          submitStatus="idle"
         />,
       );
 
       expect(screen.queryByText(/saving|submitting|loading/i)).not.toBeInTheDocument();
     });
 
-    it("disables the cancel button when isSubmitting is true", () => {
+    it("disables the cancel button when submitStatus is saving", () => {
       render(
         <WhitelistForm
           defaultValues={{ email: "user@test.com", accessTier: "regular" }}
           onSubmit={vi.fn()}
           onCancel={vi.fn()}
-          isSubmitting={true}
+          submitStatus="saving"
         />,
       );
 

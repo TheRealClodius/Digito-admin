@@ -41,29 +41,25 @@ export default function WhitelistPage({
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editingEntry, setEditingEntry] = useState<WhitelistEntry | null>(null);
   const [deletingEntryId, setDeletingEntryId] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitStatus, setSubmitStatus] = useState<"idle" | "saving" | "success" | "error">("idle");
 
-  function handleNew() { setEditingEntry(null); setSheetOpen(true); }
-  function handleEdit(entry: WhitelistEntry) { setEditingEntry(entry); setSheetOpen(true); }
+  function handleNew() { setEditingEntry(null); setSubmitStatus("idle"); setSheetOpen(true); }
+  function handleEdit(entry: WhitelistEntry) { setEditingEntry(entry); setSubmitStatus("idle"); setSheetOpen(true); }
 
   async function handleSubmit(data: Record<string, unknown>) {
     if (!collectionPath) return;
-    setIsSubmitting(true);
+    setSubmitStatus("saving");
     try {
       if (editingEntry) {
         await updateDocument(collectionPath, editingEntry.id, data);
-        toast.success("Whitelist entry updated");
       } else {
         await addDocument(collectionPath, data);
-        toast.success("Whitelist entry added");
       }
-      setSheetOpen(false);
-      setEditingEntry(null);
+      setSubmitStatus("success");
     } catch (err) {
+      setSubmitStatus("error");
       toast.error("Failed to save whitelist entry");
       console.error(err);
-    } finally {
-      setIsSubmitting(false);
     }
   }
 
@@ -125,7 +121,7 @@ export default function WhitelistPage({
               } : undefined}
               onSubmit={handleSubmit}
               onCancel={() => setSheetOpen(false)}
-              isSubmitting={isSubmitting}
+              submitStatus={submitStatus}
             />
           </div>
         </SheetContent>

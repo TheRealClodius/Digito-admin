@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Trash2 } from "lucide-react";
 
 interface HappeningsTableProps {
   happenings: Happening[];
@@ -25,7 +26,7 @@ const headers = (
     <TableHead>Location</TableHead>
     <TableHead>Host</TableHead>
     <TableHead>Highlighted</TableHead>
-    <TableHead>Actions</TableHead>
+    <TableHead className="w-40">Actions</TableHead>
   </TableRow>
 );
 
@@ -72,20 +73,23 @@ export function HappeningsTable({
                 <TableCell>{happening.hostName ?? "-"}</TableCell>
                 <TableCell>{happening.isHighlighted ? "Yes" : "No"}</TableCell>
                 <TableCell>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => onEdit(happening)}
-                  >
-                    Edit
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => onDelete(happening.id)}
-                  >
-                    Delete
-                  </Button>
+                  <div className="flex items-center">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onEdit(happening)}
+                    >
+                      Edit
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="icon"
+                      className="ml-2 size-8"
+                      onClick={() => onDelete(happening.id)}
+                    >
+                      <Trash2 className="size-4" />
+                    </Button>
+                  </div>
                 </TableCell>
               </TableRow>
             );

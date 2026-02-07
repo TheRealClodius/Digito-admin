@@ -3,11 +3,14 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { ImageUpload } from "@/components/image-upload";
+
+type SubmitStatus = "idle" | "saving" | "success" | "error";
 
 const ROLE_OPTIONS = [
   "speaker",
@@ -51,15 +54,16 @@ interface ParticipantFormProps {
   };
   onSubmit: (data: ParticipantFormValues) => void;
   onCancel: () => void;
-  isSubmitting?: boolean;
+  submitStatus?: SubmitStatus;
 }
 
 export function ParticipantForm({
   defaultValues,
   onSubmit,
   onCancel,
-  isSubmitting = false,
+  submitStatus = "idle",
 }: ParticipantFormProps) {
+  const isSubmitting = submitStatus === "saving";
   const {
     register,
     handleSubmit,
@@ -93,8 +97,7 @@ export function ParticipantForm({
   const isLastNameEmpty = !lastNameValue || lastNameValue.trim() === "";
 
   return (
-    <form onSubmit={handleSubmit((data) => onSubmit(data))} className="space-y-6">
-      {/* First Name */}
+    <form onSubmit={handleSubmit((data) => onSubmit(data))} className="grid grid-cols-2 gap-x-4 gap-y-6">
       <div className="space-y-2">
         <Label htmlFor="firstName">First Name</Label>
         <Input
@@ -109,7 +112,6 @@ export function ParticipantForm({
         )}
       </div>
 
-      {/* Last Name */}
       <div className="space-y-2">
         <Label htmlFor="lastName">Last Name</Label>
         <Input
@@ -124,7 +126,6 @@ export function ParticipantForm({
         )}
       </div>
 
-      {/* Email */}
       <div className="space-y-2">
         <Label htmlFor="email">Email</Label>
         <Input
@@ -135,7 +136,6 @@ export function ParticipantForm({
         />
       </div>
 
-      {/* Role */}
       <div className="space-y-2">
         <Label htmlFor="role">Role</Label>
         <select
@@ -152,7 +152,6 @@ export function ParticipantForm({
         </select>
       </div>
 
-      {/* Company */}
       <div className="space-y-2">
         <Label htmlFor="company">Company</Label>
         <Input
@@ -162,7 +161,6 @@ export function ParticipantForm({
         />
       </div>
 
-      {/* Title */}
       <div className="space-y-2">
         <Label htmlFor="title">Title</Label>
         <Input
@@ -172,8 +170,7 @@ export function ParticipantForm({
         />
       </div>
 
-      {/* Bio */}
-      <div className="space-y-2">
+      <div className="col-span-2 space-y-2">
         <Label htmlFor="bio">Bio</Label>
         <Textarea
           id="bio"
@@ -182,8 +179,7 @@ export function ParticipantForm({
         />
       </div>
 
-      {/* Avatar */}
-      <div className="space-y-2">
+      <div className="col-span-2 space-y-2">
         <Label>Avatar</Label>
         <ImageUpload
           value={avatarUrlValue || null}
@@ -192,7 +188,6 @@ export function ParticipantForm({
         />
       </div>
 
-      {/* Website URL */}
       <div className="space-y-2">
         <Label htmlFor="websiteUrl">Website URL</Label>
         <Input
@@ -202,7 +197,6 @@ export function ParticipantForm({
         />
       </div>
 
-      {/* LinkedIn URL */}
       <div className="space-y-2">
         <Label htmlFor="linkedinUrl">LinkedIn URL</Label>
         <Input
@@ -212,8 +206,7 @@ export function ParticipantForm({
         />
       </div>
 
-      {/* Is Highlighted */}
-      <div className="flex items-center space-x-2">
+      <div className="col-span-2 flex items-center space-x-2">
         <input
           type="checkbox"
           role="switch"
@@ -226,8 +219,7 @@ export function ParticipantForm({
         <Label htmlFor="isHighlighted">Highlighted</Label>
       </div>
 
-      {/* Buttons */}
-      <div className="flex gap-2">
+      <div className="col-span-2 flex items-center gap-2">
         <Button
           type="submit"
           disabled={isFirstNameEmpty || isLastNameEmpty || isSubmitting}
@@ -242,6 +234,15 @@ export function ParticipantForm({
         >
           Cancel
         </Button>
+        {submitStatus === "success" && (
+          <span className="flex items-center gap-1 text-sm text-green-600">
+            <Check className="size-4" />
+            Saved
+          </span>
+        )}
+        {submitStatus === "error" && (
+          <p className="text-sm text-destructive">Failed to save</p>
+        )}
       </div>
     </form>
   );

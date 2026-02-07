@@ -55,7 +55,9 @@ export function setupFirebaseMocks() {
     getAuth: vi.fn(() => mockAuth),
     onAuthStateChanged: vi.fn(),
     signInWithEmailAndPassword: vi.fn(),
+    signInWithPopup: vi.fn(),
     signOut: vi.fn(),
+    GoogleAuthProvider: vi.fn(),
   }));
 
   vi.mock("firebase/storage", () => ({

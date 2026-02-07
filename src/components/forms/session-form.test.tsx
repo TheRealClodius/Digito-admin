@@ -202,13 +202,13 @@ describe("SessionForm", () => {
     expect(onCancel).toHaveBeenCalledTimes(1);
   });
 
-  // ---- isSubmitting disables the submit button ----
+  // ---- submitStatus disables the submit button ----
 
-  it("disables the submit button when isSubmitting is true", () => {
+  it("disables the submit button when submitStatus is saving", () => {
     render(
       <SessionForm
         {...defaultProps}
-        isSubmitting={true}
+        submitStatus="saving"
         defaultValues={{
           title: "Some Session",
           startTime: new Date("2026-06-15T09:00:00"),

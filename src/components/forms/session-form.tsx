@@ -1,11 +1,14 @@
 "use client";
 
 import { useForm } from "react-hook-form";
+import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import type { SessionType, AccessTier } from "@/types/session";
+
+type SubmitStatus = "idle" | "saving" | "success" | "error";
 
 interface SessionFormDefaultValues {
   title?: string | null;
@@ -24,7 +27,7 @@ interface SessionFormProps {
   defaultValues?: SessionFormDefaultValues;
   onSubmit: (data: Record<string, unknown>) => void;
   onCancel: () => void;
-  isSubmitting?: boolean;
+  submitStatus?: SubmitStatus;
 }
 
 function formatDateForInput(date: Date | null | undefined): string {
@@ -64,8 +67,9 @@ export function SessionForm({
   defaultValues,
   onSubmit,
   onCancel,
-  isSubmitting = false,
+  submitStatus = "idle",
 }: SessionFormProps) {
+  const isSubmitting = submitStatus === "saving";
   const {
     register,
     handleSubmit,
@@ -98,8 +102,7 @@ export function SessionForm({
   };
 
   return (
-    <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-6">
-      {/* Title */}
+    <form onSubmit={handleSubmit(onFormSubmit)} className="grid grid-cols-2 gap-x-4 gap-y-6">
       <div className="space-y-2">
         <Label htmlFor="title">Title</Label>
         <Input
@@ -112,59 +115,6 @@ export function SessionForm({
         )}
       </div>
 
-      {/* Description */}
-      <div className="space-y-2">
-        <Label htmlFor="description">Description</Label>
-        <Textarea
-          id="description"
-          aria-label="Description"
-          {...register("description")}
-        />
-      </div>
-
-      {/* Start Time */}
-      <div className="space-y-2">
-        <Label htmlFor="startTime">Start Time</Label>
-        <input
-          type="datetime-local"
-          id="startTime"
-          aria-label="Start Time"
-          className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-          {...register("startTime", { required: "Start time is required" })}
-        />
-        {errors.startTime && (
-          <p className="text-sm text-destructive">
-            {errors.startTime.message}
-          </p>
-        )}
-      </div>
-
-      {/* End Time */}
-      <div className="space-y-2">
-        <Label htmlFor="endTime">End Time</Label>
-        <input
-          type="datetime-local"
-          id="endTime"
-          aria-label="End Time"
-          className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-          {...register("endTime", { required: "End time is required" })}
-        />
-        {errors.endTime && (
-          <p className="text-sm text-destructive">{errors.endTime.message}</p>
-        )}
-      </div>
-
-      {/* Location */}
-      <div className="space-y-2">
-        <Label htmlFor="location">Location</Label>
-        <Input
-          id="location"
-          aria-label="Location"
-          {...register("location")}
-        />
-      </div>
-
-      {/* Type */}
       <div className="space-y-2">
         <Label htmlFor="type">Type</Label>
         <select
@@ -181,7 +131,54 @@ export function SessionForm({
         </select>
       </div>
 
-      {/* Speaker Name */}
+      <div className="col-span-2 space-y-2">
+        <Label htmlFor="description">Description</Label>
+        <Textarea
+          id="description"
+          aria-label="Description"
+          {...register("description")}
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="startTime">Start Time</Label>
+        <input
+          type="datetime-local"
+          id="startTime"
+          aria-label="Start Time"
+          className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+          {...register("startTime", { required: "Start time is required" })}
+        />
+        {errors.startTime && (
+          <p className="text-sm text-destructive">
+            {errors.startTime.message}
+          </p>
+        )}
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="endTime">End Time</Label>
+        <input
+          type="datetime-local"
+          id="endTime"
+          aria-label="End Time"
+          className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+          {...register("endTime", { required: "End time is required" })}
+        />
+        {errors.endTime && (
+          <p className="text-sm text-destructive">{errors.endTime.message}</p>
+        )}
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="location">Location</Label>
+        <Input
+          id="location"
+          aria-label="Location"
+          {...register("location")}
+        />
+      </div>
+
       <div className="space-y-2">
         <Label htmlFor="speakerName">Speaker Name</Label>
         <Input
@@ -191,8 +188,7 @@ export function SessionForm({
         />
       </div>
 
-      {/* Speaker Bio */}
-      <div className="space-y-2">
+      <div className="col-span-2 space-y-2">
         <Label htmlFor="speakerBio">Speaker Bio</Label>
         <Textarea
           id="speakerBio"
@@ -201,7 +197,6 @@ export function SessionForm({
         />
       </div>
 
-      {/* Requires Access */}
       <div className="flex items-center space-x-2">
         <input
           type="checkbox"
@@ -215,7 +210,6 @@ export function SessionForm({
         <Label htmlFor="requiresAccess">Requires Access</Label>
       </div>
 
-      {/* Access Tier (shown when requiresAccess is true) */}
       {requiresAccessValue && (
         <div className="space-y-2">
           <Label htmlFor="accessTier">Access Tier</Label>
@@ -234,8 +228,7 @@ export function SessionForm({
         </div>
       )}
 
-      {/* Buttons */}
-      <div className="flex gap-4">
+      <div className="col-span-2 flex items-center gap-4">
         <Button type="submit" disabled={isSubmitDisabled}>
           {isSubmitting ? "Saving..." : "Save"}
         </Button>
@@ -247,6 +240,15 @@ export function SessionForm({
         >
           Cancel
         </Button>
+        {submitStatus === "success" && (
+          <span className="flex items-center gap-1 text-sm text-green-600">
+            <Check className="size-4" />
+            Saved
+          </span>
+        )}
+        {submitStatus === "error" && (
+          <p className="text-sm text-destructive">Failed to save</p>
+        )}
       </div>
     </form>
   );

@@ -41,29 +41,25 @@ export default function ParticipantsPage({
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editingParticipant, setEditingParticipant] = useState<Participant | null>(null);
   const [deletingParticipantId, setDeletingParticipantId] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitStatus, setSubmitStatus] = useState<"idle" | "saving" | "success" | "error">("idle");
 
-  function handleNew() { setEditingParticipant(null); setSheetOpen(true); }
-  function handleEdit(participant: Participant) { setEditingParticipant(participant); setSheetOpen(true); }
+  function handleNew() { setEditingParticipant(null); setSubmitStatus("idle"); setSheetOpen(true); }
+  function handleEdit(participant: Participant) { setEditingParticipant(participant); setSubmitStatus("idle"); setSheetOpen(true); }
 
   async function handleSubmit(data: Record<string, unknown>) {
     if (!collectionPath) return;
-    setIsSubmitting(true);
+    setSubmitStatus("saving");
     try {
       if (editingParticipant) {
         await updateDocument(collectionPath, editingParticipant.id, data);
-        toast.success("Participant updated");
       } else {
         await addDocument(collectionPath, data);
-        toast.success("Participant created");
       }
-      setSheetOpen(false);
-      setEditingParticipant(null);
+      setSubmitStatus("success");
     } catch (err) {
+      setSubmitStatus("error");
       toast.error("Failed to save participant");
       console.error(err);
-    } finally {
-      setIsSubmitting(false);
     }
   }
 
@@ -108,7 +104,7 @@ export default function ParticipantsPage({
       )}
 
       <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-        <SheetContent className="overflow-y-auto sm:max-w-lg">
+        <SheetContent className="overflow-y-auto">
           <SheetHeader>
             <SheetTitle>{editingParticipant ? "Edit Participant" : "New Participant"}</SheetTitle>
             <SheetDescription>
@@ -132,7 +128,7 @@ export default function ParticipantsPage({
               } : undefined}
               onSubmit={handleSubmit}
               onCancel={() => setSheetOpen(false)}
-              isSubmitting={isSubmitting}
+              submitStatus={submitStatus}
             />
           </div>
         </SheetContent>

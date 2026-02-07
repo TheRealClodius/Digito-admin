@@ -345,13 +345,13 @@ describe("ClientForm", () => {
   // ----- Loading / submitting state -----
 
   describe("loading state", () => {
-    it("disables the submit button when isSubmitting is true", () => {
+    it("disables the submit button when submitStatus is saving", () => {
       render(
         <ClientForm
           defaultValues={{ name: "Client" }}
           onSubmit={vi.fn()}
           onCancel={vi.fn()}
-          isSubmitting={true}
+          submitStatus="saving"
         />
       );
 
@@ -359,13 +359,13 @@ describe("ClientForm", () => {
       expect(submitButton).toBeDisabled();
     });
 
-    it("shows a loading indicator on the submit button when isSubmitting is true", () => {
+    it("shows a loading indicator on the submit button when submitStatus is saving", () => {
       render(
         <ClientForm
           defaultValues={{ name: "Client" }}
           onSubmit={vi.fn()}
           onCancel={vi.fn()}
-          isSubmitting={true}
+          submitStatus="saving"
         />
       );
 
@@ -373,26 +373,26 @@ describe("ClientForm", () => {
       expect(screen.getByText(/saving|submitting|loading/i)).toBeInTheDocument();
     });
 
-    it("does not show loading state when isSubmitting is false", () => {
+    it("does not show loading state when submitStatus is idle", () => {
       render(
         <ClientForm
           defaultValues={{ name: "Client" }}
           onSubmit={vi.fn()}
           onCancel={vi.fn()}
-          isSubmitting={false}
+          submitStatus="idle"
         />
       );
 
       expect(screen.queryByText(/saving|submitting|loading/i)).not.toBeInTheDocument();
     });
 
-    it("disables the cancel button when isSubmitting is true", () => {
+    it("disables the cancel button when submitStatus is saving", () => {
       render(
         <ClientForm
           defaultValues={{ name: "Client" }}
           onSubmit={vi.fn()}
           onCancel={vi.fn()}
-          isSubmitting={true}
+          submitStatus="saving"
         />
       );
 

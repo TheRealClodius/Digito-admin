@@ -40,35 +40,33 @@ export default function ClientsPage() {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [deletingClientId, setDeletingClientId] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitStatus, setSubmitStatus] = useState<"idle" | "saving" | "success" | "error">("idle");
 
   function handleNew() {
     setEditingClient(null);
+    setSubmitStatus("idle");
     setSheetOpen(true);
   }
 
   function handleEdit(client: Client) {
     setEditingClient(client);
+    setSubmitStatus("idle");
     setSheetOpen(true);
   }
 
   async function handleSubmit(data: { name: string; description?: string | null; logoUrl?: string | null }) {
-    setIsSubmitting(true);
+    setSubmitStatus("saving");
     try {
       if (editingClient) {
         await updateDocument("clients", editingClient.id, data);
-        toast.success("Client updated");
       } else {
         await addDocument("clients", data);
-        toast.success("Client created");
       }
-      setSheetOpen(false);
-      setEditingClient(null);
+      setSubmitStatus("success");
     } catch (err) {
+      setSubmitStatus("error");
       toast.error("Failed to save client");
       console.error(err);
-    } finally {
-      setIsSubmitting(false);
     }
   }
 
@@ -138,7 +136,7 @@ export default function ClientsPage() {
               }
               onSubmit={handleSubmit}
               onCancel={() => setSheetOpen(false)}
-              isSubmitting={isSubmitting}
+              submitStatus={submitStatus}
             />
           </div>
         </SheetContent>

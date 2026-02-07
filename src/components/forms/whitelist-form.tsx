@@ -3,9 +3,12 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+
+type SubmitStatus = "idle" | "saving" | "success" | "error";
 
 const whitelistFormSchema = z.object({
   email: z.string().min(1, "Email is required").email("Please enter a valid email address"),
@@ -30,15 +33,16 @@ interface WhitelistFormProps {
     lockedFields: string[];
   }) => void;
   onCancel: () => void;
-  isSubmitting?: boolean;
+  submitStatus?: SubmitStatus;
 }
 
 export function WhitelistForm({
   defaultValues,
   onSubmit,
   onCancel,
-  isSubmitting = false,
+  submitStatus = "idle",
 }: WhitelistFormProps) {
+  const isSubmitting = submitStatus === "saving";
   const {
     register,
     handleSubmit,
@@ -75,8 +79,7 @@ export function WhitelistForm({
   };
 
   return (
-    <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-6">
-      {/* Email */}
+    <form onSubmit={handleSubmit(onFormSubmit)} className="grid grid-cols-2 gap-x-4 gap-y-6">
       <div className="space-y-2">
         <Label htmlFor="email">Email</Label>
         <Input
@@ -91,7 +94,6 @@ export function WhitelistForm({
         )}
       </div>
 
-      {/* Access Tier */}
       <div className="space-y-2">
         <Label htmlFor="accessTier">Access Tier</Label>
         <select
@@ -109,7 +111,6 @@ export function WhitelistForm({
         )}
       </div>
 
-      {/* Company */}
       <div className="space-y-2">
         <Label htmlFor="company">Company</Label>
         <Input
@@ -118,7 +119,6 @@ export function WhitelistForm({
         />
       </div>
 
-      {/* Locked Fields */}
       <div className="space-y-2">
         <Label htmlFor="lockedFields">Locked Fields</Label>
         <Input
@@ -131,8 +131,7 @@ export function WhitelistForm({
         </p>
       </div>
 
-      {/* Buttons */}
-      <div className="flex gap-2">
+      <div className="col-span-2 flex items-center gap-2">
         <Button
           type="submit"
           disabled={isEmailEmpty || isSubmitting}
@@ -147,6 +146,15 @@ export function WhitelistForm({
         >
           Cancel
         </Button>
+        {submitStatus === "success" && (
+          <span className="flex items-center gap-1 text-sm text-green-600">
+            <Check className="size-4" />
+            Saved
+          </span>
+        )}
+        {submitStatus === "error" && (
+          <p className="text-sm text-destructive">Failed to save</p>
+        )}
       </div>
     </form>
   );

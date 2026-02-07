@@ -1,11 +1,13 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
 import { useAdminCheck } from "@/hooks/use-admin-check";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import { Header } from "@/components/layout/header";
 import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
 
 export default function DashboardLayout({
   children,
@@ -14,9 +16,31 @@ export default function DashboardLayout({
 }) {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
-  const { isAdmin, loading: adminLoading } = useAdminCheck(user?.uid);
+  const { isAdmin, loading: adminLoading } = useAdminCheck(user);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarDetached, setSidebarDetached] = useState(false);
 
-  if (authLoading || adminLoading) {
+  // When collapsing: detach after height animation finishes (300ms)
+  // When expanding: re-attach immediately so content makes room, then sidebar grows
+  useEffect(() => {
+    if (sidebarCollapsed) {
+      const timer = setTimeout(() => setSidebarDetached(true), 300);
+      return () => clearTimeout(timer);
+    } else {
+      setSidebarDetached(false);
+    }
+  }, [sidebarCollapsed]);
+
+  useEffect(() => {
+    if (authLoading || adminLoading) return;
+    if (!user) {
+      router.push("/login");
+    } else if (isAdmin === false) {
+      router.push("/unauthorized");
+    }
+  }, [user, isAdmin, authLoading, adminLoading, router]);
+
+  if (authLoading || adminLoading || !user || !isAdmin) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="space-y-4 w-64">
@@ -28,22 +52,22 @@ export default function DashboardLayout({
     );
   }
 
-  if (!user) {
-    router.push("/login");
-    return null;
-  }
-
-  if (!isAdmin) {
-    router.push("/unauthorized");
-    return null;
-  }
-
   return (
-    <div className="flex min-h-screen">
-      <AppSidebar />
-      <div className="flex flex-1 flex-col">
+    <div className="relative h-screen overflow-hidden bg-background">
+      <div className="absolute inset-y-0 left-0 z-30 p-2">
+        <AppSidebar
+          collapsed={sidebarCollapsed}
+          onToggleCollapse={() => setSidebarCollapsed((prev) => !prev)}
+        />
+      </div>
+      <div
+        className={cn(
+          "flex h-full flex-col overflow-hidden transition-[padding] duration-300 ease-in-out",
+          sidebarDetached ? "pl-0" : "pl-[272px]"
+        )}
+      >
         <Header />
-        <main className="flex-1 overflow-auto p-6">{children}</main>
+        <main className="flex-1 overflow-auto p-6 pt-20">{children}</main>
       </div>
     </div>
   );

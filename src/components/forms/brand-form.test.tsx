@@ -446,13 +446,13 @@ describe("BrandForm", () => {
   // ----- Loading / submitting state -----
 
   describe("loading state", () => {
-    it("disables the submit button when isSubmitting is true", () => {
+    it("disables the submit button when submitStatus is saving", () => {
       render(
         <BrandForm
           defaultValues={{ name: "Brand" }}
           onSubmit={vi.fn()}
           onCancel={vi.fn()}
-          isSubmitting={true}
+          submitStatus="saving"
         />,
       );
 
@@ -462,13 +462,13 @@ describe("BrandForm", () => {
       expect(submitButton).toBeDisabled();
     });
 
-    it("shows a loading indicator on the submit button when isSubmitting is true", () => {
+    it("shows a loading indicator on the submit button when submitStatus is saving", () => {
       render(
         <BrandForm
           defaultValues={{ name: "Brand" }}
           onSubmit={vi.fn()}
           onCancel={vi.fn()}
-          isSubmitting={true}
+          submitStatus="saving"
         />,
       );
 
@@ -477,13 +477,13 @@ describe("BrandForm", () => {
       ).toBeInTheDocument();
     });
 
-    it("does not show loading state when isSubmitting is false", () => {
+    it("does not show loading state when submitStatus is idle", () => {
       render(
         <BrandForm
           defaultValues={{ name: "Brand" }}
           onSubmit={vi.fn()}
           onCancel={vi.fn()}
-          isSubmitting={false}
+          submitStatus="idle"
         />,
       );
 
@@ -492,13 +492,13 @@ describe("BrandForm", () => {
       ).not.toBeInTheDocument();
     });
 
-    it("disables the cancel button when isSubmitting is true", () => {
+    it("disables the cancel button when submitStatus is saving", () => {
       render(
         <BrandForm
           defaultValues={{ name: "Brand" }}
           onSubmit={vi.fn()}
           onCancel={vi.fn()}
-          isSubmitting={true}
+          submitStatus="saving"
         />,
       );
 

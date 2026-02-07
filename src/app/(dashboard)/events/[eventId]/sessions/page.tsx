@@ -42,14 +42,14 @@ export default function SessionsPage({
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editingSession, setEditingSession] = useState<Session | null>(null);
   const [deletingSessionId, setDeletingSessionId] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitStatus, setSubmitStatus] = useState<"idle" | "saving" | "success" | "error">("idle");
 
-  function handleNew() { setEditingSession(null); setSheetOpen(true); }
-  function handleEdit(session: Session) { setEditingSession(session); setSheetOpen(true); }
+  function handleNew() { setEditingSession(null); setSubmitStatus("idle"); setSheetOpen(true); }
+  function handleEdit(session: Session) { setEditingSession(session); setSubmitStatus("idle"); setSheetOpen(true); }
 
   async function handleSubmit(data: Record<string, unknown>) {
     if (!collectionPath) return;
-    setIsSubmitting(true);
+    setSubmitStatus("saving");
     try {
       const firestoreData = {
         ...data,
@@ -58,18 +58,14 @@ export default function SessionsPage({
       };
       if (editingSession) {
         await updateDocument(collectionPath, editingSession.id, firestoreData);
-        toast.success("Session updated");
       } else {
         await addDocument(collectionPath, firestoreData);
-        toast.success("Session created");
       }
-      setSheetOpen(false);
-      setEditingSession(null);
+      setSubmitStatus("success");
     } catch (err) {
+      setSubmitStatus("error");
       toast.error("Failed to save session");
       console.error(err);
-    } finally {
-      setIsSubmitting(false);
     }
   }
 
@@ -114,7 +110,7 @@ export default function SessionsPage({
       )}
 
       <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-        <SheetContent className="overflow-y-auto sm:max-w-lg">
+        <SheetContent className="overflow-y-auto">
           <SheetHeader>
             <SheetTitle>{editingSession ? "Edit Session" : "New Session"}</SheetTitle>
             <SheetDescription>
@@ -137,7 +133,7 @@ export default function SessionsPage({
               } : undefined}
               onSubmit={handleSubmit}
               onCancel={() => setSheetOpen(false)}
-              isSubmitting={isSubmitting}
+              submitStatus={submitStatus}
             />
           </div>
         </SheetContent>

@@ -110,7 +110,7 @@ describe("BrandsTable", () => {
   // ----- Column headers -----
 
   describe("column headers", () => {
-    it("renders table column headers: Name, Stall #, Website, Highlighted, Actions", () => {
+    it("renders table column headers: Logo, Name, Stall #, Website, Highlighted, Actions", () => {
       render(
         <BrandsTable
           brands={sampleBrands}
@@ -120,6 +120,9 @@ describe("BrandsTable", () => {
         />,
       );
 
+      expect(
+        screen.getByRole("columnheader", { name: /logo/i }),
+      ).toBeInTheDocument();
       expect(
         screen.getByRole("columnheader", { name: /name/i }),
       ).toBeInTheDocument();
@@ -135,6 +138,50 @@ describe("BrandsTable", () => {
       expect(
         screen.getByRole("columnheader", { name: /actions/i }),
       ).toBeInTheDocument();
+    });
+  });
+
+  // ----- Logo thumbnail -----
+
+  describe("logo thumbnail", () => {
+    it("renders an image when logoUrl is provided", () => {
+      const brand = makeBrand({
+        id: "b-logo",
+        name: "Logo Brand",
+        logoUrl: "https://example.com/logo.png",
+      });
+
+      render(
+        <BrandsTable
+          brands={[brand]}
+          onEdit={vi.fn()}
+          onDelete={vi.fn()}
+          onToggleHighlighted={vi.fn()}
+        />,
+      );
+
+      const img = screen.getByRole("img", { name: /logo brand/i });
+      expect(img).toBeInTheDocument();
+      expect(img).toHaveAttribute("src", "https://example.com/logo.png");
+    });
+
+    it("does not render an image when logoUrl is null", () => {
+      const brand = makeBrand({
+        id: "b-no-logo",
+        name: "No Logo Brand",
+        logoUrl: null,
+      });
+
+      render(
+        <BrandsTable
+          brands={[brand]}
+          onEdit={vi.fn()}
+          onDelete={vi.fn()}
+          onToggleHighlighted={vi.fn()}
+        />,
+      );
+
+      expect(screen.queryByRole("img")).not.toBeInTheDocument();
     });
   });
 

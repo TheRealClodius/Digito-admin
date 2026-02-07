@@ -3,11 +3,14 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { ImageUpload } from "@/components/image-upload";
+
+type SubmitStatus = "idle" | "saving" | "success" | "error";
 
 const clientFormSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -25,15 +28,16 @@ interface ClientFormProps {
   };
   onSubmit: (data: ClientFormValues) => void;
   onCancel: () => void;
-  isSubmitting?: boolean;
+  submitStatus?: SubmitStatus;
 }
 
 export function ClientForm({
   defaultValues,
   onSubmit,
   onCancel,
-  isSubmitting = false,
+  submitStatus = "idle",
 }: ClientFormProps) {
+  const isSubmitting = submitStatus === "saving";
   const {
     register,
     handleSubmit,
@@ -55,8 +59,8 @@ export function ClientForm({
   const isNameEmpty = !nameValue || nameValue.trim() === "";
 
   return (
-    <form onSubmit={handleSubmit((data) => onSubmit(data))} className="space-y-6">
-      <div className="space-y-2">
+    <form onSubmit={handleSubmit((data) => onSubmit(data))} className="grid grid-cols-2 gap-x-4 gap-y-6">
+      <div className="col-span-2 space-y-2">
         <Label htmlFor="name">Name</Label>
         <Input
           id="name"
@@ -69,7 +73,7 @@ export function ClientForm({
         )}
       </div>
 
-      <div className="space-y-2">
+      <div className="col-span-2 space-y-2">
         <Label htmlFor="description">Description</Label>
         <Textarea
           id="description"
@@ -77,7 +81,7 @@ export function ClientForm({
         />
       </div>
 
-      <div className="space-y-2">
+      <div className="col-span-2 space-y-2">
         <Label>Logo</Label>
         <ImageUpload
           value={logoUrlValue || null}
@@ -86,7 +90,7 @@ export function ClientForm({
         />
       </div>
 
-      <div className="flex gap-2">
+      <div className="col-span-2 flex items-center gap-2">
         <Button
           type="submit"
           disabled={isNameEmpty || isSubmitting}
@@ -101,6 +105,15 @@ export function ClientForm({
         >
           Cancel
         </Button>
+        {submitStatus === "success" && (
+          <span className="flex items-center gap-1 text-sm text-green-600">
+            <Check className="size-4" />
+            Saved
+          </span>
+        )}
+        {submitStatus === "error" && (
+          <p className="text-sm text-destructive">Failed to save</p>
+        )}
       </div>
     </form>
   );

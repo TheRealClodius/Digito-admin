@@ -7,7 +7,6 @@ import {
   Sparkles,
   Users,
   ListChecks,
-  UserCircle,
 } from "lucide-react";
 import { StatsCard } from "@/components/stats-card";
 import { useCollection } from "@/hooks/use-collection";
@@ -18,7 +17,6 @@ import type { Session } from "@/types/session";
 import type { Happening } from "@/types/happening";
 import type { Participant } from "@/types/participant";
 import type { WhitelistEntry } from "@/types/whitelist-entry";
-import type { UserProfile } from "@/types/user-profile";
 
 export default function EventOverviewPage({
   params,
@@ -46,17 +44,12 @@ export default function EventOverviewPage({
   const { data: whitelist, loading: whitelistLoading } = useCollection<WhitelistEntry & { id: string }>({
     path: basePath ? `${basePath}/whitelist` : "",
   });
-  const { data: users, loading: usersLoading } = useCollection<UserProfile & { id: string }>({
-    path: basePath ? `${basePath}/users` : "",
-  });
-
   const isLoading =
     brandsLoading ||
     sessionsLoading ||
     happeningsLoading ||
     participantsLoading ||
-    whitelistLoading ||
-    usersLoading;
+    whitelistLoading;
 
   if (!selectedClientId) {
     return (
@@ -109,11 +102,6 @@ export default function EventOverviewPage({
             title="Whitelisted"
             value={whitelist.length}
             icon={ListChecks}
-          />
-          <StatsCard
-            title="Registered Users"
-            value={users.length}
-            icon={UserCircle}
           />
         </div>
       )}
