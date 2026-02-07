@@ -1,11 +1,24 @@
 "use client";
 
-import { use } from "react";
+import { use, useState } from "react";
 import { Plus } from "lucide-react";
+import { toast } from "sonner";
+
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription,
+} from "@/components/ui/sheet";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+
 import { useCollection } from "@/hooks/use-collection";
 import { useEventContext } from "@/hooks/use-event-context";
+import { addDocument, updateDocument, deleteDocument } from "@/lib/firestore";
+import { ParticipantsTable } from "@/components/tables/participants-table";
+import { ParticipantForm } from "@/components/forms/participant-form";
 import type { Participant } from "@/types/participant";
 
 export default function ParticipantsPage({
@@ -15,13 +28,57 @@ export default function ParticipantsPage({
 }) {
   const { eventId } = use(params);
   const { selectedClientId } = useEventContext();
-  const { data: participants, loading } = useCollection<Participant & { id: string }>({
-    path: selectedClientId
-      ? `clients/${selectedClientId}/events/${eventId}/participants`
-      : "",
+  const collectionPath = selectedClientId
+    ? `clients/${selectedClientId}/events/${eventId}/participants`
+    : "";
+
+  const { data: participants, loading } = useCollection<Participant>({
+    path: collectionPath,
     orderByField: "lastName",
     orderDirection: "asc",
   });
+
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [editingParticipant, setEditingParticipant] = useState<Participant | null>(null);
+  const [deletingParticipantId, setDeletingParticipantId] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  function handleNew() { setEditingParticipant(null); setSheetOpen(true); }
+  function handleEdit(participant: Participant) { setEditingParticipant(participant); setSheetOpen(true); }
+
+  async function handleSubmit(data: Record<string, unknown>) {
+    if (!collectionPath) return;
+    setIsSubmitting(true);
+    try {
+      if (editingParticipant) {
+        await updateDocument(collectionPath, editingParticipant.id, data);
+        toast.success("Participant updated");
+      } else {
+        await addDocument(collectionPath, data);
+        toast.success("Participant created");
+      }
+      setSheetOpen(false);
+      setEditingParticipant(null);
+    } catch (err) {
+      toast.error("Failed to save participant");
+      console.error(err);
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  async function handleDelete() {
+    if (!deletingParticipantId || !collectionPath) return;
+    try {
+      await deleteDocument(collectionPath, deletingParticipantId);
+      toast.success("Participant deleted");
+    } catch (err) {
+      toast.error("Failed to delete participant");
+      console.error(err);
+    } finally {
+      setDeletingParticipantId(null);
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -30,7 +87,7 @@ export default function ParticipantsPage({
           <h1 className="text-2xl font-bold tracking-tight">Participants</h1>
           <p className="text-muted-foreground">Manage speakers, hosts, and representatives</p>
         </div>
-        <Button>
+        <Button onClick={handleNew}>
           <Plus className="mr-2 size-4" />
           Add Participant
         </Button>
@@ -42,23 +99,57 @@ export default function ParticipantsPage({
           <Skeleton className="h-12 w-full" />
           <Skeleton className="h-12 w-full" />
         </div>
-      ) : participants.length === 0 ? (
-        <div className="flex min-h-[400px] flex-col items-center justify-center rounded-md border border-dashed">
-          <p className="text-muted-foreground">No participants yet</p>
-          <Button variant="outline" className="mt-4">
-            <Plus className="mr-2 size-4" />
-            Add first participant
-          </Button>
-        </div>
       ) : (
-        <div className="rounded-md border">
-          <div className="p-4">
-            <p className="text-sm text-muted-foreground">
-              {participants.length} participant(s) found
-            </p>
-          </div>
-        </div>
+        <ParticipantsTable
+          participants={participants}
+          onEdit={handleEdit}
+          onDelete={(id) => setDeletingParticipantId(id)}
+        />
       )}
+
+      <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
+        <SheetContent className="overflow-y-auto sm:max-w-lg">
+          <SheetHeader>
+            <SheetTitle>{editingParticipant ? "Edit Participant" : "New Participant"}</SheetTitle>
+            <SheetDescription>
+              {editingParticipant ? "Update participant details." : "Add a new participant."}
+            </SheetDescription>
+          </SheetHeader>
+          <div className="mt-6">
+            <ParticipantForm
+              defaultValues={editingParticipant ? {
+                firstName: editingParticipant.firstName,
+                lastName: editingParticipant.lastName,
+                email: editingParticipant.email ?? null,
+                role: editingParticipant.role,
+                company: editingParticipant.company ?? null,
+                title: editingParticipant.title ?? null,
+                bio: editingParticipant.bio ?? null,
+                avatarUrl: editingParticipant.avatarUrl ?? null,
+                websiteUrl: editingParticipant.websiteUrl ?? null,
+                linkedinUrl: editingParticipant.linkedinUrl ?? null,
+                isHighlighted: editingParticipant.isHighlighted,
+              } : undefined}
+              onSubmit={handleSubmit}
+              onCancel={() => setSheetOpen(false)}
+              isSubmitting={isSubmitting}
+            />
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      <AlertDialog open={!!deletingParticipantId} onOpenChange={(open) => !open && setDeletingParticipantId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Participant</AlertDialogTitle>
+            <AlertDialogDescription>Are you sure? This action cannot be undone.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

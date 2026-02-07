@@ -822,23 +822,27 @@ digito-admin/
 - [ ] Image upload component (reusable) — _shell created, needs Storage wiring_
 - [ ] Wire up Firebase Storage uploads for logos/banners
 
-> **Note:** Testing infrastructure set up (Vitest + Testing Library). 198 tests passing.
+> **Note:** Testing infrastructure set up (Vitest + Testing Library). 198 tests at end of Phase 2.
 > Schema gaps fixed: brand `instagramUrl`, event `chatPrompt`, event `imageUrls`.
 > Image uploads shell exists but needs Firebase Storage credentials to wire up.
 
-### Phase 3 — Core Event Content
+### Phase 3 — Core Event Content ✅
 
-- [ ] Brands page: DataTable + create/edit Dialog + image/video upload
-- [ ] Sessions page: DataTable + create/edit Dialog + DateTimePickers
-- [ ] Posts page: Grid view + create/edit with image upload
-- [ ] Whitelist page: DataTable + add entry form + duplicate detection
+- [x] Brands page: DataTable + create/edit Sheet + highlighted toggle + image upload
+- [x] Sessions page: DataTable + create/edit Sheet + DateTimePickers + access tier
+- [x] Posts page: DataTable + create/edit Sheet + image upload
+- [x] Whitelist page: DataTable + add/edit entry form + locked fields
 - [ ] Users page: Read-only DataTable with search
 
-### Phase 4 — New Entities
+> **Note:** 454 tests passing across 17 test files. All 6 entity CRUD systems built with TDD.
+> Tables: brands, posts, sessions, happenings, whitelist, participants.
+> Forms: brands, posts, sessions, happenings, whitelist, participants.
 
+### Phase 4 — New Entities ✅
+
+- [x] Happenings page: DataTable + create/edit Sheet + highlighted/access toggles
+- [x] Participants page: DataTable + create/edit Sheet + role badges
 - [ ] Stands page: DataTable + create/edit + brand assignment
-- [ ] Happenings page: DataTable + create/edit Dialog
-- [ ] Participants page: DataTable + create/edit + session/happening linking
 - [ ] Wire up denormalization (participant → session speaker fields)
 - [ ] Wire up stand → brand.stallNumber sync
 

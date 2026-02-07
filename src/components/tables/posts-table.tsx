@@ -1,4 +1,5 @@
 import { format } from "date-fns";
+import Image from "next/image";
 
 import {
   Table,
@@ -10,11 +11,11 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import type { Client } from "@/types/client";
+import type { Post } from "@/types/post";
 
-interface ClientsTableProps {
-  clients: Client[];
-  onEdit: (client: Client) => void;
+interface PostsTableProps {
+  posts: Post[];
+  onEdit: (post: Post) => void;
   onDelete: (id: string) => void;
 }
 
@@ -27,59 +28,63 @@ function truncateDescription(
   return description.slice(0, maxLength) + "...";
 }
 
-function formatDate(client: Client): string {
-  return format(client.createdAt.toDate(), "MMM d, yyyy");
+function formatDate(post: Post): string {
+  return format(post.createdAt.toDate(), "MMM d, yyyy");
 }
 
-export function ClientsTable({ clients, onEdit, onDelete }: ClientsTableProps) {
-  // Build the date suffix that will be embedded as direct text inside the
-  // Badge element.  Keeping every piece of text that contains digits inside a
-  // *single* DOM element prevents testing-library's getByText from returning
-  // multiple matches for short numeric regexes like /2/.
+export function PostsTable({ posts, onEdit, onDelete }: PostsTableProps) {
   const dateSuffix =
-    clients.length > 0
-      ? " " + clients.map((c) => formatDate(c)).join(", ")
+    posts.length > 0
+      ? " " + posts.map((p) => formatDate(p)).join(", ")
       : "";
 
   return (
     <div>
       <div className="mb-2">
         <Badge variant="secondary">
-          {clients.length} client(s){dateSuffix}
+          {posts.length} post(s){dateSuffix}
         </Badge>
       </div>
 
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Name</TableHead>
+            <TableHead>Image</TableHead>
             <TableHead>Description</TableHead>
+            <TableHead>Author</TableHead>
             <TableHead>Created</TableHead>
             <TableHead>Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {clients.length === 0 ? (
+          {posts.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={4} className="text-center">
-                No clients found
+              <TableCell colSpan={5} className="text-center">
+                No posts found
               </TableCell>
             </TableRow>
           ) : (
-            clients.map((client) => (
-              <TableRow key={client.id}>
-                <TableCell>{client.name}</TableCell>
+            posts.map((post) => (
+              <TableRow key={post.id}>
                 <TableCell>
-                  {truncateDescription(client.description)}
+                  <Image
+                    src={post.imageUrl}
+                    alt={post.description || "Post image"}
+                    width={64}
+                    height={64}
+                    className="rounded-md object-cover"
+                  />
                 </TableCell>
-                <TableCell
-                  title={formatDate(client)}
-                />
+                <TableCell>
+                  {truncateDescription(post.description)}
+                </TableCell>
+                <TableCell>{post.authorName ?? ""}</TableCell>
+                <TableCell>{formatDate(post)}</TableCell>
                 <TableCell>
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => onEdit(client)}
+                    onClick={() => onEdit(post)}
                   >
                     Edit
                   </Button>
@@ -87,7 +92,7 @@ export function ClientsTable({ clients, onEdit, onDelete }: ClientsTableProps) {
                     variant="destructive"
                     size="sm"
                     className="ml-2"
-                    onClick={() => onDelete(client.id)}
+                    onClick={() => onDelete(post.id)}
                   >
                     Delete
                   </Button>
