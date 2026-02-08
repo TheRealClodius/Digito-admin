@@ -51,10 +51,15 @@ export default function HappeningsPage({
     if (!collectionPath) return;
     setSubmitStatus("saving");
     try {
+      const toTimestamp = (val: unknown): Timestamp | unknown => {
+        if (val instanceof Date) return Timestamp.fromDate(val);
+        if (typeof val === "string" && val) return Timestamp.fromDate(new Date(val));
+        return val;
+      };
       const firestoreData = {
         ...data,
-        startTime: data.startTime instanceof Date ? Timestamp.fromDate(data.startTime) : data.startTime,
-        endTime: data.endTime instanceof Date ? Timestamp.fromDate(data.endTime) : data.endTime,
+        startTime: toTimestamp(data.startTime),
+        endTime: toTimestamp(data.endTime),
       };
       if (editingHappening) {
         await updateDocument(collectionPath, editingHappening.id, firestoreData);

@@ -16,7 +16,7 @@ import {
 
 import { useCollection } from "@/hooks/use-collection";
 import { useEventContext } from "@/hooks/use-event-context";
-import { addDocument, updateDocument, deleteDocument } from "@/lib/firestore";
+import { addDocument, updateDocument, deleteDocument, queryDocuments } from "@/lib/firestore";
 import { WhitelistTable } from "@/components/tables/whitelist-table";
 import { WhitelistForm } from "@/components/forms/whitelist-form";
 import type { WhitelistEntry } from "@/types/whitelist-entry";
@@ -47,7 +47,7 @@ export default function WhitelistPage({
   function handleEdit(entry: WhitelistEntry) { setEditingEntry(entry); setSubmitStatus("idle"); setSheetOpen(true); }
 
   async function handleSubmit(data: Record<string, unknown>) {
-    if (!collectionPath) return;
+    if (!collectionPath || !selectedClientId) return;
     setSubmitStatus("saving");
     try {
       if (editingEntry) {
@@ -55,6 +55,26 @@ export default function WhitelistPage({
       } else {
         await addDocument(collectionPath, data);
       }
+
+      // Sync locked fields to the matching user profile
+      const lockedFields = data.lockedFields as string[] | undefined;
+      if (lockedFields && lockedFields.length > 0) {
+        const usersPath = `clients/${selectedClientId}/events/${eventId}/users`;
+        const email = data.email as string;
+        const matchingUsers = await queryDocuments(usersPath, "email", email);
+        if (matchingUsers.length > 0) {
+          const update: Record<string, unknown> = {};
+          for (const field of lockedFields) {
+            if (field in data) {
+              update[field] = data[field];
+            }
+          }
+          if (Object.keys(update).length > 0) {
+            await updateDocument(usersPath, matchingUsers[0].id, update);
+          }
+        }
+      }
+
       setSubmitStatus("success");
     } catch (err) {
       setSubmitStatus("error");

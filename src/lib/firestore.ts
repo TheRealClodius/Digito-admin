@@ -4,6 +4,9 @@ import {
   addDoc,
   setDoc,
   deleteDoc,
+  getDocs,
+  query,
+  where,
   serverTimestamp,
 } from "firebase/firestore";
 import { db } from "./firebase";
@@ -39,4 +42,17 @@ export async function updateDocument(
 export async function deleteDocument(path: string, id: string) {
   const docRef = doc(db, path, id);
   await deleteDoc(docRef);
+}
+
+/**
+ * Query documents by a field value. Returns matching docs with their IDs.
+ */
+export async function queryDocuments<T>(
+  path: string,
+  field: string,
+  value: unknown
+): Promise<(T & { id: string })[]> {
+  const q = query(collection(db, path), where(field, "==", value));
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as T & { id: string }));
 }

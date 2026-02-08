@@ -56,8 +56,12 @@ export function HappeningsTable({
         <TableHeader>{headers}</TableHeader>
         <TableBody>
           {happenings.map((happening) => {
-            const startTime = happening.startTime.toDate();
-            const endTime = happening.endTime.toDate();
+            const toDate = (val: unknown): Date =>
+              val && typeof (val as { toDate?: unknown }).toDate === "function"
+                ? (val as { toDate: () => Date }).toDate()
+                : new Date(val as string | number);
+            const startTime = toDate(happening.startTime);
+            const endTime = toDate(happening.endTime);
 
             return (
               <TableRow key={happening.id}>
