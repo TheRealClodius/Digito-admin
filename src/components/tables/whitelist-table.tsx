@@ -1,4 +1,5 @@
 import { format } from "date-fns";
+import { memo } from "react";
 
 import {
   Table,
@@ -11,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Trash2 } from "lucide-react";
+import { toDate } from "@/lib/timestamps";
 import type { WhitelistEntry, WhitelistAccessTier } from "@/types/whitelist-entry";
 
 interface WhitelistTableProps {
@@ -26,14 +28,9 @@ const tierColorMap: Record<WhitelistAccessTier, string> = {
   staff: "bg-emerald-100 text-emerald-800",
 };
 
-function toDate(val: unknown): Date {
-  return val && typeof (val as { toDate?: unknown }).toDate === "function"
-    ? (val as { toDate: () => Date }).toDate()
-    : new Date(val as string | number);
-}
-
 function formatDate(entry: WhitelistEntry): string {
-  return format(toDate(entry.addedAt), "MMM d, yyyy");
+  const d = toDate(entry.addedAt);
+  return d ? format(d, "MMM d, yyyy") : "\u2014";
 }
 
 function entryCountLabel(count: number): string {
@@ -41,7 +38,7 @@ function entryCountLabel(count: number): string {
   return `${count} entries`;
 }
 
-export function WhitelistTable({ entries, onEdit, onDelete }: WhitelistTableProps) {
+export const WhitelistTable = memo(function WhitelistTable({ entries, onEdit, onDelete }: WhitelistTableProps) {
   return (
     <div>
       <div className="mb-2">
@@ -119,4 +116,4 @@ export function WhitelistTable({ entries, onEdit, onDelete }: WhitelistTableProp
       </Table>
     </div>
   );
-}
+});

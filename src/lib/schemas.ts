@@ -18,8 +18,8 @@ export const eventSchema = z.object({
   websiteUrl: z.string().url().nullable().optional().or(z.literal("")),
   instagramUrl: z.string().url().nullable().optional().or(z.literal("")),
   chatPrompt: z.string().nullable().optional(),
-  imageUrls: z.array(z.string()).optional().default([]),
-  isActive: z.boolean().default(true),
+  imageUrls: z.array(z.string()).optional(),
+  isActive: z.boolean().optional(),
 });
 
 export const brandSchema = z.object({
@@ -31,7 +31,7 @@ export const brandSchema = z.object({
   websiteUrl: z.string().url().nullable().optional().or(z.literal("")),
   instagramUrl: z.string().url().nullable().optional().or(z.literal("")),
   stallNumber: z.string().nullable().optional(),
-  isHighlighted: z.boolean().default(false),
+  isHighlighted: z.boolean().optional(),
 });
 
 export const standSchema = z.object({
@@ -54,7 +54,7 @@ export const sessionSchema = z.object({
   speakerBio: z.string().nullable().optional(),
   speakerAvatarUrl: z.string().nullable().optional(),
   participantId: z.string().nullable().optional(),
-  requiresAccess: z.boolean().default(false),
+  requiresAccess: z.boolean().optional(),
   accessTier: z.enum(["regular", "premium", "vip", "staff"]).nullable().optional(),
   imageUrl: z.string().nullable().optional(),
 });
@@ -70,8 +70,8 @@ export const happeningSchema = z.object({
   hostAvatarUrl: z.string().nullable().optional(),
   imageUrl: z.string().nullable().optional(),
   brandId: z.string().nullable().optional(),
-  isHighlighted: z.boolean().default(false),
-  requiresAccess: z.boolean().default(false),
+  isHighlighted: z.boolean().optional(),
+  requiresAccess: z.boolean().optional(),
   accessTier: z.string().nullable().optional(),
 });
 
@@ -87,9 +87,9 @@ export const participantSchema = z.object({
   websiteUrl: z.string().url().nullable().optional().or(z.literal("")),
   linkedinUrl: z.string().url().nullable().optional().or(z.literal("")),
   brandId: z.string().nullable().optional(),
-  sessionIds: z.array(z.string()).optional().default([]),
-  happeningIds: z.array(z.string()).optional().default([]),
-  isHighlighted: z.boolean().default(false),
+  sessionIds: z.array(z.string()).optional(),
+  happeningIds: z.array(z.string()).optional(),
+  isHighlighted: z.boolean().optional(),
 });
 
 export const postSchema = z.object({
@@ -101,9 +101,9 @@ export const postSchema = z.object({
 
 export const whitelistEntrySchema = z.object({
   email: z.string().email("Valid email is required").transform((v) => v.toLowerCase()),
-  accessTier: z.enum(["regular", "premium", "vip", "staff"]).default("regular"),
+  accessTier: z.enum(["regular", "premium", "vip", "staff"]).optional(),
   company: z.string().nullable().optional(),
-  lockedFields: z.array(z.string()).optional().default([]),
+  lockedFields: z.array(z.string()).optional(),
 });
 
 export type ClientFormValues = z.infer<typeof clientSchema>;

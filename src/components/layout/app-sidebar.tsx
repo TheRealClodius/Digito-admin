@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import Image from "next/image";
 import {
   LayoutDashboard,
   Building2,
@@ -60,7 +61,7 @@ export function AppSidebar({ collapsed = false, onToggleCollapse }: AppSidebarPr
     >
       <div className="flex h-14 shrink-0 items-center px-4">
         <Link href="/" className="flex items-center gap-2 font-semibold">
-          <LayoutDashboard className="size-5" />
+          <Image src="/digito-logo.svg" alt="Digito" width={24} height={24} />
           <span>Digito Admin</span>
         </Link>
         <Button

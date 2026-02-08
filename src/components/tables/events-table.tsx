@@ -1,5 +1,7 @@
 import { format } from "date-fns";
+import { memo } from "react";
 import type { Event } from "@/types/event";
+import { toDate } from "@/lib/timestamps";
 import {
   Table,
   TableHeader,
@@ -27,7 +29,7 @@ function getStatus(startDate: Date, endDate: Date): string {
   return "Live";
 }
 
-export function EventsTable({
+export const EventsTable = memo(function EventsTable({
   events,
   onEdit,
   onDelete,
@@ -69,21 +71,17 @@ export function EventsTable({
       </TableHeader>
       <TableBody>
         {events.map((event) => {
-          const toDate = (val: unknown): Date =>
-            val && typeof (val as { toDate?: unknown }).toDate === "function"
-              ? (val as { toDate: () => Date }).toDate()
-              : new Date(val as string | number);
           const startDate = toDate(event.startDate);
           const endDate = toDate(event.endDate);
-          const status = getStatus(startDate, endDate);
+          const status = startDate && endDate ? getStatus(startDate, endDate) : "Unknown";
 
           return (
             <TableRow key={event.id}>
               <TableCell>{event.name}</TableCell>
               <TableCell>{event.venue ?? "-"}</TableCell>
               <TableCell>
-                {format(startDate, "MMM d, yyyy")} &ndash;{" "}
-                {format(endDate, "MMM d, yyyy")}
+                {startDate ? format(startDate, "MMM d, yyyy") : "\u2014"} &ndash;{" "}
+                {endDate ? format(endDate, "MMM d, yyyy") : "\u2014"}
               </TableCell>
               <TableCell>
                 <Badge>{status}</Badge>
@@ -122,4 +120,4 @@ export function EventsTable({
       </TableBody>
     </Table>
   );
-}
+});

@@ -7,15 +7,12 @@ import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { whitelistEntrySchema, type WhitelistEntryFormValues } from "@/lib/schemas";
+import { whitelistEntrySchema } from "@/lib/schemas";
 
 type SubmitStatus = "idle" | "saving" | "success" | "error";
 
-// Form schema with string input for lockedFields (comma-separated)
-const whitelistFormSchema = z.object({
-  email: z.string().email("Valid email is required"),
-  accessTier: z.enum(["regular", "premium", "vip", "staff"]),
-  company: z.string().optional(),
+// Derive from canonical schema — override lockedFields to accept comma-separated string input
+const whitelistFormSchema = whitelistEntrySchema.extend({
   lockedFields: z.string().optional(),
 });
 
@@ -74,7 +71,7 @@ export function WhitelistForm({
 
     onSubmit({
       email: data.email,
-      accessTier: data.accessTier,
+      accessTier: data.accessTier ?? "regular",
       company: data.company || undefined,
       lockedFields,
     });

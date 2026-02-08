@@ -3,6 +3,7 @@ import { vi } from "vitest";
 import { useCrudPage } from "./use-crud-page";
 import * as firestore from "@/lib/firestore";
 import { toast } from "sonner";
+import { useCollection } from "./use-collection";
 
 // Mock dependencies
 vi.mock("@/lib/firestore", () => ({
@@ -307,6 +308,116 @@ describe("useCrudPage", () => {
       expect(mockDeleteDocument).not.toHaveBeenCalled();
       expect(toast.success).toHaveBeenCalledWith("Client deleted");
       expect(result.current.deletingEntityId).toBe(null);
+    });
+
+    it("calls onCleanupFiles with entity before deletion", async () => {
+      const mockDeleteDocument = vi.mocked(firestore.deleteDocument);
+      mockDeleteDocument.mockResolvedValue();
+
+      const entity = {
+        id: "b1",
+        name: "Brand",
+        logoUrl: "https://storage.example.com/logo.png",
+      };
+
+      vi.mocked(useCollection).mockReturnValue({
+        data: [entity],
+        loading: false,
+        error: null,
+      });
+
+      const onCleanupFiles = vi.fn().mockResolvedValue(undefined);
+
+      const { result } = renderHook(() =>
+        useCrudPage({
+          collectionPath: "test/brands",
+          entityName: "brand",
+          onCleanupFiles,
+        })
+      );
+
+      act(() => {
+        result.current.setDeletingEntityId("b1");
+      });
+
+      await act(async () => {
+        await result.current.handleDelete();
+      });
+
+      expect(onCleanupFiles).toHaveBeenCalledWith(entity);
+      expect(mockDeleteDocument).toHaveBeenCalledWith("test/brands", "b1");
+      expect(toast.success).toHaveBeenCalledWith("Brand deleted");
+    });
+
+    it("still deletes document when onCleanupFiles throws", async () => {
+      const mockDeleteDocument = vi.mocked(firestore.deleteDocument);
+      mockDeleteDocument.mockResolvedValue();
+
+      const entity = { id: "b2", name: "Brand 2" };
+
+      vi.mocked(useCollection).mockReturnValue({
+        data: [entity],
+        loading: false,
+        error: null,
+      });
+
+      const onCleanupFiles = vi
+        .fn()
+        .mockRejectedValue(new Error("Storage error"));
+
+      const { result } = renderHook(() =>
+        useCrudPage({
+          collectionPath: "test/brands",
+          entityName: "brand",
+          onCleanupFiles,
+        })
+      );
+
+      act(() => {
+        result.current.setDeletingEntityId("b2");
+      });
+
+      await act(async () => {
+        await result.current.handleDelete();
+      });
+
+      expect(onCleanupFiles).toHaveBeenCalledWith(entity);
+      // Document should still be deleted despite cleanup failure
+      expect(mockDeleteDocument).toHaveBeenCalledWith("test/brands", "b2");
+      expect(toast.success).toHaveBeenCalledWith("Brand deleted");
+    });
+
+    it("does not call onCleanupFiles when entity is not found in data", async () => {
+      const mockDeleteDocument = vi.mocked(firestore.deleteDocument);
+      mockDeleteDocument.mockResolvedValue();
+
+      vi.mocked(useCollection).mockReturnValue({
+        data: [{ id: "other", name: "Other" }],
+        loading: false,
+        error: null,
+      });
+
+      const onCleanupFiles = vi.fn().mockResolvedValue(undefined);
+
+      const { result } = renderHook(() =>
+        useCrudPage({
+          collectionPath: "test/brands",
+          entityName: "brand",
+          onCleanupFiles,
+        })
+      );
+
+      act(() => {
+        result.current.setDeletingEntityId("nonexistent");
+      });
+
+      await act(async () => {
+        await result.current.handleDelete();
+      });
+
+      expect(onCleanupFiles).not.toHaveBeenCalled();
+      // Should still attempt deletion
+      expect(mockDeleteDocument).toHaveBeenCalledWith("test/brands", "nonexistent");
     });
   });
 

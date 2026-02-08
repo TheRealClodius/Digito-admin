@@ -84,7 +84,7 @@
 - **Task:** Create an `AuthProvider` context (similar to `ThemeProvider`) that calls `onAuthStateChanged` once and provides `user` and `loading` via context. Refactor `useAuth` to consume this context. Wrap the app in `AuthProvider` in `providers.tsx`.
 - **Test:** Write a test verifying `onAuthStateChanged` is called only once even when multiple components use `useAuth`.
 
-### [ ] 11. Clean up Storage files on image replacement and document deletion
+### [x] 11. Clean up Storage files on image replacement and document deletion
 - **Files:** `src/hooks/use-upload.ts`, `src/components/image-upload.tsx`, all form components, all page delete handlers
 - **Problem:** When an image is replaced (e.g., updating a brand logo), the old file stays in Firebase Storage. When a document with images is deleted, its files are never cleaned up. Orphaned files accumulate indefinitely.
 - **Task:** In `ImageUpload`, when `onChange` is called with a new URL and the old `value` was a Firebase Storage URL, call `deleteFile` on the old URL. In page delete handlers, before deleting the document, read its image URL fields and delete associated storage files.

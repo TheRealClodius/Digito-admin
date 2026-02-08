@@ -1,9 +1,11 @@
 "use client";
 
-import { use, useState } from "react";
+import { useState } from "react";
 import { Plus } from "lucide-react";
 import { Timestamp } from "firebase/firestore";
 import { toast } from "sonner";
+
+import { useValidatedParams } from "@/hooks/use-validated-params";
 
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -27,6 +29,9 @@ import {
 
 import { useCollection } from "@/hooks/use-collection";
 import { addDocument, updateDocument, deleteEventCascade } from "@/lib/firestore";
+import { useUpload } from "@/hooks/use-upload";
+import { toDate } from "@/lib/timestamps";
+import { ErrorBanner } from "@/components/error-banner";
 import { EventsTable } from "@/components/tables/events-table";
 import { EventForm } from "@/components/forms/event-form";
 import type { Event } from "@/types/event";
@@ -36,14 +41,16 @@ export default function EventsPage({
 }: {
   params: Promise<{ clientId: string }>;
 }) {
-  const { clientId } = use(params);
+  const { clientId } = useValidatedParams(params);
   const collectionPath = `clients/${clientId}/events`;
 
-  const { data: events, loading } = useCollection<Event>({
+  const { data: events, loading, error } = useCollection<Event>({
     path: collectionPath,
     orderByField: "startDate",
     orderDirection: "desc",
   });
+
+  const { deleteFile } = useUpload({ basePath: "" });
 
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
@@ -98,6 +105,12 @@ export default function EventsPage({
   async function handleDelete() {
     if (!deletingEventId) return;
     try {
+      // Best-effort cleanup of associated Storage files
+      const event = events.find((e) => e.id === deletingEventId);
+      if (event) {
+        const urls = [event.logoUrl, event.bannerUrl].filter(Boolean) as string[];
+        await Promise.all(urls.map((url) => deleteFile(url).catch(() => {})));
+      }
       await deleteEventCascade(collectionPath, deletingEventId);
       toast.success("Event deleted");
     } catch (err) {
@@ -123,7 +136,9 @@ export default function EventsPage({
         </Button>
       </div>
 
-      {loading ? (
+      {error ? (
+        <ErrorBanner error={error} />
+      ) : loading ? (
         <div className="space-y-3">
           <Skeleton className="h-12 w-full" />
           <Skeleton className="h-12 w-full" />
@@ -157,8 +172,8 @@ export default function EventsPage({
                       name: editingEvent.name,
                       description: editingEvent.description ?? null,
                       venue: editingEvent.venue ?? null,
-                      startDate: editingEvent.startDate?.toDate(),
-                      endDate: editingEvent.endDate?.toDate(),
+                      startDate: toDate(editingEvent.startDate),
+                      endDate: toDate(editingEvent.endDate),
                       websiteUrl: editingEvent.websiteUrl ?? null,
                       instagramUrl: editingEvent.instagramUrl ?? null,
                       chatPrompt: editingEvent.chatPrompt ?? null,

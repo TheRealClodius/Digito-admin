@@ -1,4 +1,5 @@
 import type { Participant } from "@/types/participant";
+import { memo } from "react";
 import {
   Table,
   TableHeader,
@@ -17,7 +18,7 @@ interface ParticipantsTableProps {
   onDelete: (id: string) => void;
 }
 
-export function ParticipantsTable({
+export const ParticipantsTable = memo(function ParticipantsTable({
   participants,
   onEdit,
   onDelete,
@@ -87,4 +88,4 @@ export function ParticipantsTable({
       </Table>
     </div>
   );
-}
+});

@@ -51,7 +51,7 @@ export function ParticipantForm({
   storagePath,
 }: ParticipantFormProps) {
   const isSubmitting = submitStatus === "saving";
-  const { upload } = useUpload({ basePath: storagePath ?? "" });
+  const { upload, deleteFile } = useUpload({ basePath: storagePath ?? "" });
   const {
     register,
     handleSubmit,
@@ -76,10 +76,9 @@ export function ParticipantForm({
     mode: "onTouched",
   });
 
-  const firstNameValue = watch("firstName");
-  const lastNameValue = watch("lastName");
-  const avatarUrlValue = watch("avatarUrl");
-  const isHighlightedValue = watch("isHighlighted");
+  const [firstNameValue, lastNameValue, avatarUrlValue, isHighlightedValue] = watch([
+    "firstName", "lastName", "avatarUrl", "isHighlighted",
+  ]);
 
   const isFirstNameEmpty = !firstNameValue || firstNameValue.trim() === "";
   const isLastNameEmpty = !lastNameValue || lastNameValue.trim() === "";
@@ -173,6 +172,7 @@ export function ParticipantForm({
           value={avatarUrlValue || null}
           onChange={(url) => setValue("avatarUrl", url)}
           uploadFn={storagePath ? (file) => upload(file, `avatar_${Date.now()}_${file.name}`) : undefined}
+          deleteFileFn={deleteFile}
           disabled={isSubmitting}
         />
       </div>

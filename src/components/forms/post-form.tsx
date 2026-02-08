@@ -34,7 +34,7 @@ export function PostForm({
   storagePath,
 }: PostFormProps) {
   const isSubmitting = submitStatus === "saving";
-  const { upload } = useUpload({ basePath: storagePath ?? "" });
+  const { upload, deleteFile } = useUpload({ basePath: storagePath ?? "" });
   const {
     register,
     handleSubmit,
@@ -52,8 +52,7 @@ export function PostForm({
     mode: "onTouched",
   });
 
-  const imageUrlValue = watch("imageUrl");
-  const authorAvatarUrlValue = watch("authorAvatarUrl");
+  const [imageUrlValue, authorAvatarUrlValue] = watch(["imageUrl", "authorAvatarUrl"]);
   const isImageEmpty = !imageUrlValue || imageUrlValue.trim() === "";
 
   return (
@@ -64,6 +63,7 @@ export function PostForm({
           value={imageUrlValue || null}
           onChange={(url) => setValue("imageUrl", url ?? "", { shouldValidate: true })}
           uploadFn={storagePath ? (file) => upload(file, `image_${Date.now()}_${file.name}`) : undefined}
+          deleteFileFn={deleteFile}
           disabled={isSubmitting}
         />
         {(errors.imageUrl || isImageEmpty) && (
@@ -77,6 +77,7 @@ export function PostForm({
           value={authorAvatarUrlValue || null}
           onChange={(url) => setValue("authorAvatarUrl", url)}
           uploadFn={storagePath ? (file) => upload(file, `avatar_${Date.now()}_${file.name}`) : undefined}
+          deleteFileFn={deleteFile}
           disabled={isSubmitting}
         />
       </div>

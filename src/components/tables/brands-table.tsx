@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Trash2 } from "lucide-react";
 import type { Brand } from "@/types/brand";
+import { memo } from "react";
 
 interface BrandsTableProps {
   brands: Brand[];
@@ -19,7 +20,7 @@ interface BrandsTableProps {
   onToggleHighlighted: (id: string, highlighted: boolean) => void;
 }
 
-export function BrandsTable({
+export const BrandsTable = memo(function BrandsTable({
   brands,
   onEdit,
   onDelete,
@@ -103,4 +104,4 @@ export function BrandsTable({
       </Table>
     </div>
   );
-}
+});

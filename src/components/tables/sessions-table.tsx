@@ -1,5 +1,7 @@
 import { format } from "date-fns";
+import { memo } from "react";
 import type { Session } from "@/types/session";
+import { toDate } from "@/lib/timestamps";
 import {
   Table,
   TableHeader,
@@ -18,7 +20,7 @@ interface SessionsTableProps {
   onDelete: (sessionId: string) => void;
 }
 
-export function SessionsTable({
+export const SessionsTable = memo(function SessionsTable({
   sessions,
   onEdit,
   onDelete,
@@ -66,10 +68,6 @@ export function SessionsTable({
         </TableHeader>
         <TableBody>
           {sessions.map((session) => {
-            const toDate = (val: unknown): Date =>
-              val && typeof (val as { toDate?: unknown }).toDate === "function"
-                ? (val as { toDate: () => Date }).toDate()
-                : new Date(val as string | number);
             const startTime = toDate(session.startTime);
             const endTime = toDate(session.endTime);
 
@@ -80,8 +78,8 @@ export function SessionsTable({
                   <Badge variant="secondary">{session.type}</Badge>
                 </TableCell>
                 <TableCell>
-                  {format(startTime, "MMM d, h:mm a")} &ndash;{" "}
-                  {format(endTime, "MMM d, h:mm a")}
+                  {startTime ? format(startTime, "MMM d, h:mm a") : "\u2014"} &ndash;{" "}
+                  {endTime ? format(endTime, "MMM d, h:mm a") : "\u2014"}
                 </TableCell>
                 <TableCell>{session.location ?? "-"}</TableCell>
                 <TableCell>{session.speakerName ?? "-"}</TableCell>
@@ -112,4 +110,4 @@ export function SessionsTable({
       </Table>
     </>
   );
-}
+});

@@ -33,7 +33,7 @@ export function ClientForm({
   storagePath,
 }: ClientFormProps) {
   const isSubmitting = submitStatus === "saving";
-  const { upload } = useUpload({ basePath: storagePath ?? "" });
+  const { upload, deleteFile } = useUpload({ basePath: storagePath ?? "" });
   const {
     register,
     handleSubmit,
@@ -50,8 +50,7 @@ export function ClientForm({
     mode: "onTouched",
   });
 
-  const nameValue = watch("name");
-  const logoUrlValue = watch("logoUrl");
+  const [nameValue, logoUrlValue] = watch(["name", "logoUrl"]);
   const isNameEmpty = !nameValue || nameValue.trim() === "";
 
   return (
@@ -83,6 +82,7 @@ export function ClientForm({
           value={logoUrlValue || null}
           onChange={(url) => setValue("logoUrl", url)}
           uploadFn={storagePath ? (file) => upload(file, `logo_${Date.now()}_${file.name}`) : undefined}
+          deleteFileFn={deleteFile}
           disabled={isSubmitting}
         />
       </div>

@@ -1,4 +1,5 @@
 import { format } from "date-fns";
+import { memo } from "react";
 
 import {
   Table,
@@ -11,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Trash2 } from "lucide-react";
+import { toDate } from "@/lib/timestamps";
 import type { Client } from "@/types/client";
 
 interface ClientsTableProps {
@@ -28,17 +30,12 @@ function truncateDescription(
   return description.slice(0, maxLength) + "...";
 }
 
-function toDate(val: unknown): Date {
-  return val && typeof (val as { toDate?: unknown }).toDate === "function"
-    ? (val as { toDate: () => Date }).toDate()
-    : new Date(val as string | number);
-}
-
 function formatDate(client: Client): string {
-  return format(toDate(client.createdAt), "MMM d, yyyy");
+  const d = toDate(client.createdAt);
+  return d ? format(d, "MMM d, yyyy") : "\u2014";
 }
 
-export function ClientsTable({ clients, onEdit, onDelete }: ClientsTableProps) {
+export const ClientsTable = memo(function ClientsTable({ clients, onEdit, onDelete }: ClientsTableProps) {
   // Build the date suffix that will be embedded as direct text inside the
   // Badge element.  Keeping every piece of text that contains digits inside a
   // *single* DOM element prevents testing-library's getByText from returning
@@ -107,4 +104,4 @@ export function ClientsTable({ clients, onEdit, onDelete }: ClientsTableProps) {
       </Table>
     </div>
   );
-}
+});

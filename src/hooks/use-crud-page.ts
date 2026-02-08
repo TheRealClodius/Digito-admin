@@ -13,9 +13,12 @@ interface UseCrudPageOptions<T> {
   orderByField?: string;
   orderDirection?: "asc" | "desc";
   constraints?: QueryConstraint[];
+  constraintsKey?: string;
+  pageSize?: number;
   entityName?: string;
   dataTransformer?: (data: Record<string, unknown>) => Record<string, unknown>;
   onDelete?: (id: string) => Promise<void>;
+  onCleanupFiles?: (entity: T) => Promise<void>;
 }
 
 export function useCrudPage<T extends DocumentData & { id: string }>({
@@ -23,15 +26,20 @@ export function useCrudPage<T extends DocumentData & { id: string }>({
   orderByField = "createdAt",
   orderDirection = "desc",
   constraints = [],
+  constraintsKey,
+  pageSize,
   entityName = "item",
   dataTransformer,
   onDelete,
+  onCleanupFiles,
 }: UseCrudPageOptions<T>) {
   const { data, loading, error } = useCollection<T>({
     path: collectionPath,
     orderByField,
     orderDirection,
     constraints,
+    constraintsKey,
+    pageSize,
   });
 
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -74,6 +82,14 @@ export function useCrudPage<T extends DocumentData & { id: string }>({
   async function handleDelete() {
     if (!deletingEntityId || !collectionPath) return;
     try {
+      // Best-effort cleanup of associated Storage files
+      if (onCleanupFiles) {
+        const entity = data.find((e) => e.id === deletingEntityId);
+        if (entity) {
+          await onCleanupFiles(entity).catch(() => {});
+        }
+      }
+
       if (onDelete) {
         await onDelete(deletingEntityId);
       } else {

@@ -1,4 +1,5 @@
 import { format } from "date-fns";
+import { memo } from "react";
 import Image from "next/image";
 import { Trash2 } from "lucide-react";
 
@@ -12,6 +13,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { toDate } from "@/lib/timestamps";
 import type { Post } from "@/types/post";
 
 interface PostsTableProps {
@@ -29,17 +31,12 @@ function truncateDescription(
   return description.slice(0, maxLength) + "...";
 }
 
-function toDate(val: unknown): Date {
-  return val && typeof (val as { toDate?: unknown }).toDate === "function"
-    ? (val as { toDate: () => Date }).toDate()
-    : new Date(val as string | number);
-}
-
 function formatDate(post: Post): string {
-  return format(toDate(post.createdAt), "MMM d, yyyy");
+  const d = toDate(post.createdAt);
+  return d ? format(d, "MMM d, yyyy") : "\u2014";
 }
 
-export function PostsTable({ posts, onEdit, onDelete }: PostsTableProps) {
+export const PostsTable = memo(function PostsTable({ posts, onEdit, onDelete }: PostsTableProps) {
   const dateSuffix =
     posts.length > 0
       ? " " + posts.map((p) => formatDate(p)).join(", ")
@@ -114,4 +111,4 @@ export function PostsTable({ posts, onEdit, onDelete }: PostsTableProps) {
       </Table>
     </div>
   );
-}
+});

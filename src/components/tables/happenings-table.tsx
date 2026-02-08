@@ -1,5 +1,7 @@
 import { format } from "date-fns";
+import { memo } from "react";
 import type { Happening } from "@/types/happening";
+import { toDate } from "@/lib/timestamps";
 import {
   Table,
   TableHeader,
@@ -30,7 +32,7 @@ const headers = (
   </TableRow>
 );
 
-export function HappeningsTable({
+export const HappeningsTable = memo(function HappeningsTable({
   happenings,
   onEdit,
   onDelete,
@@ -56,10 +58,6 @@ export function HappeningsTable({
         <TableHeader>{headers}</TableHeader>
         <TableBody>
           {happenings.map((happening) => {
-            const toDate = (val: unknown): Date =>
-              val && typeof (val as { toDate?: unknown }).toDate === "function"
-                ? (val as { toDate: () => Date }).toDate()
-                : new Date(val as string | number);
             const startTime = toDate(happening.startTime);
             const endTime = toDate(happening.endTime);
 
@@ -70,8 +68,8 @@ export function HappeningsTable({
                   <Badge>{happening.type}</Badge>
                 </TableCell>
                 <TableCell>
-                  {format(startTime, "MMM d, yyyy h:mm a")} &ndash;{" "}
-                  {format(endTime, "h:mm a")}
+                  {startTime ? format(startTime, "MMM d, yyyy h:mm a") : "\u2014"} &ndash;{" "}
+                  {endTime ? format(endTime, "h:mm a") : "\u2014"}
                 </TableCell>
                 <TableCell>{happening.location ?? "-"}</TableCell>
                 <TableCell>{happening.hostName ?? "-"}</TableCell>
@@ -106,4 +104,4 @@ export function HappeningsTable({
       </p>
     </div>
   );
-}
+});

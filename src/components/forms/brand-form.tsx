@@ -30,7 +30,7 @@ export function BrandForm({
   storagePath,
 }: BrandFormProps) {
   const isSubmitting = submitStatus === "saving";
-  const { upload } = useUpload({ basePath: storagePath ?? "" });
+  const { upload, deleteFile } = useUpload({ basePath: storagePath ?? "" });
   const {
     register,
     handleSubmit,
@@ -52,10 +52,7 @@ export function BrandForm({
     mode: "onTouched",
   });
 
-  const nameValue = watch("name");
-  const logoUrlValue = watch("logoUrl");
-  const imageUrlValue = watch("imageUrl");
-  const isHighlightedValue = watch("isHighlighted");
+  const [nameValue, logoUrlValue, imageUrlValue, isHighlightedValue] = watch(["name", "logoUrl", "imageUrl", "isHighlighted"]);
   const isNameEmpty = !nameValue || nameValue.trim() === "";
 
   return (
@@ -108,6 +105,7 @@ export function BrandForm({
           value={logoUrlValue || null}
           onChange={(url) => setValue("logoUrl", url)}
           uploadFn={storagePath ? (file) => upload(file, `logo_${Date.now()}_${file.name}`) : undefined}
+          deleteFileFn={deleteFile}
           disabled={isSubmitting}
         />
       </div>
@@ -118,6 +116,7 @@ export function BrandForm({
           value={imageUrlValue || null}
           onChange={(url) => setValue("imageUrl", url)}
           uploadFn={storagePath ? (file) => upload(file, `image_${Date.now()}_${file.name}`) : undefined}
+          deleteFileFn={deleteFile}
           disabled={isSubmitting}
         />
       </div>

@@ -1,6 +1,5 @@
 "use client";
 
-import { use } from "react";
 import {
   ShoppingBag,
   Mic2,
@@ -8,6 +7,7 @@ import {
   Users,
   ListChecks,
 } from "lucide-react";
+import { useValidatedParams } from "@/hooks/use-validated-params";
 import { StatsCard } from "@/components/stats-card";
 import { useCollectionCount } from "@/hooks/use-collection-count";
 import { useEventContext } from "@/hooks/use-event-context";
@@ -18,7 +18,7 @@ export default function EventOverviewPage({
 }: {
   params: Promise<{ eventId: string }>;
 }) {
-  const { eventId } = use(params);
+  const { eventId } = useValidatedParams(params);
   const { selectedClientId } = useEventContext();
   const basePath = selectedClientId
     ? `clients/${selectedClientId}/events/${eventId}`

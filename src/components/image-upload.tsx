@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useDropzone } from "react-dropzone";
 import { Loader2, Upload, X } from "lucide-react";
 import Image from "next/image";
@@ -11,6 +11,7 @@ interface ImageUploadProps {
   value?: string | null;
   onChange: (url: string | null) => void;
   uploadFn?: (file: File) => Promise<string>;
+  deleteFileFn?: (url: string) => Promise<void>;
   disabled?: boolean;
   className?: string;
   maxSize?: number;
@@ -21,6 +22,7 @@ export function ImageUpload({
   value,
   onChange,
   uploadFn,
+  deleteFileFn,
   disabled,
   className,
   maxSize = 10 * 1024 * 1024, // 10MB
@@ -28,18 +30,38 @@ export function ImageUpload({
 }: ImageUploadProps) {
   const [preview, setPreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const prevObjectUrl = useRef<string | null>(null);
+
+  // Revoke old blob URLs to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      if (prevObjectUrl.current) {
+        URL.revokeObjectURL(prevObjectUrl.current);
+      }
+    };
+  }, []);
 
   const onDrop = useCallback(
     async (acceptedFiles: File[]) => {
       const file = acceptedFiles[0];
       if (!file) return;
 
+      // Revoke previous blob URL before creating a new one
+      if (prevObjectUrl.current) {
+        URL.revokeObjectURL(prevObjectUrl.current);
+      }
+
       const objectUrl = URL.createObjectURL(file);
+      prevObjectUrl.current = objectUrl;
       setPreview(objectUrl);
 
       if (uploadFn) {
         setUploading(true);
         try {
+          // Delete old Storage file before uploading replacement
+          if (value && deleteFileFn) {
+            deleteFileFn(value).catch(() => {});
+          }
           const downloadUrl = await uploadFn(file);
           onChange(downloadUrl);
         } catch (err) {
@@ -50,7 +72,7 @@ export function ImageUpload({
         }
       }
     },
-    [uploadFn, onChange]
+    [uploadFn, deleteFileFn, onChange, value]
   );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -64,6 +86,9 @@ export function ImageUpload({
   const displayUrl = preview || value;
 
   const handleRemove = () => {
+    if (value && deleteFileFn) {
+      deleteFileFn(value).catch(() => {});
+    }
     setPreview(null);
     onChange(null);
   };

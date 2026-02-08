@@ -6,6 +6,7 @@ import {
   query,
   onSnapshot,
   orderBy,
+  limit,
   type QueryConstraint,
   type DocumentData,
 } from "firebase/firestore";
@@ -16,6 +17,10 @@ interface UseCollectionOptions {
   orderByField?: string;
   orderDirection?: "asc" | "desc";
   constraints?: QueryConstraint[];
+  /** Stable key for constraint identity — avoids JSON.stringify on every render */
+  constraintsKey?: string;
+  /** When set, limits the query to this many documents */
+  pageSize?: number;
 }
 
 export function useCollection<T extends DocumentData & { id: string }>({
@@ -23,6 +28,8 @@ export function useCollection<T extends DocumentData & { id: string }>({
   orderByField = "createdAt",
   orderDirection = "desc",
   constraints = [],
+  constraintsKey = "",
+  pageSize,
 }: UseCollectionOptions) {
   const [data, setData] = useState<T[]>([]);
   const [loading, setLoading] = useState(true);
@@ -35,11 +42,16 @@ export function useCollection<T extends DocumentData & { id: string }>({
       return;
     }
 
-    const q = query(
-      collection(db, path),
+    const queryConstraints: QueryConstraint[] = [
       orderBy(orderByField, orderDirection),
-      ...constraints
-    );
+      ...constraints,
+    ];
+
+    if (pageSize) {
+      queryConstraints.push(limit(pageSize));
+    }
+
+    const q = query(collection(db, path), ...queryConstraints);
 
     const unsubscribe = onSnapshot(
       q,
@@ -58,7 +70,8 @@ export function useCollection<T extends DocumentData & { id: string }>({
     );
 
     return unsubscribe;
-  }, [path, orderByField, orderDirection, JSON.stringify(constraints)]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [path, orderByField, orderDirection, constraintsKey, pageSize]);
 
   return { data, loading, error };
 }

@@ -87,8 +87,7 @@ export function EventForm({
     mode: "onBlur",
   });
 
-  const nameValue = watch("name");
-  const isActiveValue = watch("isActive");
+  const [nameValue, isActiveValue] = watch(["name", "isActive"]);
 
   const isSubmitDisabled = !nameValue?.trim() || isSubmitting;
 

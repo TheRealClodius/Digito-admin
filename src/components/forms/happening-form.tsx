@@ -88,9 +88,7 @@ export function HappeningForm({
     mode: "onBlur",
   });
 
-  const titleValue = watch("title");
-  const isHighlightedValue = watch("isHighlighted");
-  const requiresAccessValue = watch("requiresAccess");
+  const [titleValue, isHighlightedValue, requiresAccessValue] = watch(["title", "isHighlighted", "requiresAccess"]);
 
   const isSubmitDisabled = !titleValue?.trim() || isSubmitting;
 

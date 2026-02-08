@@ -38,7 +38,9 @@ export default function DashboardLayout({
     if (!user) {
       router.push("/login");
     } else if (isAdmin === false) {
-      signOut().then(() => router.push("/unauthorized"));
+      signOut()
+        .then(() => router.push("/unauthorized"))
+        .catch(() => router.push("/unauthorized"));
     }
   }, [user, isAdmin, authLoading, adminLoading, router]);
 

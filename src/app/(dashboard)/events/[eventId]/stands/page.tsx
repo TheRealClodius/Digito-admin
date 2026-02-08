@@ -1,11 +1,13 @@
 "use client";
 
-import { use } from "react";
 import { Plus } from "lucide-react";
+
+import { useValidatedParams } from "@/hooks/use-validated-params";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCollection } from "@/hooks/use-collection";
 import { useEventContext } from "@/hooks/use-event-context";
+import { ErrorBanner } from "@/components/error-banner";
 import type { Stand } from "@/types/stand";
 
 export default function StandsPage({
@@ -13,9 +15,9 @@ export default function StandsPage({
 }: {
   params: Promise<{ eventId: string }>;
 }) {
-  const { eventId } = use(params);
+  const { eventId } = useValidatedParams(params);
   const { selectedClientId } = useEventContext();
-  const { data: stands, loading } = useCollection<Stand & { id: string }>({
+  const { data: stands, loading, error } = useCollection<Stand & { id: string }>({
     path: selectedClientId
       ? `clients/${selectedClientId}/events/${eventId}/stands`
       : "",
@@ -36,7 +38,9 @@ export default function StandsPage({
         </Button>
       </div>
 
-      {loading ? (
+      {error ? (
+        <ErrorBanner error={error} />
+      ) : loading ? (
         <div className="space-y-3">
           <Skeleton className="h-12 w-full" />
           <Skeleton className="h-12 w-full" />

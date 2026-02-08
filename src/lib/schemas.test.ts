@@ -80,14 +80,14 @@ describe("eventSchema", () => {
     endDate: new Date("2025-06-02"),
   };
 
-  it("accepts a minimal valid event and applies defaults", () => {
+  it("accepts a minimal valid event", () => {
     const result = eventSchema.safeParse(validEvent);
     expect(result.success).toBe(true);
     if (result.success) {
       expect(result.data.name).toBe("Launch Party");
       expect(result.data.clientId).toBe("client-1");
-      expect(result.data.isActive).toBe(true);
-      expect(result.data.imageUrls).toEqual([]);
+      expect(result.data.isActive).toBeUndefined();
+      expect(result.data.imageUrls).toBeUndefined();
     }
   });
 
@@ -241,10 +241,10 @@ describe("eventSchema", () => {
 
   // --- imageUrls (new field) ---
 
-  it("defaults imageUrls to empty array when omitted", () => {
+  it("leaves imageUrls undefined when omitted", () => {
     const result = eventSchema.safeParse(validEvent);
     expect(result.success).toBe(true);
-    if (result.success) expect(result.data.imageUrls).toEqual([]);
+    if (result.success) expect(result.data.imageUrls).toBeUndefined();
   });
 
   it("accepts a populated imageUrls array", () => {
@@ -260,10 +260,10 @@ describe("eventSchema", () => {
 
   // --- isActive default ---
 
-  it("defaults isActive to true when omitted", () => {
+  it("leaves isActive undefined when omitted", () => {
     const result = eventSchema.safeParse(validEvent);
     expect(result.success).toBe(true);
-    if (result.success) expect(result.data.isActive).toBe(true);
+    if (result.success) expect(result.data.isActive).toBeUndefined();
   });
 
   it("allows isActive to be explicitly false", () => {
@@ -277,12 +277,12 @@ describe("eventSchema", () => {
 // brandSchema
 // ---------------------------------------------------------------------------
 describe("brandSchema", () => {
-  it("accepts valid input with only required fields and applies defaults", () => {
+  it("accepts valid input with only required fields", () => {
     const result = brandSchema.safeParse({ name: "BrandX" });
     expect(result.success).toBe(true);
     if (result.success) {
       expect(result.data.name).toBe("BrandX");
-      expect(result.data.isHighlighted).toBe(false);
+      expect(result.data.isHighlighted).toBeUndefined();
     }
   });
 
@@ -372,10 +372,10 @@ describe("brandSchema", () => {
 
   // --- isHighlighted default ---
 
-  it("defaults isHighlighted to false", () => {
+  it("leaves isHighlighted undefined when not provided", () => {
     const result = brandSchema.safeParse({ name: "B" });
     expect(result.success).toBe(true);
-    if (result.success) expect(result.data.isHighlighted).toBe(false);
+    if (result.success) expect(result.data.isHighlighted).toBeUndefined();
   });
 
   it("allows isHighlighted to be explicitly true", () => {
@@ -455,11 +455,11 @@ describe("sessionSchema", () => {
     type: "talk" as const,
   };
 
-  it("accepts valid input with required fields and applies defaults", () => {
+  it("accepts valid input with required fields", () => {
     const result = sessionSchema.safeParse(validSession);
     expect(result.success).toBe(true);
     if (result.success) {
-      expect(result.data.requiresAccess).toBe(false);
+      expect(result.data.requiresAccess).toBeUndefined();
     }
   });
 
@@ -507,10 +507,10 @@ describe("sessionSchema", () => {
     expect(sessionSchema.safeParse({ ...validSession, accessTier: "gold" }).success).toBe(false);
   });
 
-  it("defaults requiresAccess to false", () => {
+  it("leaves requiresAccess undefined when not provided", () => {
     const result = sessionSchema.safeParse(validSession);
     expect(result.success).toBe(true);
-    if (result.success) expect(result.data.requiresAccess).toBe(false);
+    if (result.success) expect(result.data.requiresAccess).toBeUndefined();
   });
 
   it("accepts null for optional nullable fields", () => {
@@ -540,12 +540,12 @@ describe("happeningSchema", () => {
     type: "launch" as const,
   };
 
-  it("accepts valid input with required fields and applies defaults", () => {
+  it("accepts valid input with required fields", () => {
     const result = happeningSchema.safeParse(validHappening);
     expect(result.success).toBe(true);
     if (result.success) {
-      expect(result.data.isHighlighted).toBe(false);
-      expect(result.data.requiresAccess).toBe(false);
+      expect(result.data.isHighlighted).toBeUndefined();
+      expect(result.data.requiresAccess).toBeUndefined();
     }
   });
 
@@ -583,16 +583,16 @@ describe("happeningSchema", () => {
     expect(happeningSchema.safeParse({ ...validHappening, type: "concert" }).success).toBe(false);
   });
 
-  it("defaults isHighlighted to false", () => {
+  it("leaves isHighlighted undefined when not provided", () => {
     const result = happeningSchema.safeParse(validHappening);
     expect(result.success).toBe(true);
-    if (result.success) expect(result.data.isHighlighted).toBe(false);
+    if (result.success) expect(result.data.isHighlighted).toBeUndefined();
   });
 
-  it("defaults requiresAccess to false", () => {
+  it("leaves requiresAccess undefined when not provided", () => {
     const result = happeningSchema.safeParse(validHappening);
     expect(result.success).toBe(true);
-    if (result.success) expect(result.data.requiresAccess).toBe(false);
+    if (result.success) expect(result.data.requiresAccess).toBeUndefined();
   });
 
   it("accepts null for optional nullable fields", () => {
@@ -620,13 +620,13 @@ describe("participantSchema", () => {
     role: "speaker" as const,
   };
 
-  it("accepts valid input with required fields and applies defaults", () => {
+  it("accepts valid input with required fields", () => {
     const result = participantSchema.safeParse(validParticipant);
     expect(result.success).toBe(true);
     if (result.success) {
-      expect(result.data.sessionIds).toEqual([]);
-      expect(result.data.happeningIds).toEqual([]);
-      expect(result.data.isHighlighted).toBe(false);
+      expect(result.data.sessionIds).toBeUndefined();
+      expect(result.data.happeningIds).toBeUndefined();
+      expect(result.data.isHighlighted).toBeUndefined();
     }
   });
 
@@ -739,10 +739,10 @@ describe("participantSchema", () => {
 
   // --- Array defaults ---
 
-  it("defaults sessionIds to empty array", () => {
+  it("leaves sessionIds undefined when not provided", () => {
     const result = participantSchema.safeParse(validParticipant);
     expect(result.success).toBe(true);
-    if (result.success) expect(result.data.sessionIds).toEqual([]);
+    if (result.success) expect(result.data.sessionIds).toBeUndefined();
   });
 
   it("accepts populated sessionIds", () => {
@@ -754,16 +754,16 @@ describe("participantSchema", () => {
     if (result.success) expect(result.data.sessionIds).toEqual(["s1", "s2"]);
   });
 
-  it("defaults happeningIds to empty array", () => {
+  it("leaves happeningIds undefined when not provided", () => {
     const result = participantSchema.safeParse(validParticipant);
     expect(result.success).toBe(true);
-    if (result.success) expect(result.data.happeningIds).toEqual([]);
+    if (result.success) expect(result.data.happeningIds).toBeUndefined();
   });
 
-  it("defaults isHighlighted to false", () => {
+  it("leaves isHighlighted undefined when not provided", () => {
     const result = participantSchema.safeParse(validParticipant);
     expect(result.success).toBe(true);
-    if (result.success) expect(result.data.isHighlighted).toBe(false);
+    if (result.success) expect(result.data.isHighlighted).toBeUndefined();
   });
 });
 
@@ -809,13 +809,13 @@ describe("postSchema", () => {
 // whitelistEntrySchema
 // ---------------------------------------------------------------------------
 describe("whitelistEntrySchema", () => {
-  it("accepts valid email and applies defaults", () => {
+  it("accepts valid email and transforms to lowercase", () => {
     const result = whitelistEntrySchema.safeParse({ email: "Test@Example.com" });
     expect(result.success).toBe(true);
     if (result.success) {
-      expect(result.data.email).toBe("test@example.com"); // transformed to lowercase
-      expect(result.data.accessTier).toBe("regular");
-      expect(result.data.lockedFields).toEqual([]);
+      expect(result.data.email).toBe("test@example.com");
+      expect(result.data.accessTier).toBeUndefined();
+      expect(result.data.lockedFields).toBeUndefined();
     }
   });
 
@@ -847,16 +847,16 @@ describe("whitelistEntrySchema", () => {
     ).toBe(false);
   });
 
-  it("defaults accessTier to regular", () => {
+  it("leaves accessTier undefined when not provided", () => {
     const result = whitelistEntrySchema.safeParse({ email: "a@b.com" });
     expect(result.success).toBe(true);
-    if (result.success) expect(result.data.accessTier).toBe("regular");
+    if (result.success) expect(result.data.accessTier).toBeUndefined();
   });
 
-  it("defaults lockedFields to empty array", () => {
+  it("leaves lockedFields undefined when not provided", () => {
     const result = whitelistEntrySchema.safeParse({ email: "a@b.com" });
     expect(result.success).toBe(true);
-    if (result.success) expect(result.data.lockedFields).toEqual([]);
+    if (result.success) expect(result.data.lockedFields).toBeUndefined();
   });
 
   it("accepts populated lockedFields", () => {

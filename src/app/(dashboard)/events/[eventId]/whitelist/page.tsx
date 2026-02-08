@@ -1,22 +1,13 @@
 "use client";
 
-import { use, useState } from "react";
-import { Plus } from "lucide-react";
+import { useState } from "react";
 import { toast } from "sonner";
 
-import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription,
-} from "@/components/ui/sheet";
-import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-
+import { useValidatedParams } from "@/hooks/use-validated-params";
 import { useCrudPage } from "@/hooks/use-crud-page";
 import { useEventContext } from "@/hooks/use-event-context";
-import { addDocument, updateDocument, queryDocuments } from "@/lib/firestore";
+import { batchUpdateWhitelistAndUser } from "@/lib/firestore";
+import { CrudPage } from "@/components/crud-page";
 import { WhitelistTable } from "@/components/tables/whitelist-table";
 import { WhitelistForm } from "@/components/forms/whitelist-form";
 import type { WhitelistEntry } from "@/types/whitelist-entry";
@@ -26,24 +17,13 @@ export default function WhitelistPage({
 }: {
   params: Promise<{ eventId: string }>;
 }) {
-  const { eventId } = use(params);
+  const { eventId } = useValidatedParams(params);
   const { selectedClientId } = useEventContext();
   const collectionPath = selectedClientId
     ? `clients/${selectedClientId}/events/${eventId}/whitelist`
     : "";
 
-  const {
-    data: entries,
-    loading,
-    sheetOpen,
-    setSheetOpen,
-    editingEntity: editingEntry,
-    deletingEntityId: deletingEntryId,
-    setDeletingEntityId: setDeletingEntryId,
-    handleNew,
-    handleEdit,
-    handleDelete,
-  } = useCrudPage<WhitelistEntry>({
+  const crud = useCrudPage<WhitelistEntry>({
     collectionPath,
     orderByField: "addedAt",
     orderDirection: "desc",
@@ -56,30 +36,16 @@ export default function WhitelistPage({
     if (!collectionPath || !selectedClientId) return;
     setSubmitStatus("saving");
     try {
-      if (editingEntry) {
-        await updateDocument(collectionPath, editingEntry.id, data);
-      } else {
-        await addDocument(collectionPath, data);
-      }
+      const lockedFields = (data.lockedFields as string[] | undefined) ?? [];
 
-      // Sync locked fields to the matching user profile
-      const lockedFields = data.lockedFields as string[] | undefined;
-      if (lockedFields && lockedFields.length > 0) {
-        const usersPath = `clients/${selectedClientId}/events/${eventId}/users`;
-        const email = data.email as string;
-        const matchingUsers = await queryDocuments(usersPath, "email", email);
-        if (matchingUsers.length > 0) {
-          const update: Record<string, unknown> = {};
-          for (const field of lockedFields) {
-            if (field in data) {
-              update[field] = data[field];
-            }
-          }
-          if (Object.keys(update).length > 0) {
-            await updateDocument(usersPath, matchingUsers[0].id, update);
-          }
-        }
-      }
+      await batchUpdateWhitelistAndUser({
+        whitelistPath: collectionPath,
+        whitelistId: crud.editingEntity?.id ?? null,
+        whitelistData: data,
+        usersPath: `clients/${selectedClientId}/events/${eventId}/users`,
+        email: data.email as string,
+        lockedFields,
+      });
 
       setSubmitStatus("success");
     } catch (err) {
@@ -90,68 +56,34 @@ export default function WhitelistPage({
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Whitelist</h1>
-          <p className="text-muted-foreground">Manage pre-approved attendees</p>
-        </div>
-        <Button onClick={handleNew}>
-          <Plus className="mr-2 size-4" />
-          Add Entry
-        </Button>
-      </div>
-
-      {loading ? (
-        <div className="space-y-3">
-          <Skeleton className="h-12 w-full" />
-          <Skeleton className="h-12 w-full" />
-          <Skeleton className="h-12 w-full" />
-        </div>
-      ) : (
-        <WhitelistTable
-          entries={entries}
-          onEdit={handleEdit}
-          onDelete={(id) => setDeletingEntryId(id)}
+    <CrudPage
+      title="Whitelist"
+      description="Manage pre-approved attendees"
+      addButtonLabel="Add Entry"
+      entityName="whitelist entry"
+      deleteTitle="Remove Entry"
+      deleteDescription="Remove this person from the whitelist?"
+      deleteActionLabel="Remove"
+      newDescription="Add a new pre-approved attendee."
+      {...crud}
+      submitStatus={submitStatus}
+      handleSubmit={handleSubmit}
+      renderTable={(entries, onEdit, onDelete) => (
+        <WhitelistTable entries={entries} onEdit={onEdit} onDelete={onDelete} />
+      )}
+      renderForm={({ editingEntity, onSubmit, onCancel, submitStatus: status }) => (
+        <WhitelistForm
+          defaultValues={editingEntity ? {
+            email: editingEntity.email,
+            accessTier: editingEntity.accessTier,
+            company: editingEntity.company ?? null,
+            lockedFields: editingEntity.lockedFields ?? [],
+          } : undefined}
+          onSubmit={onSubmit}
+          onCancel={onCancel}
+          submitStatus={status}
         />
       )}
-
-      <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-        <SheetContent className="overflow-y-auto">
-          <SheetHeader>
-            <SheetTitle>{editingEntry ? "Edit Entry" : "New Whitelist Entry"}</SheetTitle>
-            <SheetDescription>
-              {editingEntry ? "Update the whitelist entry." : "Add a new pre-approved attendee."}
-            </SheetDescription>
-          </SheetHeader>
-          <div className="mt-6">
-            <WhitelistForm
-              defaultValues={editingEntry ? {
-                email: editingEntry.email,
-                accessTier: editingEntry.accessTier,
-                company: editingEntry.company ?? null,
-                lockedFields: editingEntry.lockedFields ?? [],
-              } : undefined}
-              onSubmit={handleSubmit}
-              onCancel={() => setSheetOpen(false)}
-              submitStatus={submitStatus}
-            />
-          </div>
-        </SheetContent>
-      </Sheet>
-
-      <AlertDialog open={!!deletingEntryId} onOpenChange={(open) => !open && setDeletingEntryId(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Remove Entry</AlertDialogTitle>
-            <AlertDialogDescription>Remove this person from the whitelist?</AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete}>Remove</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </div>
+    />
   );
 }

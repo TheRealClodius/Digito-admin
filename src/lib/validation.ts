@@ -11,7 +11,7 @@
  * @param id - The ID to validate
  * @returns true if the ID is valid, false otherwise
  */
-export function isValidFirestoreId(id: any): boolean {
+export function isValidFirestoreId(id: unknown): boolean {
   // Check if it's a string
   if (typeof id !== "string") {
     return false;

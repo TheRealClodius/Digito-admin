@@ -92,8 +92,7 @@ export function SessionForm({
     mode: "onBlur",
   });
 
-  const titleValue = watch("title");
-  const requiresAccessValue = watch("requiresAccess");
+  const [titleValue, requiresAccessValue] = watch(["title", "requiresAccess"]);
 
   const isSubmitDisabled = !titleValue?.trim() || isSubmitting;
 
