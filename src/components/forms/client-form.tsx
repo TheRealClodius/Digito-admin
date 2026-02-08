@@ -2,7 +2,6 @@
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,16 +9,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { ImageUpload } from "@/components/image-upload";
 import { useUpload } from "@/hooks/use-upload";
+import { clientSchema, type ClientFormValues } from "@/lib/schemas";
 
 type SubmitStatus = "idle" | "saving" | "success" | "error";
-
-const clientFormSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  description: z.string().nullable().optional(),
-  logoUrl: z.string().nullable().optional(),
-});
-
-type ClientFormValues = z.infer<typeof clientFormSchema>;
 
 interface ClientFormProps {
   defaultValues?: {
@@ -49,7 +41,7 @@ export function ClientForm({
     setValue,
     formState: { errors },
   } = useForm<ClientFormValues>({
-    resolver: zodResolver(clientFormSchema),
+    resolver: zodResolver(clientSchema),
     defaultValues: {
       name: defaultValues?.name ?? "",
       description: defaultValues?.description ?? "",

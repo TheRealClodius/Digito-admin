@@ -28,8 +28,14 @@ function truncateDescription(
   return description.slice(0, maxLength) + "...";
 }
 
+function toDate(val: unknown): Date {
+  return val && typeof (val as { toDate?: unknown }).toDate === "function"
+    ? (val as { toDate: () => Date }).toDate()
+    : new Date(val as string | number);
+}
+
 function formatDate(client: Client): string {
-  return format(client.createdAt.toDate(), "MMM d, yyyy");
+  return format(toDate(client.createdAt), "MMM d, yyyy");
 }
 
 export function ClientsTable({ clients, onEdit, onDelete }: ClientsTableProps) {
@@ -73,9 +79,7 @@ export function ClientsTable({ clients, onEdit, onDelete }: ClientsTableProps) {
                 <TableCell>
                   {truncateDescription(client.description)}
                 </TableCell>
-                <TableCell
-                  title={formatDate(client)}
-                />
+                <TableCell>{formatDate(client)}</TableCell>
                 <TableCell>
                   <div className="flex items-center">
                     <Button

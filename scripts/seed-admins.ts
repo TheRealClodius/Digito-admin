@@ -5,10 +5,10 @@
  * Prerequisites:
  *   1. Place your Firebase service account key at ./service-account-key.json
  *      (download from Firebase Console → Project Settings → Service Accounts)
- *   2. Both users should have signed in at least once (accounts must exist in Firebase Auth)
+ *   2. All admin users should have signed in at least once (accounts must exist in Firebase Auth)
  *
  * Usage:
- *   npx tsx scripts/seed-admins.ts
+ *   ADMIN_EMAILS=admin1@example.com,admin2@example.com npx tsx scripts/seed-admins.ts
  */
 
 import { initializeApp, cert } from "firebase-admin/app";
@@ -19,10 +19,18 @@ import { resolve } from "path";
 
 const SERVICE_ACCOUNT_PATH = resolve(process.cwd(), "service-account-key.json");
 
-const ADMIN_EMAILS = [
-  "andrei.clodius@goodgest.com",
-  "ga.ibba@goodgest.com",
-];
+// Read admin emails from environment variable
+// Format: ADMIN_EMAILS=email1@example.com,email2@example.com
+const adminEmailsEnv = process.env.ADMIN_EMAILS;
+if (!adminEmailsEnv) {
+  console.error(
+    "ERROR: ADMIN_EMAILS environment variable is not set.\n" +
+    "Usage: ADMIN_EMAILS=admin@example.com,admin2@example.com npx tsx scripts/seed-admins.ts"
+  );
+  process.exit(1);
+}
+
+const ADMIN_EMAILS = adminEmailsEnv.split(",").map((email) => email.trim()).filter(Boolean);
 
 let serviceAccount: object;
 try {

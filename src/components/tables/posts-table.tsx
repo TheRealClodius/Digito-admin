@@ -29,8 +29,14 @@ function truncateDescription(
   return description.slice(0, maxLength) + "...";
 }
 
+function toDate(val: unknown): Date {
+  return val && typeof (val as { toDate?: unknown }).toDate === "function"
+    ? (val as { toDate: () => Date }).toDate()
+    : new Date(val as string | number);
+}
+
 function formatDate(post: Post): string {
-  return format(post.createdAt.toDate(), "MMM d, yyyy");
+  return format(toDate(post.createdAt), "MMM d, yyyy");
 }
 
 export function PostsTable({ posts, onEdit, onDelete }: PostsTableProps) {

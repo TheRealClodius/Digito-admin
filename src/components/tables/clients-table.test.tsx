@@ -121,8 +121,30 @@ describe("ClientsTable", () => {
       );
 
       // The component should render the date in some human-readable format.
-      // We check that the year and some part of the date appear.
-      expect(screen.getByText(/2025/)).toBeInTheDocument();
+      // We check that the year and some part of the date appear (in multiple places).
+      expect(screen.getAllByText(/2025/).length).toBeGreaterThan(0);
+    });
+
+    it("displays the created date as visible text in the Created column cell", () => {
+      const client = makeClient({
+        id: "c-date-visible",
+        name: "Date Visible Test",
+        createdAt: { toDate: () => new Date("2025-01-10T00:00:00Z") },
+      });
+
+      render(
+        <ClientsTable clients={[client]} onEdit={vi.fn()} onDelete={vi.fn()} />
+      );
+
+      // Find the row for this client
+      const row = screen.getByText("Date Visible Test").closest("tr")!;
+      const cells = within(row).getAllByRole("cell");
+
+      // The Created column is the 3rd column (index 2)
+      const createdCell = cells[2];
+
+      // The date text should be visible in the cell, not just in a title attribute
+      expect(createdCell).toHaveTextContent(/Jan 10, 2025/);
     });
   });
 

@@ -26,7 +26,7 @@ import {
 } from "@/components/ui/alert-dialog";
 
 import { useCollection } from "@/hooks/use-collection";
-import { addDocument, updateDocument, deleteDocument } from "@/lib/firestore";
+import { addDocument, updateDocument, deleteEventCascade } from "@/lib/firestore";
 import { EventsTable } from "@/components/tables/events-table";
 import { EventForm } from "@/components/forms/event-form";
 import type { Event } from "@/types/event";
@@ -98,7 +98,7 @@ export default function EventsPage({
   async function handleDelete() {
     if (!deletingEventId) return;
     try {
-      await deleteDocument(collectionPath, deletingEventId);
+      await deleteEventCascade(collectionPath, deletingEventId);
       toast.success("Event deleted");
     } catch (err) {
       toast.error("Failed to delete event");

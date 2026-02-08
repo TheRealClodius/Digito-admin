@@ -1,8 +1,7 @@
 "use client";
 
-import { use, useState } from "react";
+import { use } from "react";
 import { Plus } from "lucide-react";
-import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -14,9 +13,8 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-import { useCollection } from "@/hooks/use-collection";
+import { useCrudPage } from "@/hooks/use-crud-page";
 import { useEventContext } from "@/hooks/use-event-context";
-import { addDocument, updateDocument, deleteDocument } from "@/lib/firestore";
 import { PostsTable } from "@/components/tables/posts-table";
 import { PostForm } from "@/components/forms/post-form";
 import type { Post } from "@/types/post";
@@ -32,45 +30,23 @@ export default function PostsPage({
     ? `clients/${selectedClientId}/events/${eventId}/posts`
     : "";
 
-  const { data: posts, loading } = useCollection<Post>({ path: collectionPath });
-
-  const [sheetOpen, setSheetOpen] = useState(false);
-  const [editingPost, setEditingPost] = useState<Post | null>(null);
-  const [deletingPostId, setDeletingPostId] = useState<string | null>(null);
-  const [submitStatus, setSubmitStatus] = useState<"idle" | "saving" | "success" | "error">("idle");
-
-  function handleNew() { setEditingPost(null); setSubmitStatus("idle"); setSheetOpen(true); }
-  function handleEdit(post: Post) { setEditingPost(post); setSubmitStatus("idle"); setSheetOpen(true); }
-
-  async function handleSubmit(data: Record<string, unknown>) {
-    if (!collectionPath) return;
-    setSubmitStatus("saving");
-    try {
-      if (editingPost) {
-        await updateDocument(collectionPath, editingPost.id, data);
-      } else {
-        await addDocument(collectionPath, data);
-      }
-      setSubmitStatus("success");
-    } catch (err) {
-      setSubmitStatus("error");
-      toast.error("Failed to save post");
-      console.error(err);
-    }
-  }
-
-  async function handleDelete() {
-    if (!deletingPostId || !collectionPath) return;
-    try {
-      await deleteDocument(collectionPath, deletingPostId);
-      toast.success("Post deleted");
-    } catch (err) {
-      toast.error("Failed to delete post");
-      console.error(err);
-    } finally {
-      setDeletingPostId(null);
-    }
-  }
+  const {
+    data: posts,
+    loading,
+    sheetOpen,
+    setSheetOpen,
+    editingEntity: editingPost,
+    deletingEntityId: deletingPostId,
+    setDeletingEntityId: setDeletingPostId,
+    submitStatus,
+    handleNew,
+    handleEdit,
+    handleSubmit,
+    handleDelete,
+  } = useCrudPage<Post>({
+    collectionPath,
+    entityName: "post",
+  });
 
   return (
     <div className="space-y-6">

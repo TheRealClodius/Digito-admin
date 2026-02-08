@@ -1,8 +1,6 @@
 "use client";
 
-import { useState } from "react";
 import { Plus } from "lucide-react";
-import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -24,64 +22,33 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-import { useCollection } from "@/hooks/use-collection";
-import { addDocument, updateDocument, deleteDocument } from "@/lib/firestore";
+import { useCrudPage } from "@/hooks/use-crud-page";
+import { deleteClientCascade } from "@/lib/firestore";
 import { ClientsTable } from "@/components/tables/clients-table";
 import { ClientForm } from "@/components/forms/client-form";
 import type { Client } from "@/types/client";
 
 export default function ClientsPage() {
-  const { data: clients, loading } = useCollection<Client>({
-    path: "clients",
+  const {
+    data: clients,
+    loading,
+    sheetOpen,
+    setSheetOpen,
+    editingEntity: editingClient,
+    deletingEntityId: deletingClientId,
+    setDeletingEntityId: setDeletingClientId,
+    submitStatus,
+    handleNew,
+    handleEdit,
+    handleSubmit,
+    handleDelete,
+  } = useCrudPage<Client>({
+    collectionPath: "clients",
     orderByField: "name",
     orderDirection: "asc",
+    entityName: "client",
+    onDelete: (id) => deleteClientCascade(id),
   });
-
-  const [sheetOpen, setSheetOpen] = useState(false);
-  const [editingClient, setEditingClient] = useState<Client | null>(null);
-  const [deletingClientId, setDeletingClientId] = useState<string | null>(null);
-  const [submitStatus, setSubmitStatus] = useState<"idle" | "saving" | "success" | "error">("idle");
-
-  function handleNew() {
-    setEditingClient(null);
-    setSubmitStatus("idle");
-    setSheetOpen(true);
-  }
-
-  function handleEdit(client: Client) {
-    setEditingClient(client);
-    setSubmitStatus("idle");
-    setSheetOpen(true);
-  }
-
-  async function handleSubmit(data: { name: string; description?: string | null; logoUrl?: string | null }) {
-    setSubmitStatus("saving");
-    try {
-      if (editingClient) {
-        await updateDocument("clients", editingClient.id, data);
-      } else {
-        await addDocument("clients", data);
-      }
-      setSubmitStatus("success");
-    } catch (err) {
-      setSubmitStatus("error");
-      toast.error("Failed to save client");
-      console.error(err);
-    }
-  }
-
-  async function handleDelete() {
-    if (!deletingClientId) return;
-    try {
-      await deleteDocument("clients", deletingClientId);
-      toast.success("Client deleted");
-    } catch (err) {
-      toast.error("Failed to delete client");
-      console.error(err);
-    } finally {
-      setDeletingClientId(null);
-    }
-  }
 
   return (
     <div className="space-y-6">
@@ -112,7 +79,6 @@ export default function ClientsPage() {
         />
       )}
 
-      {/* Create / Edit Sheet */}
       <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
         <SheetContent className="overflow-y-auto">
           <SheetHeader>
@@ -143,7 +109,6 @@ export default function ClientsPage() {
         </SheetContent>
       </Sheet>
 
-      {/* Delete Confirmation */}
       <AlertDialog
         open={!!deletingClientId}
         onOpenChange={(open) => !open && setDeletingClientId(null)}

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from "firebase/storage";
 import { storage } from "@/lib/firebase";
+import { sanitizeFilename } from "@/lib/validation";
 
 interface UseUploadOptions {
   basePath: string;
@@ -14,7 +15,7 @@ export function useUpload({ basePath }: UseUploadOptions) {
   const [error, setError] = useState<Error | null>(null);
 
   async function upload(file: File, filename?: string): Promise<string> {
-    const name = filename || file.name;
+    const name = sanitizeFilename(filename || file.name);
     const storageRef = ref(storage, `${basePath}/${name}`);
 
     setUploading(true);

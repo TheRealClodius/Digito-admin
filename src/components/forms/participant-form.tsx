@@ -2,7 +2,6 @@
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { ImageUpload } from "@/components/image-upload";
 import { useUpload } from "@/hooks/use-upload";
+import { participantSchema, type ParticipantFormValues } from "@/lib/schemas";
 
 type SubmitStatus = "idle" | "saving" | "success" | "error";
 
@@ -22,22 +22,6 @@ const ROLE_OPTIONS = [
   "performer",
   "other",
 ] as const;
-
-const participantFormSchema = z.object({
-  firstName: z.string().min(1, "First name is required"),
-  lastName: z.string().min(1, "Last name is required"),
-  email: z.string().nullable().optional(),
-  role: z.enum(ROLE_OPTIONS),
-  company: z.string().nullable().optional(),
-  title: z.string().nullable().optional(),
-  bio: z.string().nullable().optional(),
-  avatarUrl: z.string().nullable().optional(),
-  websiteUrl: z.string().nullable().optional(),
-  linkedinUrl: z.string().nullable().optional(),
-  isHighlighted: z.boolean(),
-});
-
-type ParticipantFormValues = z.infer<typeof participantFormSchema>;
 
 interface ParticipantFormProps {
   defaultValues?: {
@@ -75,7 +59,7 @@ export function ParticipantForm({
     setValue,
     formState: { errors },
   } = useForm<ParticipantFormValues>({
-    resolver: zodResolver(participantFormSchema),
+    resolver: zodResolver(participantSchema),
     defaultValues: {
       firstName: defaultValues?.firstName ?? "",
       lastName: defaultValues?.lastName ?? "",

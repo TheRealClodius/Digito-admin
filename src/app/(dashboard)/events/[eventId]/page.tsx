@@ -9,14 +9,9 @@ import {
   ListChecks,
 } from "lucide-react";
 import { StatsCard } from "@/components/stats-card";
-import { useCollection } from "@/hooks/use-collection";
+import { useCollectionCount } from "@/hooks/use-collection-count";
 import { useEventContext } from "@/hooks/use-event-context";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { Brand } from "@/types/brand";
-import type { Session } from "@/types/session";
-import type { Happening } from "@/types/happening";
-import type { Participant } from "@/types/participant";
-import type { WhitelistEntry } from "@/types/whitelist-entry";
 
 export default function EventOverviewPage({
   params,
@@ -29,19 +24,19 @@ export default function EventOverviewPage({
     ? `clients/${selectedClientId}/events/${eventId}`
     : "";
 
-  const { data: brands, loading: brandsLoading } = useCollection<Brand & { id: string }>({
+  const { count: brandsCount, loading: brandsLoading } = useCollectionCount({
     path: basePath ? `${basePath}/brands` : "",
   });
-  const { data: sessions, loading: sessionsLoading } = useCollection<Session & { id: string }>({
+  const { count: sessionsCount, loading: sessionsLoading } = useCollectionCount({
     path: basePath ? `${basePath}/sessions` : "",
   });
-  const { data: happenings, loading: happeningsLoading } = useCollection<Happening & { id: string }>({
+  const { count: happeningsCount, loading: happeningsLoading } = useCollectionCount({
     path: basePath ? `${basePath}/happenings` : "",
   });
-  const { data: participants, loading: participantsLoading } = useCollection<Participant & { id: string }>({
+  const { count: participantsCount, loading: participantsLoading } = useCollectionCount({
     path: basePath ? `${basePath}/participants` : "",
   });
-  const { data: whitelist, loading: whitelistLoading } = useCollection<WhitelistEntry & { id: string }>({
+  const { count: whitelistCount, loading: whitelistLoading } = useCollectionCount({
     path: basePath ? `${basePath}/whitelist` : "",
   });
   const isLoading =
@@ -80,27 +75,27 @@ export default function EventOverviewPage({
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           <StatsCard
             title="Total Brands"
-            value={brands.length}
+            value={brandsCount}
             icon={ShoppingBag}
           />
           <StatsCard
             title="Total Sessions"
-            value={sessions.length}
+            value={sessionsCount}
             icon={Mic2}
           />
           <StatsCard
             title="Total Happenings"
-            value={happenings.length}
+            value={happeningsCount}
             icon={Sparkles}
           />
           <StatsCard
             title="Participants"
-            value={participants.length}
+            value={participantsCount}
             icon={Users}
           />
           <StatsCard
             title="Whitelisted"
-            value={whitelist.length}
+            value={whitelistCount}
             icon={ListChecks}
           />
         </div>

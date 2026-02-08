@@ -1,9 +1,8 @@
 "use client";
 
-import { use, useState } from "react";
+import { use } from "react";
 import { Plus } from "lucide-react";
 import { Timestamp } from "firebase/firestore";
-import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -15,9 +14,8 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-import { useCollection } from "@/hooks/use-collection";
+import { useCrudPage } from "@/hooks/use-crud-page";
 import { useEventContext } from "@/hooks/use-event-context";
-import { addDocument, updateDocument, deleteDocument } from "@/lib/firestore";
 import { SessionsTable } from "@/components/tables/sessions-table";
 import { SessionForm } from "@/components/forms/session-form";
 import type { Session } from "@/types/session";
@@ -33,54 +31,30 @@ export default function SessionsPage({
     ? `clients/${selectedClientId}/events/${eventId}/sessions`
     : "";
 
-  const { data: sessions, loading } = useCollection<Session>({
-    path: collectionPath,
+  const {
+    data: sessions,
+    loading,
+    sheetOpen,
+    setSheetOpen,
+    editingEntity: editingSession,
+    deletingEntityId: deletingSessionId,
+    setDeletingEntityId: setDeletingSessionId,
+    submitStatus,
+    handleNew,
+    handleEdit,
+    handleSubmit,
+    handleDelete,
+  } = useCrudPage<Session>({
+    collectionPath,
     orderByField: "startTime",
     orderDirection: "asc",
+    entityName: "session",
+    dataTransformer: (data) => ({
+      ...data,
+      startTime: data.startTime instanceof Date ? Timestamp.fromDate(data.startTime) : data.startTime,
+      endTime: data.endTime instanceof Date ? Timestamp.fromDate(data.endTime) : data.endTime,
+    }),
   });
-
-  const [sheetOpen, setSheetOpen] = useState(false);
-  const [editingSession, setEditingSession] = useState<Session | null>(null);
-  const [deletingSessionId, setDeletingSessionId] = useState<string | null>(null);
-  const [submitStatus, setSubmitStatus] = useState<"idle" | "saving" | "success" | "error">("idle");
-
-  function handleNew() { setEditingSession(null); setSubmitStatus("idle"); setSheetOpen(true); }
-  function handleEdit(session: Session) { setEditingSession(session); setSubmitStatus("idle"); setSheetOpen(true); }
-
-  async function handleSubmit(data: Record<string, unknown>) {
-    if (!collectionPath) return;
-    setSubmitStatus("saving");
-    try {
-      const firestoreData = {
-        ...data,
-        startTime: data.startTime instanceof Date ? Timestamp.fromDate(data.startTime) : data.startTime,
-        endTime: data.endTime instanceof Date ? Timestamp.fromDate(data.endTime) : data.endTime,
-      };
-      if (editingSession) {
-        await updateDocument(collectionPath, editingSession.id, firestoreData);
-      } else {
-        await addDocument(collectionPath, firestoreData);
-      }
-      setSubmitStatus("success");
-    } catch (err) {
-      setSubmitStatus("error");
-      toast.error("Failed to save session");
-      console.error(err);
-    }
-  }
-
-  async function handleDelete() {
-    if (!deletingSessionId || !collectionPath) return;
-    try {
-      await deleteDocument(collectionPath, deletingSessionId);
-      toast.success("Session deleted");
-    } catch (err) {
-      toast.error("Failed to delete session");
-      console.error(err);
-    } finally {
-      setDeletingSessionId(null);
-    }
-  }
 
   return (
     <div className="space-y-6">

@@ -4,10 +4,12 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
 import { useAdminCheck } from "@/hooks/use-admin-check";
+import { signOut } from "@/lib/auth";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import { Header } from "@/components/layout/header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { ErrorBoundary } from "@/components/error-boundary";
 
 export default function DashboardLayout({
   children,
@@ -36,7 +38,7 @@ export default function DashboardLayout({
     if (!user) {
       router.push("/login");
     } else if (isAdmin === false) {
-      router.push("/unauthorized");
+      signOut().then(() => router.push("/unauthorized"));
     }
   }, [user, isAdmin, authLoading, adminLoading, router]);
 
@@ -67,7 +69,9 @@ export default function DashboardLayout({
         )}
       >
         <Header />
-        <main className="flex-1 overflow-auto p-6 pt-20">{children}</main>
+        <main className="flex-1 overflow-auto p-6 pt-20">
+          <ErrorBoundary>{children}</ErrorBoundary>
+        </main>
       </div>
     </div>
   );

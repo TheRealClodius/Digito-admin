@@ -58,7 +58,7 @@ export function useCollection<T extends DocumentData & { id: string }>({
     );
 
     return unsubscribe;
-  }, [path, orderByField, orderDirection]);
+  }, [path, orderByField, orderDirection, JSON.stringify(constraints)]);
 
   return { data, loading, error };
 }

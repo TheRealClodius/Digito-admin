@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { signIn, signInWithGoogle, checkSuperAdmin } from "@/lib/auth";
+import { signIn, signInWithGoogle, checkSuperAdmin, signOut } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -25,6 +25,7 @@ export default function LoginPage() {
       const isAdmin = await checkSuperAdmin(user);
 
       if (!isAdmin) {
+        await signOut();
         router.push("/unauthorized");
         return;
       }
@@ -47,6 +48,7 @@ export default function LoginPage() {
       const isAdmin = await checkSuperAdmin(user);
 
       if (!isAdmin) {
+        await signOut();
         router.push("/unauthorized");
         return;
       }

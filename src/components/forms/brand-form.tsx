@@ -2,7 +2,6 @@
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,33 +10,12 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { ImageUpload } from "@/components/image-upload";
 import { useUpload } from "@/hooks/use-upload";
+import { brandSchema, type BrandFormValues } from "@/lib/schemas";
 
 type SubmitStatus = "idle" | "saving" | "success" | "error";
 
-const brandFormSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  description: z.string().nullable().optional(),
-  logoUrl: z.string().nullable().optional(),
-  imageUrl: z.string().nullable().optional(),
-  websiteUrl: z.string().nullable().optional(),
-  instagramUrl: z.string().nullable().optional(),
-  stallNumber: z.string().nullable().optional(),
-  isHighlighted: z.boolean().optional(),
-});
-
-type BrandFormValues = z.infer<typeof brandFormSchema>;
-
 interface BrandFormProps {
-  defaultValues?: {
-    name?: string;
-    description?: string | null;
-    logoUrl?: string | null;
-    imageUrl?: string | null;
-    websiteUrl?: string | null;
-    instagramUrl?: string | null;
-    stallNumber?: string | null;
-    isHighlighted?: boolean;
-  };
+  defaultValues?: Partial<BrandFormValues>;
   onSubmit: (data: BrandFormValues) => void;
   onCancel: () => void;
   submitStatus?: SubmitStatus;
@@ -59,16 +37,16 @@ export function BrandForm({
     watch,
     setValue,
     formState: { errors },
-  } = useForm<BrandFormValues>({
-    resolver: zodResolver(brandFormSchema),
+  } = useForm({
+    resolver: zodResolver(brandSchema),
     defaultValues: {
       name: defaultValues?.name ?? "",
-      description: defaultValues?.description ?? "",
-      logoUrl: defaultValues?.logoUrl ?? "",
-      imageUrl: defaultValues?.imageUrl ?? "",
+      description: defaultValues?.description ?? null,
+      logoUrl: defaultValues?.logoUrl ?? null,
+      imageUrl: defaultValues?.imageUrl ?? null,
       websiteUrl: defaultValues?.websiteUrl ?? "",
       instagramUrl: defaultValues?.instagramUrl ?? "",
-      stallNumber: defaultValues?.stallNumber ?? "",
+      stallNumber: defaultValues?.stallNumber ?? null,
       isHighlighted: defaultValues?.isHighlighted ?? false,
     },
     mode: "onTouched",
@@ -110,12 +88,18 @@ export function BrandForm({
 
       <div className="space-y-2">
         <Label htmlFor="websiteUrl">Website URL</Label>
-        <Input id="websiteUrl" {...register("websiteUrl")} />
+        <Input id="websiteUrl" {...register("websiteUrl")} type="url" />
+        {errors.websiteUrl && (
+          <p className="text-sm text-destructive">{errors.websiteUrl.message}</p>
+        )}
       </div>
 
       <div className="space-y-2">
         <Label htmlFor="instagramUrl">Instagram URL</Label>
-        <Input id="instagramUrl" {...register("instagramUrl")} />
+        <Input id="instagramUrl" {...register("instagramUrl")} type="url" />
+        {errors.instagramUrl && (
+          <p className="text-sm text-destructive">{errors.instagramUrl.message}</p>
+        )}
       </div>
 
       <div className="space-y-2">

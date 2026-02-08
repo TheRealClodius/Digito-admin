@@ -7,11 +7,13 @@ import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { whitelistEntrySchema, type WhitelistEntryFormValues } from "@/lib/schemas";
 
 type SubmitStatus = "idle" | "saving" | "success" | "error";
 
+// Form schema with string input for lockedFields (comma-separated)
 const whitelistFormSchema = z.object({
-  email: z.string().min(1, "Email is required").email("Please enter a valid email address"),
+  email: z.string().email("Valid email is required"),
   accessTier: z.enum(["regular", "premium", "vip", "staff"]),
   company: z.string().optional(),
   lockedFields: z.string().optional(),

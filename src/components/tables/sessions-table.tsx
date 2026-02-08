@@ -66,8 +66,12 @@ export function SessionsTable({
         </TableHeader>
         <TableBody>
           {sessions.map((session) => {
-            const startTime = session.startTime.toDate();
-            const endTime = session.endTime.toDate();
+            const toDate = (val: unknown): Date =>
+              val && typeof (val as { toDate?: unknown }).toDate === "function"
+                ? (val as { toDate: () => Date }).toDate()
+                : new Date(val as string | number);
+            const startTime = toDate(session.startTime);
+            const endTime = toDate(session.endTime);
 
             return (
               <TableRow key={session.id}>

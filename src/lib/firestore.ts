@@ -26,6 +26,7 @@ export async function addDocument(path: string, data: Record<string, unknown>) {
 
 /**
  * Update an existing document (merge mode — only overwrites provided fields).
+ * Automatically adds an `updatedAt` server timestamp.
  */
 export async function updateDocument(
   path: string,
@@ -33,7 +34,14 @@ export async function updateDocument(
   data: Record<string, unknown>
 ) {
   const docRef = doc(db, path, id);
-  await setDoc(docRef, data, { merge: true });
+  await setDoc(
+    docRef,
+    {
+      ...data,
+      updatedAt: serverTimestamp(),
+    },
+    { merge: true }
+  );
 }
 
 /**
@@ -42,6 +50,51 @@ export async function updateDocument(
 export async function deleteDocument(path: string, id: string) {
   const docRef = doc(db, path, id);
   await deleteDoc(docRef);
+}
+
+const EVENT_SUBCOLLECTIONS = [
+  "brands",
+  "sessions",
+  "happenings",
+  "participants",
+  "posts",
+  "whitelist",
+  "stands",
+  "users",
+];
+
+/**
+ * Delete an event and all its subcollection documents.
+ */
+export async function deleteEventCascade(eventsPath: string, eventId: string) {
+  const eventDocPath = `${eventsPath}/${eventId}`;
+
+  for (const sub of EVENT_SUBCOLLECTIONS) {
+    const subColRef = collection(db, `${eventDocPath}/${sub}`);
+    const snapshot = await getDocs(subColRef);
+    for (const docSnap of snapshot.docs) {
+      await deleteDoc(docSnap.ref);
+    }
+  }
+
+  const eventRef = doc(db, eventsPath, eventId);
+  await deleteDoc(eventRef);
+}
+
+/**
+ * Delete a client and all its events (with cascade).
+ */
+export async function deleteClientCascade(clientId: string) {
+  const eventsPath = `clients/${clientId}/events`;
+  const eventsColRef = collection(db, eventsPath);
+  const eventsSnapshot = await getDocs(eventsColRef);
+
+  for (const eventDoc of eventsSnapshot.docs) {
+    await deleteEventCascade(eventsPath, eventDoc.id);
+  }
+
+  const clientRef = doc(db, "clients", clientId);
+  await deleteDoc(clientRef);
 }
 
 /**

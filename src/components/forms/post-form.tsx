@@ -2,7 +2,6 @@
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -10,17 +9,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ImageUpload } from "@/components/image-upload";
 import { useUpload } from "@/hooks/use-upload";
+import { postSchema, type PostFormValues } from "@/lib/schemas";
 
 type SubmitStatus = "idle" | "saving" | "success" | "error";
-
-const postFormSchema = z.object({
-  imageUrl: z.string().min(1, "Image is required"),
-  description: z.string().nullable().optional(),
-  authorName: z.string().nullable().optional(),
-  authorAvatarUrl: z.string().nullable().optional(),
-});
-
-type PostFormValues = z.infer<typeof postFormSchema>;
 
 interface PostFormProps {
   defaultValues?: {
@@ -51,7 +42,7 @@ export function PostForm({
     setValue,
     formState: { errors },
   } = useForm<PostFormValues>({
-    resolver: zodResolver(postFormSchema),
+    resolver: zodResolver(postSchema),
     defaultValues: {
       imageUrl: defaultValues?.imageUrl ?? "",
       description: defaultValues?.description ?? "",

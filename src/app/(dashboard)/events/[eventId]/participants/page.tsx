@@ -1,8 +1,7 @@
 "use client";
 
-import { use, useState } from "react";
+import { use } from "react";
 import { Plus } from "lucide-react";
-import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -14,9 +13,8 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-import { useCollection } from "@/hooks/use-collection";
+import { useCrudPage } from "@/hooks/use-crud-page";
 import { useEventContext } from "@/hooks/use-event-context";
-import { addDocument, updateDocument, deleteDocument } from "@/lib/firestore";
 import { ParticipantsTable } from "@/components/tables/participants-table";
 import { ParticipantForm } from "@/components/forms/participant-form";
 import type { Participant } from "@/types/participant";
@@ -32,49 +30,25 @@ export default function ParticipantsPage({
     ? `clients/${selectedClientId}/events/${eventId}/participants`
     : "";
 
-  const { data: participants, loading } = useCollection<Participant>({
-    path: collectionPath,
+  const {
+    data: participants,
+    loading,
+    sheetOpen,
+    setSheetOpen,
+    editingEntity: editingParticipant,
+    deletingEntityId: deletingParticipantId,
+    setDeletingEntityId: setDeletingParticipantId,
+    submitStatus,
+    handleNew,
+    handleEdit,
+    handleSubmit,
+    handleDelete,
+  } = useCrudPage<Participant>({
+    collectionPath,
     orderByField: "lastName",
     orderDirection: "asc",
+    entityName: "participant",
   });
-
-  const [sheetOpen, setSheetOpen] = useState(false);
-  const [editingParticipant, setEditingParticipant] = useState<Participant | null>(null);
-  const [deletingParticipantId, setDeletingParticipantId] = useState<string | null>(null);
-  const [submitStatus, setSubmitStatus] = useState<"idle" | "saving" | "success" | "error">("idle");
-
-  function handleNew() { setEditingParticipant(null); setSubmitStatus("idle"); setSheetOpen(true); }
-  function handleEdit(participant: Participant) { setEditingParticipant(participant); setSubmitStatus("idle"); setSheetOpen(true); }
-
-  async function handleSubmit(data: Record<string, unknown>) {
-    if (!collectionPath) return;
-    setSubmitStatus("saving");
-    try {
-      if (editingParticipant) {
-        await updateDocument(collectionPath, editingParticipant.id, data);
-      } else {
-        await addDocument(collectionPath, data);
-      }
-      setSubmitStatus("success");
-    } catch (err) {
-      setSubmitStatus("error");
-      toast.error("Failed to save participant");
-      console.error(err);
-    }
-  }
-
-  async function handleDelete() {
-    if (!deletingParticipantId || !collectionPath) return;
-    try {
-      await deleteDocument(collectionPath, deletingParticipantId);
-      toast.success("Participant deleted");
-    } catch (err) {
-      toast.error("Failed to delete participant");
-      console.error(err);
-    } finally {
-      setDeletingParticipantId(null);
-    }
-  }
 
   return (
     <div className="space-y-6">

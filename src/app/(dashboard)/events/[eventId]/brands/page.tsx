@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState } from "react";
+import { use } from "react";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
 
@@ -14,9 +14,9 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-import { useCollection } from "@/hooks/use-collection";
+import { useCrudPage } from "@/hooks/use-crud-page";
 import { useEventContext } from "@/hooks/use-event-context";
-import { addDocument, updateDocument, deleteDocument } from "@/lib/firestore";
+import { updateDocument } from "@/lib/firestore";
 import { BrandsTable } from "@/components/tables/brands-table";
 import { BrandForm } from "@/components/forms/brand-form";
 import type { Brand } from "@/types/brand";
@@ -32,36 +32,25 @@ export default function BrandsPage({
     ? `clients/${selectedClientId}/events/${eventId}/brands`
     : "";
 
-  const { data: brands, loading } = useCollection<Brand>({
-    path: collectionPath,
+  const {
+    data: brands,
+    loading,
+    sheetOpen,
+    setSheetOpen,
+    editingEntity: editingBrand,
+    deletingEntityId: deletingBrandId,
+    setDeletingEntityId: setDeletingBrandId,
+    submitStatus,
+    handleNew,
+    handleEdit,
+    handleSubmit,
+    handleDelete,
+  } = useCrudPage<Brand>({
+    collectionPath,
     orderByField: "name",
     orderDirection: "asc",
+    entityName: "brand",
   });
-
-  const [sheetOpen, setSheetOpen] = useState(false);
-  const [editingBrand, setEditingBrand] = useState<Brand | null>(null);
-  const [deletingBrandId, setDeletingBrandId] = useState<string | null>(null);
-  const [submitStatus, setSubmitStatus] = useState<"idle" | "saving" | "success" | "error">("idle");
-
-  function handleNew() { setEditingBrand(null); setSubmitStatus("idle"); setSheetOpen(true); }
-  function handleEdit(brand: Brand) { setEditingBrand(brand); setSubmitStatus("idle"); setSheetOpen(true); }
-
-  async function handleSubmit(data: Record<string, unknown>) {
-    if (!collectionPath) return;
-    setSubmitStatus("saving");
-    try {
-      if (editingBrand) {
-        await updateDocument(collectionPath, editingBrand.id, data);
-      } else {
-        await addDocument(collectionPath, data);
-      }
-      setSubmitStatus("success");
-    } catch (err) {
-      setSubmitStatus("error");
-      toast.error("Failed to save brand");
-      console.error(err);
-    }
-  }
 
   async function handleToggleHighlighted(brandId: string, isHighlighted: boolean) {
     if (!collectionPath) return;
@@ -71,19 +60,6 @@ export default function BrandsPage({
     } catch (err) {
       toast.error("Failed to update brand");
       console.error(err);
-    }
-  }
-
-  async function handleDelete() {
-    if (!deletingBrandId || !collectionPath) return;
-    try {
-      await deleteDocument(collectionPath, deletingBrandId);
-      toast.success("Brand deleted");
-    } catch (err) {
-      toast.error("Failed to delete brand");
-      console.error(err);
-    } finally {
-      setDeletingBrandId(null);
     }
   }
 

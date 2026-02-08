@@ -1,9 +1,8 @@
 "use client";
 
-import { use, useState } from "react";
+import { use } from "react";
 import { Plus } from "lucide-react";
 import { Timestamp } from "firebase/firestore";
-import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -15,12 +14,17 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-import { useCollection } from "@/hooks/use-collection";
+import { useCrudPage } from "@/hooks/use-crud-page";
 import { useEventContext } from "@/hooks/use-event-context";
-import { addDocument, updateDocument, deleteDocument } from "@/lib/firestore";
 import { HappeningsTable } from "@/components/tables/happenings-table";
 import { HappeningForm } from "@/components/forms/happening-form";
 import type { Happening } from "@/types/happening";
+
+const toTimestamp = (val: unknown): Timestamp | unknown => {
+  if (val instanceof Date) return Timestamp.fromDate(val);
+  if (typeof val === "string" && val) return Timestamp.fromDate(new Date(val));
+  return val;
+};
 
 export default function HappeningsPage({
   params,
@@ -33,59 +37,30 @@ export default function HappeningsPage({
     ? `clients/${selectedClientId}/events/${eventId}/happenings`
     : "";
 
-  const { data: happenings, loading } = useCollection<Happening>({
-    path: collectionPath,
+  const {
+    data: happenings,
+    loading,
+    sheetOpen,
+    setSheetOpen,
+    editingEntity: editingHappening,
+    deletingEntityId: deletingHappeningId,
+    setDeletingEntityId: setDeletingHappeningId,
+    submitStatus,
+    handleNew,
+    handleEdit,
+    handleSubmit,
+    handleDelete,
+  } = useCrudPage<Happening>({
+    collectionPath,
     orderByField: "startTime",
     orderDirection: "asc",
+    entityName: "happening",
+    dataTransformer: (data) => ({
+      ...data,
+      startTime: toTimestamp(data.startTime),
+      endTime: toTimestamp(data.endTime),
+    }),
   });
-
-  const [sheetOpen, setSheetOpen] = useState(false);
-  const [editingHappening, setEditingHappening] = useState<Happening | null>(null);
-  const [deletingHappeningId, setDeletingHappeningId] = useState<string | null>(null);
-  const [submitStatus, setSubmitStatus] = useState<"idle" | "saving" | "success" | "error">("idle");
-
-  function handleNew() { setEditingHappening(null); setSubmitStatus("idle"); setSheetOpen(true); }
-  function handleEdit(happening: Happening) { setEditingHappening(happening); setSubmitStatus("idle"); setSheetOpen(true); }
-
-  async function handleSubmit(data: Record<string, unknown>) {
-    if (!collectionPath) return;
-    setSubmitStatus("saving");
-    try {
-      const toTimestamp = (val: unknown): Timestamp | unknown => {
-        if (val instanceof Date) return Timestamp.fromDate(val);
-        if (typeof val === "string" && val) return Timestamp.fromDate(new Date(val));
-        return val;
-      };
-      const firestoreData = {
-        ...data,
-        startTime: toTimestamp(data.startTime),
-        endTime: toTimestamp(data.endTime),
-      };
-      if (editingHappening) {
-        await updateDocument(collectionPath, editingHappening.id, firestoreData);
-      } else {
-        await addDocument(collectionPath, firestoreData);
-      }
-      setSubmitStatus("success");
-    } catch (err) {
-      setSubmitStatus("error");
-      toast.error("Failed to save happening");
-      console.error(err);
-    }
-  }
-
-  async function handleDelete() {
-    if (!deletingHappeningId || !collectionPath) return;
-    try {
-      await deleteDocument(collectionPath, deletingHappeningId);
-      toast.success("Happening deleted");
-    } catch (err) {
-      toast.error("Failed to delete happening");
-      console.error(err);
-    } finally {
-      setDeletingHappeningId(null);
-    }
-  }
 
   return (
     <div className="space-y-6">

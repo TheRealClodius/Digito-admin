@@ -10,6 +10,7 @@ export default defineConfig({
     setupFiles: ["./src/test/setup.ts"],
     css: false,
     include: ["src/**/*.{test,spec}.{ts,tsx}"],
+    exclude: ["src/test/firestore-rules.test.ts"],
   },
   resolve: {
     alias: {

@@ -69,8 +69,12 @@ export function EventsTable({
       </TableHeader>
       <TableBody>
         {events.map((event) => {
-          const startDate = event.startDate.toDate();
-          const endDate = event.endDate.toDate();
+          const toDate = (val: unknown): Date =>
+            val && typeof (val as { toDate?: unknown }).toDate === "function"
+              ? (val as { toDate: () => Date }).toDate()
+              : new Date(val as string | number);
+          const startDate = toDate(event.startDate);
+          const endDate = toDate(event.endDate);
           const status = getStatus(startDate, endDate);
 
           return (

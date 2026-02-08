@@ -14,9 +14,9 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-import { useCollection } from "@/hooks/use-collection";
+import { useCrudPage } from "@/hooks/use-crud-page";
 import { useEventContext } from "@/hooks/use-event-context";
-import { addDocument, updateDocument, deleteDocument, queryDocuments } from "@/lib/firestore";
+import { addDocument, updateDocument, queryDocuments } from "@/lib/firestore";
 import { WhitelistTable } from "@/components/tables/whitelist-table";
 import { WhitelistForm } from "@/components/forms/whitelist-form";
 import type { WhitelistEntry } from "@/types/whitelist-entry";
@@ -32,19 +32,25 @@ export default function WhitelistPage({
     ? `clients/${selectedClientId}/events/${eventId}/whitelist`
     : "";
 
-  const { data: entries, loading } = useCollection<WhitelistEntry>({
-    path: collectionPath,
+  const {
+    data: entries,
+    loading,
+    sheetOpen,
+    setSheetOpen,
+    editingEntity: editingEntry,
+    deletingEntityId: deletingEntryId,
+    setDeletingEntityId: setDeletingEntryId,
+    handleNew,
+    handleEdit,
+    handleDelete,
+  } = useCrudPage<WhitelistEntry>({
+    collectionPath,
     orderByField: "addedAt",
     orderDirection: "desc",
+    entityName: "whitelist entry",
   });
 
-  const [sheetOpen, setSheetOpen] = useState(false);
-  const [editingEntry, setEditingEntry] = useState<WhitelistEntry | null>(null);
-  const [deletingEntryId, setDeletingEntryId] = useState<string | null>(null);
   const [submitStatus, setSubmitStatus] = useState<"idle" | "saving" | "success" | "error">("idle");
-
-  function handleNew() { setEditingEntry(null); setSubmitStatus("idle"); setSheetOpen(true); }
-  function handleEdit(entry: WhitelistEntry) { setEditingEntry(entry); setSubmitStatus("idle"); setSheetOpen(true); }
 
   async function handleSubmit(data: Record<string, unknown>) {
     if (!collectionPath || !selectedClientId) return;
@@ -80,19 +86,6 @@ export default function WhitelistPage({
       setSubmitStatus("error");
       toast.error("Failed to save whitelist entry");
       console.error(err);
-    }
-  }
-
-  async function handleDelete() {
-    if (!deletingEntryId || !collectionPath) return;
-    try {
-      await deleteDocument(collectionPath, deletingEntryId);
-      toast.success("Whitelist entry removed");
-    } catch (err) {
-      toast.error("Failed to delete entry");
-      console.error(err);
-    } finally {
-      setDeletingEntryId(null);
     }
   }
 

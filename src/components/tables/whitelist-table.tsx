@@ -26,8 +26,14 @@ const tierColorMap: Record<WhitelistAccessTier, string> = {
   staff: "bg-emerald-100 text-emerald-800",
 };
 
+function toDate(val: unknown): Date {
+  return val && typeof (val as { toDate?: unknown }).toDate === "function"
+    ? (val as { toDate: () => Date }).toDate()
+    : new Date(val as string | number);
+}
+
 function formatDate(entry: WhitelistEntry): string {
-  return format(entry.addedAt.toDate(), "MMM d, yyyy");
+  return format(toDate(entry.addedAt), "MMM d, yyyy");
 }
 
 function entryCountLabel(count: number): string {
