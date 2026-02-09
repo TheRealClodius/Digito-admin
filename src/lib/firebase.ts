@@ -1,7 +1,7 @@
-import { initializeApp, getApps } from "firebase/app";
-import { getAuth } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
-import { getStorage } from "firebase/storage";
+import { initializeApp, getApps, type FirebaseApp } from "firebase/app";
+import { getAuth, type Auth } from "firebase/auth";
+import { getFirestore, type Firestore } from "firebase/firestore";
+import { getStorage, type FirebaseStorage } from "firebase/storage";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -12,10 +12,26 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-// Initialize Firebase (prevent duplicate initialization in dev with HMR)
-const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
+function getApp(): FirebaseApp {
+  return getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
+}
 
-export const auth = getAuth(app);
-export const db = getFirestore(app);
-export const storage = getStorage(app);
-export default app;
+// Lazy singletons — avoid initializing Firebase during static page generation
+// when environment variables are not available (e.g. Vercel build step).
+let _auth: Auth;
+let _db: Firestore;
+let _storage: FirebaseStorage;
+
+export const auth: Auth = new Proxy({} as Auth, {
+  get(_, prop) { _auth ??= getAuth(getApp()); return Reflect.get(_auth, prop); },
+});
+export const db: Firestore = new Proxy({} as Firestore, {
+  get(_, prop) { _db ??= getFirestore(getApp()); return Reflect.get(_db, prop); },
+});
+export const storage: FirebaseStorage = new Proxy({} as FirebaseStorage, {
+  get(_, prop) { _storage ??= getStorage(getApp()); return Reflect.get(_storage, prop); },
+});
+
+export default new Proxy({} as FirebaseApp, {
+  get(_, prop) { return Reflect.get(getApp(), prop); },
+});
