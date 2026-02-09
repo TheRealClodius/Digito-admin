@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { doc, onSnapshot, type DocumentData } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { getDbInstance } from "@/lib/firebase";
 
 export function useDocument<T extends DocumentData>(path: string, id: string | undefined) {
   const [data, setData] = useState<(T & { id: string }) | null>(null);
@@ -17,7 +17,7 @@ export function useDocument<T extends DocumentData>(path: string, id: string | u
     }
 
     const unsubscribe = onSnapshot(
-      doc(db, path, id),
+      doc(getDbInstance(), path, id),
       (snapshot) => {
         if (snapshot.exists()) {
           setData({ id: snapshot.id, ...snapshot.data() } as T & { id: string });

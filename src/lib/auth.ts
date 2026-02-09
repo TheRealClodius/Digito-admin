@@ -6,22 +6,22 @@ import {
   GoogleAuthProvider,
   type User,
 } from "firebase/auth";
-import { auth } from "./firebase";
+import { getAuthInstance } from "./firebase";
 
 const googleProvider = new GoogleAuthProvider();
 
 export async function signIn(email: string, password: string) {
-  const credential = await signInWithEmailAndPassword(auth, email, password);
+  const credential = await signInWithEmailAndPassword(getAuthInstance(), email, password);
   return credential.user;
 }
 
 export async function signInWithGoogle() {
-  const credential = await signInWithPopup(auth, googleProvider);
+  const credential = await signInWithPopup(getAuthInstance(), googleProvider);
   return credential.user;
 }
 
 export async function signOut() {
-  await firebaseSignOut(auth);
+  await firebaseSignOut(getAuthInstance());
 }
 
 export async function checkSuperAdmin(user: User): Promise<boolean> {
@@ -30,5 +30,5 @@ export async function checkSuperAdmin(user: User): Promise<boolean> {
 }
 
 export function onAuthChange(callback: (user: User | null) => void) {
-  return onAuthStateChanged(auth, callback);
+  return onAuthStateChanged(getAuthInstance(), callback);
 }

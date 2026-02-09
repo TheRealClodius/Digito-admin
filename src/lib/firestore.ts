@@ -10,14 +10,14 @@ import {
   serverTimestamp,
   writeBatch,
 } from "firebase/firestore";
-import { db } from "./firebase";
+import { getDbInstance } from "./firebase";
 
 /**
  * Add a new document to a Firestore collection.
  * Automatically adds a `createdAt` server timestamp.
  */
 export async function addDocument(path: string, data: Record<string, unknown>) {
-  const colRef = collection(db, path);
+  const colRef = collection(getDbInstance(), path);
   const docRef = await addDoc(colRef, {
     ...data,
     createdAt: serverTimestamp(),
@@ -34,7 +34,7 @@ export async function updateDocument(
   id: string,
   data: Record<string, unknown>
 ) {
-  const docRef = doc(db, path, id);
+  const docRef = doc(getDbInstance(), path, id);
   await setDoc(
     docRef,
     {
@@ -49,7 +49,7 @@ export async function updateDocument(
  * Delete a document by path and ID.
  */
 export async function deleteDocument(path: string, id: string) {
-  const docRef = doc(db, path, id);
+  const docRef = doc(getDbInstance(), path, id);
   await deleteDoc(docRef);
 }
 
@@ -73,7 +73,7 @@ export async function deleteEventCascade(eventsPath: string, eventId: string) {
   const allRefs: ReturnType<typeof doc>[] = [];
 
   for (const sub of EVENT_SUBCOLLECTIONS) {
-    const subColRef = collection(db, `${eventDocPath}/${sub}`);
+    const subColRef = collection(getDbInstance(), `${eventDocPath}/${sub}`);
     const snapshot = await getDocs(subColRef);
     for (const docSnap of snapshot.docs) {
       allRefs.push(docSnap.ref);
@@ -81,12 +81,12 @@ export async function deleteEventCascade(eventsPath: string, eventId: string) {
   }
 
   // Add the event document itself last
-  allRefs.push(doc(db, eventsPath, eventId));
+  allRefs.push(doc(getDbInstance(), eventsPath, eventId));
 
   // Batch deletes in chunks of 500 (Firestore limit)
   const BATCH_SIZE = 500;
   for (let i = 0; i < allRefs.length; i += BATCH_SIZE) {
-    const batch = writeBatch(db);
+    const batch = writeBatch(getDbInstance());
     const chunk = allRefs.slice(i, i + BATCH_SIZE);
     for (const ref of chunk) {
       batch.delete(ref);
@@ -100,14 +100,14 @@ export async function deleteEventCascade(eventsPath: string, eventId: string) {
  */
 export async function deleteClientCascade(clientId: string) {
   const eventsPath = `clients/${clientId}/events`;
-  const eventsColRef = collection(db, eventsPath);
+  const eventsColRef = collection(getDbInstance(), eventsPath);
   const eventsSnapshot = await getDocs(eventsColRef);
 
   for (const eventDoc of eventsSnapshot.docs) {
     await deleteEventCascade(eventsPath, eventDoc.id);
   }
 
-  const clientRef = doc(db, "clients", clientId);
+  const clientRef = doc(getDbInstance(), "clients", clientId);
   await deleteDoc(clientRef);
 }
 
@@ -119,7 +119,7 @@ export async function queryDocuments<T>(
   field: string,
   value: unknown
 ): Promise<(T & { id: string })[]> {
-  const q = query(collection(db, path), where(field, "==", value));
+  const q = query(collection(getDbInstance(), path), where(field, "==", value));
   const snapshot = await getDocs(q);
   return snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as T & { id: string }));
 }
@@ -147,7 +147,7 @@ export async function batchUpdateWhitelistAndUser({
 }: BatchWhitelistSyncOptions) {
   // For new entries, use addDoc (can't batch addDoc, so do it first)
   if (!whitelistId) {
-    await addDoc(collection(db, whitelistPath), {
+    await addDoc(collection(getDbInstance(), whitelistPath), {
       ...whitelistData,
       createdAt: serverTimestamp(),
     });
@@ -156,11 +156,11 @@ export async function batchUpdateWhitelistAndUser({
     if (lockedFields.length === 0) return;
 
     // Find matching user and sync in a batch
-    const q = query(collection(db, usersPath), where("email", "==", email));
+    const q = query(collection(getDbInstance(), usersPath), where("email", "==", email));
     const snapshot = await getDocs(q);
     if (snapshot.docs.length > 0) {
-      const batch = writeBatch(db);
-      const userRef = doc(db, usersPath, snapshot.docs[0].id);
+      const batch = writeBatch(getDbInstance());
+      const userRef = doc(getDbInstance(), usersPath, snapshot.docs[0].id);
       const update: Record<string, unknown> = {};
       for (const field of lockedFields) {
         if (field in whitelistData) {
@@ -176,18 +176,18 @@ export async function batchUpdateWhitelistAndUser({
   }
 
   // For existing entries, batch the whitelist update + user sync together
-  const batch = writeBatch(db);
+  const batch = writeBatch(getDbInstance());
 
   // 1. Update whitelist entry
-  const whitelistRef = doc(db, whitelistPath, whitelistId);
+  const whitelistRef = doc(getDbInstance(), whitelistPath, whitelistId);
   batch.set(whitelistRef, { ...whitelistData, updatedAt: serverTimestamp() }, { merge: true });
 
   // 2. Sync locked fields to user profile (if any)
   if (lockedFields.length > 0) {
-    const q = query(collection(db, usersPath), where("email", "==", email));
+    const q = query(collection(getDbInstance(), usersPath), where("email", "==", email));
     const snapshot = await getDocs(q);
     if (snapshot.docs.length > 0) {
-      const userRef = doc(db, usersPath, snapshot.docs[0].id);
+      const userRef = doc(getDbInstance(), usersPath, snapshot.docs[0].id);
       const update: Record<string, unknown> = {};
       for (const field of lockedFields) {
         if (field in whitelistData) {

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { collection, getCountFromServer } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { getDbInstance } from "@/lib/firebase";
 
 interface UseCollectionCountOptions {
   path: string;
@@ -39,7 +39,7 @@ export function useCollectionCount({
         setLoading(true);
         setError(null);
 
-        const collectionRef = collection(db, path);
+        const collectionRef = collection(getDbInstance(), path);
         const snapshot = await getCountFromServer(collectionRef);
 
         if (!cancelled) {

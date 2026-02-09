@@ -10,7 +10,7 @@ import {
   type QueryConstraint,
   type DocumentData,
 } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { getDbInstance } from "@/lib/firebase";
 
 interface UseCollectionOptions {
   path: string;
@@ -51,7 +51,7 @@ export function useCollection<T extends DocumentData & { id: string }>({
       queryConstraints.push(limit(pageSize));
     }
 
-    const q = query(collection(db, path), ...queryConstraints);
+    const q = query(collection(getDbInstance(), path), ...queryConstraints);
 
     const unsubscribe = onSnapshot(
       q,
