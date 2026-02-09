@@ -40,8 +40,9 @@ export default function LoginPage() {
       }
 
       router.push("/");
-    } catch {
-      setError("Google sign-in failed. Please try again.");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      setError(`Google sign-in failed: ${message}`);
     } finally {
       setLoading(false);
     }
