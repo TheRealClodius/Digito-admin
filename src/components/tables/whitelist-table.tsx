@@ -51,18 +51,18 @@ export const WhitelistTable = memo(function WhitelistTable({ entries, onEdit, on
         <TableHeader>
           <TableRow>
             <TableHead>Email</TableHead>
-            <TableHead>Access Tier</TableHead>
+            <TableHead>Livello Accesso</TableHead>
             <TableHead>Company</TableHead>
             <TableHead>Locked Fields</TableHead>
             <TableHead>Added</TableHead>
-            <TableHead className="w-40">Actions</TableHead>
+            <TableHead className="w-40">Azioni</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {entries.length === 0 ? (
             <TableRow>
               <TableCell colSpan={6} className="text-center">
-                No whitelist entries found
+                Nessun elemento trovato
               </TableCell>
             </TableRow>
           ) : (

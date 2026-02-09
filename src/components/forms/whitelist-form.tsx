@@ -94,7 +94,7 @@ export function WhitelistForm({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="accessTier">Access Tier</Label>
+        <Label htmlFor="accessTier">Livello Accesso</Label>
         <select
           id="accessTier"
           {...register("accessTier")}
@@ -111,7 +111,7 @@ export function WhitelistForm({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="company">Company</Label>
+        <Label htmlFor="company">Azienda</Label>
         <Input
           id="company"
           {...register("company")}

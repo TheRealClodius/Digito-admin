@@ -5,11 +5,11 @@ import { useTheme } from "@/contexts/theme-context";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { Switch } from "@/components/ui/switch";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 export default function SettingsPage() {
   const { user } = useAuth();
-  const { theme, toggleTheme } = useTheme();
+  const { theme, themeMode, setThemeMode } = useTheme();
 
   return (
     <div className="space-y-6">
@@ -43,14 +43,22 @@ export default function SettingsPage() {
           <CardDescription>Customize how the dashboard looks</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-between">
-            <Label htmlFor="dark-mode">Dark mode</Label>
-            <Switch
-              id="dark-mode"
-              checked={theme === "dark"}
-              onCheckedChange={toggleTheme}
-            />
-          </div>
+          <RadioGroup value={themeMode} onValueChange={setThemeMode}>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="light" id="light" />
+              <Label htmlFor="light">Light</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="dark" id="dark" />
+              <Label htmlFor="dark">Dark</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="auto" id="auto" />
+              <Label htmlFor="auto">
+                Auto (currently {theme})
+              </Label>
+            </div>
+          </RadioGroup>
         </CardContent>
       </Card>
 

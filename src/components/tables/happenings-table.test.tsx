@@ -78,12 +78,12 @@ describe("HappeningsTable", () => {
       <HappeningsTable happenings={[makeHappening()]} {...defaultHandlers} />,
     );
 
-    expect(screen.getByText("Title")).toBeInTheDocument();
+    expect(screen.getByText("Titolo")).toBeInTheDocument();
     expect(screen.getByText("Type")).toBeInTheDocument();
     expect(screen.getByText("Time")).toBeInTheDocument();
     expect(screen.getByText("Location")).toBeInTheDocument();
     expect(screen.getByText("Host")).toBeInTheDocument();
-    expect(screen.getByText("Highlighted")).toBeInTheDocument();
+    expect(screen.getByText("In Evidenza")).toBeInTheDocument();
     expect(screen.getByText("Actions")).toBeInTheDocument();
   });
 
@@ -107,7 +107,7 @@ describe("HappeningsTable", () => {
 
   // ---- Empty state ----
 
-  it('shows "No happenings found" when the happenings array is empty', () => {
+  it('shows "Nessun evento trovato" when the happenings array is empty', () => {
     render(<HappeningsTable happenings={[]} {...defaultHandlers} />);
 
     expect(screen.getByText(/no happenings found/i)).toBeInTheDocument();

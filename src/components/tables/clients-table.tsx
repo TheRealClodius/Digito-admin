@@ -49,24 +49,24 @@ export const ClientsTable = memo(function ClientsTable({ clients, onEdit, onDele
     <div>
       <div className="mb-2">
         <Badge variant="secondary">
-          {clients.length} client(s){dateSuffix}
+          {clients.length} cliente(i){dateSuffix}
         </Badge>
       </div>
 
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Name</TableHead>
-            <TableHead>Description</TableHead>
-            <TableHead>Created</TableHead>
-            <TableHead className="w-40">Actions</TableHead>
+            <TableHead>Nome</TableHead>
+            <TableHead>Descrizione</TableHead>
+            <TableHead>Creato</TableHead>
+            <TableHead className="w-40">Azioni</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {clients.length === 0 ? (
             <TableRow>
               <TableCell colSpan={4} className="text-center">
-                No clients found
+                Nessun cliente trovato
               </TableCell>
             </TableRow>
           ) : (

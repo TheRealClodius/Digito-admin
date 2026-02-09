@@ -441,7 +441,7 @@ describe("ParticipantForm", () => {
     it("enables the submit button when defaultValues includes first and last name", () => {
       render(
         <ParticipantForm
-          defaultValues={{ firstName: "Pre-filled", lastName: "Name" }}
+          defaultValues={{ firstName: "Pre-filled", lastName: "Nome" }}
           onSubmit={vi.fn()}
           onCancel={vi.fn()}
         />,
@@ -457,7 +457,7 @@ describe("ParticipantForm", () => {
 
       render(
         <ParticipantForm
-          defaultValues={{ firstName: "Old", lastName: "Name", email: "old@test.com" }}
+          defaultValues={{ firstName: "Old", lastName: "Nome", email: "old@test.com" }}
           onSubmit={onSubmit}
           onCancel={vi.fn()}
         />,
@@ -477,7 +477,7 @@ describe("ParticipantForm", () => {
       expect(onSubmit).toHaveBeenCalledWith(
         expect.objectContaining({
           firstName: "Updated",
-          lastName: "Name",
+          lastName: "Nome",
         }),
       );
     });

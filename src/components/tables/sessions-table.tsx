@@ -33,17 +33,17 @@ export const SessionsTable = memo(function SessionsTable({
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Title</TableHead>
-            <TableHead>Type</TableHead>
-            <TableHead>Time</TableHead>
-            <TableHead>Location</TableHead>
+            <TableHead>Titolo</TableHead>
+            <TableHead>Tipo</TableHead>
+            <TableHead>Ora</TableHead>
+            <TableHead>Luogo</TableHead>
             <TableHead>Speaker</TableHead>
-            <TableHead className="w-40">Actions</TableHead>
+            <TableHead className="w-40">Azioni</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           <TableRow>
-            <TableCell colSpan={6}>No sessions found</TableCell>
+            <TableCell colSpan={6}>Nessuna sessione trovata</TableCell>
           </TableRow>
         </TableBody>
       </Table>
@@ -58,12 +58,12 @@ export const SessionsTable = memo(function SessionsTable({
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Title</TableHead>
-            <TableHead>Type</TableHead>
-            <TableHead>Time</TableHead>
-            <TableHead>Location</TableHead>
+            <TableHead>Titolo</TableHead>
+            <TableHead>Tipo</TableHead>
+            <TableHead>Ora</TableHead>
+            <TableHead>Luogo</TableHead>
             <TableHead>Speaker</TableHead>
-            <TableHead className="w-40">Actions</TableHead>
+            <TableHead className="w-40">Azioni</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>

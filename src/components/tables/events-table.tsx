@@ -24,9 +24,9 @@ interface EventsTableProps {
 
 function getStatus(startDate: Date, endDate: Date): string {
   const now = new Date();
-  if (now < startDate) return "Upcoming";
-  if (now > endDate) return "Ended";
-  return "Live";
+  if (now < startDate) return "Prossimo";
+  if (now > endDate) return "Terminato";
+  return "In Corso";
 }
 
 export const EventsTable = memo(function EventsTable({
@@ -40,17 +40,17 @@ export const EventsTable = memo(function EventsTable({
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Name</TableHead>
-            <TableHead>Venue</TableHead>
-            <TableHead>Dates</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Active</TableHead>
-            <TableHead className="w-40">Actions</TableHead>
+            <TableHead>Nome</TableHead>
+            <TableHead>Sede</TableHead>
+            <TableHead>Date</TableHead>
+            <TableHead>Stato</TableHead>
+            <TableHead>Attivo</TableHead>
+            <TableHead className="w-40">Azioni</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           <TableRow>
-            <TableCell colSpan={6}>No events found</TableCell>
+            <TableCell colSpan={6}>Nessun evento trovato</TableCell>
           </TableRow>
         </TableBody>
       </Table>
@@ -61,12 +61,12 @@ export const EventsTable = memo(function EventsTable({
     <Table>
       <TableHeader>
         <TableRow>
-          <TableHead>Name</TableHead>
-          <TableHead>Venue</TableHead>
-          <TableHead>Dates</TableHead>
-          <TableHead>Status</TableHead>
-          <TableHead>Active</TableHead>
-          <TableHead className="w-40">Actions</TableHead>
+          <TableHead>Nome</TableHead>
+          <TableHead>Sede</TableHead>
+          <TableHead>Date</TableHead>
+          <TableHead>Stato</TableHead>
+          <TableHead>Attivo</TableHead>
+          <TableHead className="w-40">Azioni</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>

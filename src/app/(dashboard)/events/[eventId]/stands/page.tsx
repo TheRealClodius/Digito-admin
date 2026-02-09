@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useCollection } from "@/hooks/use-collection";
 import { useEventContext } from "@/hooks/use-event-context";
 import { ErrorBanner } from "@/components/error-banner";
+import { NoClientSelected } from "@/components/no-client-selected";
 import type { Stand } from "@/types/stand";
 
 export default function StandsPage({
@@ -24,6 +25,18 @@ export default function StandsPage({
     orderByField: "name",
     orderDirection: "asc",
   });
+
+  if (!selectedClientId) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Stands</h1>
+          <p className="text-muted-foreground">Manage booth locations for this event</p>
+        </div>
+        <NoClientSelected />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

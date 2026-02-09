@@ -38,18 +38,18 @@ export const BrandsTable = memo(function BrandsTable({
         <TableHeader>
           <TableRow>
             <TableHead className="w-16">Logo</TableHead>
-            <TableHead>Name</TableHead>
+            <TableHead>Nome</TableHead>
             <TableHead>Stall #</TableHead>
             <TableHead>Website</TableHead>
-            <TableHead>Highlighted</TableHead>
-            <TableHead className="w-40">Actions</TableHead>
+            <TableHead>In Evidenza</TableHead>
+            <TableHead className="w-40">Azioni</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {brands.length === 0 ? (
             <TableRow>
               <TableCell colSpan={6} className="text-center">
-                No brands found
+                Nessun brand trovato
               </TableCell>
             </TableRow>
           ) : (

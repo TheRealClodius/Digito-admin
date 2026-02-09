@@ -34,9 +34,56 @@ import LoginPage from "./page";
 
 const fakeUser = { uid: "user-1", email: "test@test.com" };
 
-describe("LoginPage — sign out on non-admin", () => {
+describe("LoginPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+  it("renders the Digito logo in side panel", () => {
+    render(<LoginPage />);
+    const logo = screen.getByRole("img", { name: /digito logo/i });
+    expect(logo).toBeInTheDocument();
+  });
+
+  it("renders multiple background images for cycling", () => {
+    render(<LoginPage />);
+    const backgrounds = screen.getAllByAltText(/background/i);
+    expect(backgrounds.length).toBeGreaterThan(1);
+  });
+
+  it("applies delayed fade-in animation to background container", () => {
+    render(<LoginPage />);
+    const backgrounds = screen.getAllByAltText(/background/i);
+    const container = backgrounds[0].parentElement;
+    expect(container).toHaveClass("animate-fade-in-delayed");
+  });
+
+  it("renders a light mode overlay mask on background images", () => {
+    render(<LoginPage />);
+    const mask = screen.getByTestId("background-mask");
+    expect(mask).toBeInTheDocument();
+    expect(mask).toHaveClass("bg-white/75");
+  });
+
+  it("renders side panel with title and description", () => {
+    render(<LoginPage />);
+    expect(screen.getByText("Digito Admin")).toBeInTheDocument();
+    expect(screen.getByText(/sign in to manage your events/i)).toBeInTheDocument();
+  });
+
+  it("renders all login options", () => {
+    render(<LoginPage />);
+    const googleButton = screen.getByRole("button", { name: /sign in with google/i });
+    const ssoButton = screen.getByRole("button", { name: /login with sso/i });
+    const magicLinkButton = screen.getByRole("button", { name: /connect with magic link/i });
+
+    expect(googleButton).toBeInTheDocument();
+    expect(ssoButton).toBeInTheDocument();
+    expect(magicLinkButton).toBeInTheDocument();
+
+    // Email and password inputs should not be present
+    expect(screen.queryByLabelText(/email/i)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/password/i)).not.toBeInTheDocument();
   });
 
   it("calls signOut before redirecting when Google sign-in user is not admin", async () => {
@@ -56,24 +103,6 @@ describe("LoginPage — sign out on non-admin", () => {
     expect(mockPush).toHaveBeenCalledWith("/unauthorized");
   });
 
-  it("calls signOut before redirecting when email/password user is not admin", async () => {
-    const user = userEvent.setup();
-    mockSignIn.mockResolvedValue(fakeUser);
-    mockCheckSuperAdmin.mockResolvedValue(false);
-    mockSignOut.mockResolvedValue(undefined);
-
-    render(<LoginPage />);
-
-    await user.type(screen.getByLabelText(/email/i), "test@test.com");
-    await user.type(screen.getByLabelText(/password/i), "password123");
-    await user.click(screen.getByRole("button", { name: /^sign in$/i }));
-
-    await waitFor(() => {
-      expect(mockSignOut).toHaveBeenCalledTimes(1);
-    });
-    expect(mockPush).toHaveBeenCalledWith("/unauthorized");
-  });
-
   it("does NOT call signOut when user is admin (Google sign-in)", async () => {
     const user = userEvent.setup();
     mockSignInWithGoogle.mockResolvedValue(fakeUser);
@@ -83,23 +112,6 @@ describe("LoginPage — sign out on non-admin", () => {
 
     const googleButton = screen.getByRole("button", { name: /sign in with google/i });
     await user.click(googleButton);
-
-    await waitFor(() => {
-      expect(mockPush).toHaveBeenCalledWith("/");
-    });
-    expect(mockSignOut).not.toHaveBeenCalled();
-  });
-
-  it("does NOT call signOut when user is admin (email/password)", async () => {
-    const user = userEvent.setup();
-    mockSignIn.mockResolvedValue(fakeUser);
-    mockCheckSuperAdmin.mockResolvedValue(true);
-
-    render(<LoginPage />);
-
-    await user.type(screen.getByLabelText(/email/i), "test@test.com");
-    await user.type(screen.getByLabelText(/password/i), "password123");
-    await user.click(screen.getByRole("button", { name: /^sign in$/i }));
 
     await waitFor(() => {
       expect(mockPush).toHaveBeenCalledWith("/");

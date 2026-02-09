@@ -9,6 +9,7 @@ import { toDate } from "@/lib/timestamps";
 import { CrudPage } from "@/components/crud-page";
 import { HappeningsTable } from "@/components/tables/happenings-table";
 import { HappeningForm } from "@/components/forms/happening-form";
+import { NoClientSelected } from "@/components/no-client-selected";
 import type { Happening } from "@/types/happening";
 
 const toTimestamp = (val: unknown): Timestamp | unknown => {
@@ -40,10 +41,22 @@ export default function HappeningsPage({
     }),
   });
 
+  if (!selectedClientId) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Eventi</h1> {/* Events/Happenings */}
+          <p className="text-muted-foreground">Gestisci demo, performance e attivazioni</p> {/* Manage demos, performances, and activations */}
+        </div>
+        <NoClientSelected />
+      </div>
+    );
+  }
+
   return (
     <CrudPage
-      title="Happenings"
-      description="Manage demos, performances, and activations"
+      title="Eventi"
+      description="Gestisci demo, performance e attivazioni"
       addButtonLabel="Add Happening"
       entityName="happening"
       {...crud}

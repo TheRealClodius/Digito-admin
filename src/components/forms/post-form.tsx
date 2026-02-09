@@ -58,7 +58,7 @@ export function PostForm({
   return (
     <form onSubmit={handleSubmit((data) => onSubmit(data))} className="grid grid-cols-2 gap-x-4 gap-y-6">
       <div className="space-y-2">
-        <Label>Image</Label>
+        <Label>Immagine</Label>
         <ImageUpload
           value={imageUrlValue || null}
           onChange={(url) => setValue("imageUrl", url ?? "", { shouldValidate: true })}
@@ -83,7 +83,7 @@ export function PostForm({
       </div>
 
       <div className="col-span-2 space-y-2">
-        <Label htmlFor="description">Description</Label>
+        <Label htmlFor="description">Descrizione</Label>
         <Textarea
           id="description"
           {...register("description")}

@@ -101,7 +101,7 @@ export function EventForm({
   return (
     <form onSubmit={handleSubmit(onFormSubmit)} className="grid grid-cols-2 gap-x-4 gap-y-6">
       <div className="space-y-2">
-        <Label htmlFor="name">Name</Label>
+        <Label htmlFor="name">Nome</Label>
         <Input
           id="name"
           aria-label="Name"
@@ -113,7 +113,7 @@ export function EventForm({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="venue">Venue</Label>
+        <Label htmlFor="venue">Sede</Label>
         <Input
           id="venue"
           aria-label="Venue"
@@ -122,7 +122,7 @@ export function EventForm({
       </div>
 
       <div className="col-span-2 space-y-2">
-        <Label htmlFor="description">Description</Label>
+        <Label htmlFor="description">Descrizione</Label>
         <Textarea
           id="description"
           aria-label="Description"
@@ -131,7 +131,7 @@ export function EventForm({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="startDate">Start Date</Label>
+        <Label htmlFor="startDate">Data Inizio</Label>
         <input
           type="datetime-local"
           id="startDate"
@@ -145,7 +145,7 @@ export function EventForm({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="endDate">End Date</Label>
+        <Label htmlFor="endDate">Data Fine</Label>
         <input
           type="datetime-local"
           id="endDate"
@@ -159,7 +159,7 @@ export function EventForm({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="websiteUrl">Website URL</Label>
+        <Label htmlFor="websiteUrl">URL Sito Web</Label>
         <Input
           id="websiteUrl"
           aria-label="Website URL"
@@ -168,7 +168,7 @@ export function EventForm({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="instagramUrl">Instagram URL</Label>
+        <Label htmlFor="instagramUrl">URL Instagram</Label>
         <Input
           id="instagramUrl"
           aria-label="Instagram URL"
@@ -177,7 +177,7 @@ export function EventForm({
       </div>
 
       <div className="col-span-2 space-y-2">
-        <Label htmlFor="chatPrompt">Chat Prompt</Label>
+        <Label htmlFor="chatPrompt">Prompt Chat</Label>
         <Input
           id="chatPrompt"
           aria-label="Chat Prompt"
@@ -196,7 +196,7 @@ export function EventForm({
           onChange={(e) => setValue("isActive", e.target.checked)}
           className="h-4 w-4"
         />
-        <Label htmlFor="isActive">Active</Label>
+        <Label htmlFor="isActive">Attivo</Label>
       </div>
 
       <div className="space-y-2">

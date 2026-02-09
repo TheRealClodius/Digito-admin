@@ -10,6 +10,7 @@ import { useUpload } from "@/hooks/use-upload";
 import { CrudPage } from "@/components/crud-page";
 import { BrandsTable } from "@/components/tables/brands-table";
 import { BrandForm } from "@/components/forms/brand-form";
+import { NoClientSelected } from "@/components/no-client-selected";
 import type { Brand } from "@/types/brand";
 
 export default function BrandsPage({
@@ -46,10 +47,22 @@ export default function BrandsPage({
     }
   }
 
+  if (!selectedClientId) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Brand</h1>
+          <p className="text-muted-foreground">Gestisci i brand per questo evento</p> {/* Manage brands for this event */}
+        </div>
+        <NoClientSelected />
+      </div>
+    );
+  }
+
   return (
     <CrudPage
-      title="Brands"
-      description="Manage brands for this event"
+      title="Brand"
+      description="Gestisci i brand per questo evento"
       addButtonLabel="Add Brand"
       entityName="brand"
       {...crud}

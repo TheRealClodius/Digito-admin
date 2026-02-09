@@ -116,12 +116,12 @@ describe("WhitelistTable", () => {
   // ----- Empty state -----
 
   describe("empty state", () => {
-    it('shows "No whitelist entries found" when given an empty array', () => {
+    it('shows "Nessun elemento trovato" when given an empty array', () => {
       render(
         <WhitelistTable entries={[]} onEdit={vi.fn()} onDelete={vi.fn()} />,
       );
 
-      expect(screen.getByText(/no whitelist entries found/i)).toBeInTheDocument();
+      expect(screen.getByText(/Nessun elemento trovato/i)).toBeInTheDocument();
     });
 
     it("does not render data rows when the entries array is empty", () => {

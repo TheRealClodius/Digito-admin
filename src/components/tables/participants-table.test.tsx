@@ -163,7 +163,7 @@ describe("ParticipantsTable", () => {
     });
 
     it("handles null company gracefully", () => {
-      const participant = makeParticipant({ id: "p-null-co", firstName: "No", lastName: "Company", company: null });
+      const participant = makeParticipant({ id: "p-null-co", firstName: "No", lastName: "Azienda", company: null });
 
       render(
         <ParticipantsTable participants={[participant]} onEdit={vi.fn()} onDelete={vi.fn()} />,
@@ -176,7 +176,7 @@ describe("ParticipantsTable", () => {
   // ----- Empty state -----
 
   describe("empty state", () => {
-    it('shows "No participants found" when given an empty array', () => {
+    it('shows "Nessun partecipante trovato" when given an empty array', () => {
       render(
         <ParticipantsTable participants={[]} onEdit={vi.fn()} onDelete={vi.fn()} />,
       );

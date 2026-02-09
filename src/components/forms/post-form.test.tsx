@@ -43,7 +43,7 @@ describe("PostForm", () => {
     it("renders an Image upload area", () => {
       render(<PostForm onSubmit={vi.fn()} onCancel={vi.fn()} />);
 
-      expect(screen.getByText("Image")).toBeInTheDocument();
+      expect(screen.getByText("Immagine")).toBeInTheDocument();
     });
 
     it("renders a description textarea", () => {

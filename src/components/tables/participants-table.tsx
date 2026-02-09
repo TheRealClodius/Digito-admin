@@ -34,19 +34,19 @@ export const ParticipantsTable = memo(function ParticipantsTable({
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Name</TableHead>
-            <TableHead>Role</TableHead>
-            <TableHead>Company</TableHead>
+            <TableHead>Nome</TableHead>
+            <TableHead>Ruolo</TableHead>
+            <TableHead>Azienda</TableHead>
             <TableHead>Email</TableHead>
             <TableHead>Highlighted</TableHead>
-            <TableHead className="w-40">Actions</TableHead>
+            <TableHead className="w-40">Azioni</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {participants.length === 0 ? (
             <TableRow>
               <TableCell colSpan={6} className="text-center">
-                No participants found
+                Nessun partecipante trovato
               </TableCell>
             </TableRow>
           ) : (

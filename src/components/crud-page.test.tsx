@@ -42,7 +42,7 @@ describe("CrudPage", () => {
     expect(screen.getByRole("button", { name: /Add Brand/i })).toBeInTheDocument();
   });
 
-  it("calls handleNew when add button is clicked", async () => {
+  it("calls handleNuovo when add button is clicked", async () => {
     const user = userEvent.setup();
     render(<CrudPage {...defaultProps} />);
     await user.click(screen.getByRole("button", { name: /Add Brand/i }));
@@ -83,7 +83,7 @@ describe("CrudPage", () => {
         editingEntity={{ id: "1", name: "Brand A" }}
       />
     );
-    expect(screen.getByText("Edit Brand")).toBeInTheDocument();
+    expect(screen.getByText("Modifica Brand")).toBeInTheDocument();
   });
 
   it("shows new title when creating", () => {
@@ -94,7 +94,7 @@ describe("CrudPage", () => {
         editingEntity={null}
       />
     );
-    expect(screen.getByText("New Brand")).toBeInTheDocument();
+    expect(screen.getByText("Nuovo Brand")).toBeInTheDocument();
   });
 
   it("renders delete dialog when deletingEntityId is set", () => {

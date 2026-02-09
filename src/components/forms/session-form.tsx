@@ -103,7 +103,7 @@ export function SessionForm({
   return (
     <form onSubmit={handleSubmit(onFormSubmit)} className="grid grid-cols-2 gap-x-4 gap-y-6">
       <div className="space-y-2">
-        <Label htmlFor="title">Title</Label>
+        <Label htmlFor="title">Titolo</Label>
         <Input
           id="title"
           aria-label="Title"
@@ -115,7 +115,7 @@ export function SessionForm({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="type">Type</Label>
+        <Label htmlFor="type">Tipo</Label>
         <select
           id="type"
           aria-label="Type"
@@ -131,7 +131,7 @@ export function SessionForm({
       </div>
 
       <div className="col-span-2 space-y-2">
-        <Label htmlFor="description">Description</Label>
+        <Label htmlFor="description">Descrizione</Label>
         <Textarea
           id="description"
           aria-label="Description"
@@ -140,7 +140,7 @@ export function SessionForm({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="startTime">Start Time</Label>
+        <Label htmlFor="startTime">Ora Inizio</Label>
         <input
           type="datetime-local"
           id="startTime"
@@ -156,7 +156,7 @@ export function SessionForm({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="endTime">End Time</Label>
+        <Label htmlFor="endTime">Ora Fine</Label>
         <input
           type="datetime-local"
           id="endTime"
@@ -170,7 +170,7 @@ export function SessionForm({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="location">Location</Label>
+        <Label htmlFor="location">Luogo</Label>
         <Input
           id="location"
           aria-label="Location"

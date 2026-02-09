@@ -7,6 +7,7 @@ import { useUpload } from "@/hooks/use-upload";
 import { CrudPage } from "@/components/crud-page";
 import { ParticipantsTable } from "@/components/tables/participants-table";
 import { ParticipantForm } from "@/components/forms/participant-form";
+import { NoClientSelected } from "@/components/no-client-selected";
 import type { Participant } from "@/types/participant";
 
 export default function ParticipantsPage({
@@ -31,10 +32,22 @@ export default function ParticipantsPage({
     },
   });
 
+  if (!selectedClientId) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Partecipanti</h1> {/* Participants */}
+          <p className="text-muted-foreground">Gestisci relatori, host e rappresentanti</p> {/* Manage speakers, hosts, and representatives */}
+        </div>
+        <NoClientSelected />
+      </div>
+    );
+  }
+
   return (
     <CrudPage
-      title="Participants"
-      description="Manage speakers, hosts, and representatives"
+      title="Partecipanti"
+      description="Gestisci relatori, host e rappresentanti"
       addButtonLabel="Add Participant"
       entityName="participant"
       {...crud}

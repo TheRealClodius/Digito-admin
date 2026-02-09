@@ -110,7 +110,7 @@ describe("BrandsTable", () => {
   // ----- Column headers -----
 
   describe("column headers", () => {
-    it("renders table column headers: Logo, Name, Stall #, Website, Highlighted, Actions", () => {
+    it("renders table column headers: Logo, Nome, Stand, Website, Highlighted, Actions", () => {
       render(
         <BrandsTable
           brands={sampleBrands}
@@ -266,7 +266,7 @@ describe("BrandsTable", () => {
   // ----- Empty state -----
 
   describe("empty state", () => {
-    it('shows "No brands found" when given an empty array', () => {
+    it('shows "Nessun brand trovato" when given an empty array', () => {
       render(
         <BrandsTable
           brands={[]}
@@ -411,7 +411,7 @@ describe("BrandsTable", () => {
     });
 
     it("renders the switch as checked for highlighted brands", () => {
-      const brand = makeBrand({ id: "b-hi", name: "Highlighted", isHighlighted: true });
+      const brand = makeBrand({ id: "b-hi", name: "In Evidenza", isHighlighted: true });
 
       render(
         <BrandsTable

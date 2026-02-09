@@ -151,7 +151,7 @@ describe("ClientsTable", () => {
   // ----- Empty state -----
 
   describe("empty state", () => {
-    it('shows "No clients found" when given an empty array', () => {
+    it('shows "Nessun cliente trovato" when given an empty array', () => {
       render(
         <ClientsTable clients={[]} onEdit={vi.fn()} onDelete={vi.fn()} />
       );

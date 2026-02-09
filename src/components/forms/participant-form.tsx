@@ -86,7 +86,7 @@ export function ParticipantForm({
   return (
     <form onSubmit={handleSubmit((data) => onSubmit(data))} className="grid grid-cols-2 gap-x-4 gap-y-6">
       <div className="space-y-2">
-        <Label htmlFor="firstName">First Name</Label>
+        <Label htmlFor="firstName">Nome</Label>
         <Input
           id="firstName"
           aria-label="First Name"
@@ -100,7 +100,7 @@ export function ParticipantForm({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="lastName">Last Name</Label>
+        <Label htmlFor="lastName">Cognome</Label>
         <Input
           id="lastName"
           aria-label="Last Name"
@@ -124,7 +124,7 @@ export function ParticipantForm({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="role">Role</Label>
+        <Label htmlFor="role">Ruolo</Label>
         <select
           id="role"
           aria-label="Role"
@@ -140,7 +140,7 @@ export function ParticipantForm({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="company">Company</Label>
+        <Label htmlFor="company">Azienda</Label>
         <Input
           id="company"
           aria-label="Company"
@@ -149,7 +149,7 @@ export function ParticipantForm({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="title">Title</Label>
+        <Label htmlFor="title">Titolo</Label>
         <Input
           id="title"
           aria-label="Title"
@@ -158,7 +158,7 @@ export function ParticipantForm({
       </div>
 
       <div className="col-span-2 space-y-2">
-        <Label htmlFor="bio">Bio</Label>
+        <Label htmlFor="bio">Biografia</Label>
         <Textarea
           id="bio"
           aria-label="Bio"
@@ -178,7 +178,7 @@ export function ParticipantForm({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="websiteUrl">Website URL</Label>
+        <Label htmlFor="websiteUrl">URL Sito Web</Label>
         <Input
           id="websiteUrl"
           aria-label="Website URL"
@@ -187,7 +187,7 @@ export function ParticipantForm({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="linkedinUrl">LinkedIn URL</Label>
+        <Label htmlFor="linkedinUrl">URL LinkedIn</Label>
         <Input
           id="linkedinUrl"
           aria-label="LinkedIn URL"
@@ -205,7 +205,7 @@ export function ParticipantForm({
           onChange={(e) => setValue("isHighlighted", e.target.checked)}
           className="h-4 w-4"
         />
-        <Label htmlFor="isHighlighted">Highlighted</Label>
+        <Label htmlFor="isHighlighted">In Evidenza</Label>
       </div>
 
       <div className="col-span-2 flex items-center gap-2">

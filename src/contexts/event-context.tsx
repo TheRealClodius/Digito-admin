@@ -31,18 +31,18 @@ function setSessionItem(key: string, value: string | null) {
 }
 
 export function EventContextProvider({ children }: { children: ReactNode }) {
-  const [selectedClientId, setClientId] = useState<string | null>(() =>
-    getSessionItem("selectedClientId")
-  );
-  const [selectedEventId, setEventId] = useState<string | null>(() =>
-    getSessionItem("selectedEventId")
-  );
-  const [selectedClientName, setClientName] = useState<string | null>(() =>
-    getSessionItem("selectedClientName")
-  );
-  const [selectedEventName, setEventName] = useState<string | null>(() =>
-    getSessionItem("selectedEventName")
-  );
+  const [selectedClientId, setClientId] = useState<string | null>(null);
+  const [selectedEventId, setEventId] = useState<string | null>(null);
+  const [selectedClientName, setClientName] = useState<string | null>(null);
+  const [selectedEventName, setEventName] = useState<string | null>(null);
+
+  // Initialize from sessionStorage on mount (client-side only)
+  useEffect(() => {
+    setClientId(getSessionItem("selectedClientId"));
+    setEventId(getSessionItem("selectedEventId"));
+    setClientName(getSessionItem("selectedClientName"));
+    setEventName(getSessionItem("selectedEventName"));
+  }, []);
 
   const setSelectedClient = useCallback((id: string | null, name?: string | null) => {
     setClientId(id);

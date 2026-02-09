@@ -210,7 +210,7 @@ describe("PostsTable", () => {
   // ----- Empty state -----
 
   describe("empty state", () => {
-    it('shows "No posts found" when given an empty array', () => {
+    it('shows "Nessun post trovato" when given an empty array', () => {
       render(
         <PostsTable posts={[]} onEdit={vi.fn()} onDelete={vi.fn()} />,
       );

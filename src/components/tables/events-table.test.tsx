@@ -68,7 +68,7 @@ describe("EventsTable", () => {
   it("renders all expected column headers", () => {
     render(<EventsTable events={[makeEvent()]} {...defaultHandlers} />);
 
-    expect(screen.getByText("Name")).toBeInTheDocument();
+    expect(screen.getByText("Nome")).toBeInTheDocument();
     expect(screen.getByText("Venue")).toBeInTheDocument();
     expect(screen.getByText("Dates")).toBeInTheDocument();
     expect(screen.getByText("Status")).toBeInTheDocument();
@@ -94,7 +94,7 @@ describe("EventsTable", () => {
 
   // ---- Empty state ----
 
-  it('shows "No events found" when the events array is empty', () => {
+  it('shows "Nessun evento trovato" when the events array is empty', () => {
     render(<EventsTable events={[]} {...defaultHandlers} />);
 
     expect(screen.getByText(/no events found/i)).toBeInTheDocument();

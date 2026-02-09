@@ -28,7 +28,7 @@ const headers = (
     <TableHead>Location</TableHead>
     <TableHead>Host</TableHead>
     <TableHead>Highlighted</TableHead>
-    <TableHead className="w-40">Actions</TableHead>
+    <TableHead className="w-40">Azioni</TableHead>
   </TableRow>
 );
 
@@ -43,7 +43,7 @@ export const HappeningsTable = memo(function HappeningsTable({
         <TableHeader>{headers}</TableHeader>
         <TableBody>
           <TableRow>
-            <TableCell colSpan={7}>No happenings found</TableCell>
+            <TableCell colSpan={7}>Nessun evento trovato</TableCell>
           </TableRow>
         </TableBody>
       </Table>

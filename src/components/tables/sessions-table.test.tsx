@@ -76,7 +76,7 @@ describe("SessionsTable", () => {
   it("renders all expected column headers", () => {
     render(<SessionsTable sessions={[makeSession()]} {...defaultHandlers} />);
 
-    expect(screen.getByText("Title")).toBeInTheDocument();
+    expect(screen.getByText("Titolo")).toBeInTheDocument();
     expect(screen.getByText("Type")).toBeInTheDocument();
     expect(screen.getByText("Time")).toBeInTheDocument();
     expect(screen.getByText("Location")).toBeInTheDocument();
@@ -102,7 +102,7 @@ describe("SessionsTable", () => {
 
   // ---- Empty state ----
 
-  it('shows "No sessions found" when the sessions array is empty', () => {
+  it('shows "Nessuna sessione trovata" when the sessions array is empty', () => {
     render(<SessionsTable sessions={[]} {...defaultHandlers} />);
 
     expect(screen.getByText(/no sessions found/i)).toBeInTheDocument();
