@@ -70,8 +70,8 @@ describe("BrandForm", () => {
     it("renders a description textarea", () => {
       render(<BrandForm onSubmit={vi.fn()} onCancel={vi.fn()} />);
 
-      expect(screen.getByLabelText(/description/i)).toBeInTheDocument();
-      const descriptionField = screen.getByLabelText(/description/i);
+      expect(screen.getByRole("textbox", { name: /description/i })).toBeInTheDocument();
+      const descriptionField = screen.getByRole("textbox", { name: /description/i });
       expect(descriptionField.tagName.toLowerCase()).toBe("textarea");
     });
 
@@ -183,7 +183,7 @@ describe("BrandForm", () => {
       const nameInput = screen.getByLabelText(/name/i);
       await user.type(nameInput, "New Brand");
 
-      const descriptionInput = screen.getByLabelText(/description/i);
+      const descriptionInput = screen.getByRole("textbox", { name: /description/i });
       await user.type(descriptionInput, "A great brand");
 
       const websiteInput = screen.getByLabelText(/website url/i);
@@ -301,7 +301,7 @@ describe("BrandForm", () => {
         />,
       );
 
-      const descriptionInput = screen.getByLabelText(/description/i);
+      const descriptionInput = screen.getByRole("textbox", { name: /description/i });
       expect(descriptionInput).toHaveValue("Existing description");
     });
 
@@ -314,7 +314,7 @@ describe("BrandForm", () => {
         />,
       );
 
-      const descriptionInput = screen.getByLabelText(/description/i);
+      const descriptionInput = screen.getByRole("textbox", { name: /description/i });
       expect(descriptionInput).toHaveValue("");
     });
 

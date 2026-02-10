@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import {
-  Sparkles,
+  Wand2,
   Minimize2,
   Maximize2,
   SpellCheck,
@@ -16,11 +16,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { useAIImprove } from "@/hooks/use-ai-improve";
 import { ACTION_LABELS, type AIAction } from "@/lib/ai";
 
@@ -30,8 +25,8 @@ interface AICopyToolsProps {
   onAccept: (text: string) => void;
 }
 
-const ACTION_ICONS: Record<AIAction, typeof Sparkles> = {
-  improve: Sparkles,
+const ACTION_ICONS: Record<AIAction, typeof Wand2> = {
+  improve: Wand2,
   shorten: Minimize2,
   expand: Maximize2,
   grammar: SpellCheck,
@@ -86,7 +81,7 @@ export function AICopyTools({
     return (
       <div className="rounded-md border bg-muted/50 p-3 space-y-3">
         <div className="flex items-center gap-2 text-sm font-medium">
-          <Sparkles className="size-4 text-primary" />
+          <Wand2 className="size-4 text-primary" />
           AI Suggestion
         </div>
         <p className="text-sm whitespace-pre-wrap">{result}</p>
@@ -104,23 +99,18 @@ export function AICopyTools({
 
   return (
     <DropdownMenu>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <DropdownMenuTrigger asChild>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="size-8"
-              disabled={isEmpty}
-              aria-label={`AI writing tools for ${fieldName}`}
-            >
-              <Sparkles className="size-4" />
-            </Button>
-          </DropdownMenuTrigger>
-        </TooltipTrigger>
-        <TooltipContent>AI writing tools</TooltipContent>
-      </Tooltip>
+      <DropdownMenuTrigger asChild>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="size-8"
+          disabled={isEmpty}
+          aria-label={`AI writing tools for ${fieldName}`}
+        >
+          <Wand2 className="size-4" />
+        </Button>
+      </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         {ACTION_ORDER.map((action) => {
           const Icon = ACTION_ICONS[action];

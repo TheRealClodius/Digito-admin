@@ -34,13 +34,6 @@ vi.mock("sonner", () => ({
 
 import { AICopyTools } from "./ai-copy-tools";
 
-// Wrap in TooltipProvider for Radix
-import { TooltipProvider } from "@/components/ui/tooltip";
-
-function renderWithProviders(ui: React.ReactElement) {
-  return render(<TooltipProvider>{ui}</TooltipProvider>);
-}
-
 describe("AICopyTools", () => {
   const defaultProps = {
     fieldName: "description",
@@ -63,7 +56,7 @@ describe("AICopyTools", () => {
 
   describe("default state", () => {
     it("renders the sparkle trigger button", () => {
-      renderWithProviders(<AICopyTools {...defaultProps} />);
+      render(<AICopyTools {...defaultProps} />);
 
       expect(
         screen.getByRole("button", { name: /ai writing tools/i })
@@ -71,7 +64,7 @@ describe("AICopyTools", () => {
     });
 
     it("disables the button when text is empty", () => {
-      renderWithProviders(
+      render(
         <AICopyTools {...defaultProps} getCurrentValue={() => ""} />
       );
 
@@ -81,7 +74,7 @@ describe("AICopyTools", () => {
     });
 
     it("disables the button when text is only whitespace", () => {
-      renderWithProviders(
+      render(
         <AICopyTools {...defaultProps} getCurrentValue={() => "   "} />
       );
 
@@ -91,7 +84,7 @@ describe("AICopyTools", () => {
     });
 
     it("enables the button when text has content", () => {
-      renderWithProviders(<AICopyTools {...defaultProps} />);
+      render(<AICopyTools {...defaultProps} />);
 
       expect(
         screen.getByRole("button", { name: /ai writing tools/i })
@@ -104,7 +97,7 @@ describe("AICopyTools", () => {
   describe("dropdown menu", () => {
     it("shows four action items when clicked", async () => {
       const user = userEvent.setup();
-      renderWithProviders(<AICopyTools {...defaultProps} />);
+      render(<AICopyTools {...defaultProps} />);
 
       await user.click(
         screen.getByRole("button", { name: /ai writing tools/i })
@@ -118,7 +111,7 @@ describe("AICopyTools", () => {
 
     it("calls improve with 'improve' action when 'Improve clarity' is clicked", async () => {
       const user = userEvent.setup();
-      renderWithProviders(<AICopyTools {...defaultProps} />);
+      render(<AICopyTools {...defaultProps} />);
 
       await user.click(
         screen.getByRole("button", { name: /ai writing tools/i })
@@ -130,7 +123,7 @@ describe("AICopyTools", () => {
 
     it("calls improve with 'shorten' action when 'Shorten' is clicked", async () => {
       const user = userEvent.setup();
-      renderWithProviders(<AICopyTools {...defaultProps} />);
+      render(<AICopyTools {...defaultProps} />);
 
       await user.click(
         screen.getByRole("button", { name: /ai writing tools/i })
@@ -142,7 +135,7 @@ describe("AICopyTools", () => {
 
     it("calls improve with 'expand' action when 'Expand' is clicked", async () => {
       const user = userEvent.setup();
-      renderWithProviders(<AICopyTools {...defaultProps} />);
+      render(<AICopyTools {...defaultProps} />);
 
       await user.click(
         screen.getByRole("button", { name: /ai writing tools/i })
@@ -154,7 +147,7 @@ describe("AICopyTools", () => {
 
     it("calls improve with 'grammar' action when 'Fix grammar' is clicked", async () => {
       const user = userEvent.setup();
-      renderWithProviders(<AICopyTools {...defaultProps} />);
+      render(<AICopyTools {...defaultProps} />);
 
       await user.click(
         screen.getByRole("button", { name: /ai writing tools/i })
@@ -177,7 +170,7 @@ describe("AICopyTools", () => {
         reset: mockReset,
       });
 
-      renderWithProviders(<AICopyTools {...defaultProps} />);
+      render(<AICopyTools {...defaultProps} />);
 
       expect(screen.getByText(/improving/i)).toBeInTheDocument();
     });
@@ -191,7 +184,7 @@ describe("AICopyTools", () => {
         reset: mockReset,
       });
 
-      renderWithProviders(<AICopyTools {...defaultProps} />);
+      render(<AICopyTools {...defaultProps} />);
 
       expect(
         screen.queryByRole("button", { name: /ai writing tools/i })
@@ -213,7 +206,7 @@ describe("AICopyTools", () => {
     });
 
     it("shows the suggestion text", () => {
-      renderWithProviders(<AICopyTools {...defaultProps} />);
+      render(<AICopyTools {...defaultProps} />);
 
       expect(
         screen.getByText("This is the AI-improved text.")
@@ -221,7 +214,7 @@ describe("AICopyTools", () => {
     });
 
     it("shows Accept and Reject buttons", () => {
-      renderWithProviders(<AICopyTools {...defaultProps} />);
+      render(<AICopyTools {...defaultProps} />);
 
       expect(
         screen.getByRole("button", { name: /accept/i })
@@ -235,7 +228,7 @@ describe("AICopyTools", () => {
       const user = userEvent.setup();
       const onAccept = vi.fn();
 
-      renderWithProviders(
+      render(
         <AICopyTools {...defaultProps} onAccept={onAccept} />
       );
 
@@ -249,7 +242,7 @@ describe("AICopyTools", () => {
       const user = userEvent.setup();
       const onAccept = vi.fn();
 
-      renderWithProviders(
+      render(
         <AICopyTools {...defaultProps} onAccept={onAccept} />
       );
 
@@ -260,7 +253,7 @@ describe("AICopyTools", () => {
     });
 
     it("does not show the trigger button when in preview state", () => {
-      renderWithProviders(<AICopyTools {...defaultProps} />);
+      render(<AICopyTools {...defaultProps} />);
 
       expect(
         screen.queryByRole("button", { name: /ai writing tools/i })
@@ -280,7 +273,7 @@ describe("AICopyTools", () => {
         reset: mockReset,
       });
 
-      renderWithProviders(<AICopyTools {...defaultProps} />);
+      render(<AICopyTools {...defaultProps} />);
 
       expect(mockToastError).toHaveBeenCalledWith("Something went wrong");
     });

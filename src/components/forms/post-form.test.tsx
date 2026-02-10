@@ -59,8 +59,8 @@ describe("PostForm", () => {
     it("renders a description textarea", () => {
       render(<PostForm onSubmit={vi.fn()} onCancel={vi.fn()} />);
 
-      expect(screen.getByLabelText(/description/i)).toBeInTheDocument();
-      const descriptionField = screen.getByLabelText(/description/i);
+      expect(screen.getByRole("textbox", { name: /description/i })).toBeInTheDocument();
+      const descriptionField = screen.getByRole("textbox", { name: /description/i });
       expect(descriptionField.tagName.toLowerCase()).toBe("textarea");
     });
 
@@ -130,7 +130,7 @@ describe("PostForm", () => {
       render(<PostForm onSubmit={vi.fn()} onCancel={vi.fn()} />);
 
       // Try to trigger validation by interacting with the form
-      const descField = screen.getByLabelText(/description/i);
+      const descField = screen.getByRole("textbox", { name: /description/i });
       await user.click(descField);
       await user.tab(); // blur
 
@@ -155,7 +155,7 @@ describe("PostForm", () => {
         />,
       );
 
-      const descriptionInput = screen.getByLabelText(/description/i);
+      const descriptionInput = screen.getByRole("textbox", { name: /description/i });
       expect(descriptionInput).toHaveValue("Existing description");
     });
 
@@ -187,7 +187,7 @@ describe("PostForm", () => {
         />,
       );
 
-      const descriptionInput = screen.getByLabelText(/description/i);
+      const descriptionInput = screen.getByRole("textbox", { name: /description/i });
       expect(descriptionInput).toHaveValue("");
     });
 
@@ -223,7 +223,7 @@ describe("PostForm", () => {
         />,
       );
 
-      const descriptionInput = screen.getByLabelText(/description/i);
+      const descriptionInput = screen.getByRole("textbox", { name: /description/i });
       await user.clear(descriptionInput);
       await user.type(descriptionInput, "Updated description");
 

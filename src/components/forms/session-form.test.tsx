@@ -65,7 +65,7 @@ describe("SessionForm", () => {
   it("renders the Description field", () => {
     render(<SessionForm {...defaultProps} />);
 
-    expect(screen.getByLabelText(/description/i)).toBeInTheDocument();
+    expect(screen.getByRole("textbox", { name: /description/i })).toBeInTheDocument();
   });
 
   it("renders Start Time and End Time fields", () => {
@@ -91,7 +91,7 @@ describe("SessionForm", () => {
     render(<SessionForm {...defaultProps} />);
 
     expect(screen.getByLabelText(/speaker name/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/speaker bio/i)).toBeInTheDocument();
+    expect(screen.getByRole("textbox", { name: /speaker bio/i })).toBeInTheDocument();
   });
 
   it("renders the Requires Registration and Requires VIP Access checkboxes", () => {
@@ -189,12 +189,12 @@ describe("SessionForm", () => {
     );
 
     expect(screen.getByLabelText(/title/i)).toHaveValue("Existing Session");
-    expect(screen.getByLabelText(/description/i)).toHaveValue(
+    expect(screen.getByRole("textbox", { name: /description/i })).toHaveValue(
       "Some description",
     );
     expect(screen.getByLabelText(/location/i)).toHaveValue("Grand Hall");
     expect(screen.getByLabelText(/speaker name/i)).toHaveValue("Alice");
-    expect(screen.getByLabelText(/speaker bio/i)).toHaveValue(
+    expect(screen.getByRole("textbox", { name: /speaker bio/i })).toHaveValue(
       "Expert in testing",
     );
     expect(screen.getByLabelText(/type/i)).toHaveValue("workshop");
@@ -347,9 +347,9 @@ describe("SessionForm", () => {
     );
 
     expect(screen.getByLabelText(/title/i)).toHaveValue("Session");
-    expect(screen.getByLabelText(/description/i)).toHaveValue("");
+    expect(screen.getByRole("textbox", { name: /description/i })).toHaveValue("");
     expect(screen.getByLabelText(/location/i)).toHaveValue("");
     expect(screen.getByLabelText(/speaker name/i)).toHaveValue("");
-    expect(screen.getByLabelText(/speaker bio/i)).toHaveValue("");
+    expect(screen.getByRole("textbox", { name: /speaker bio/i })).toHaveValue("");
   });
 });

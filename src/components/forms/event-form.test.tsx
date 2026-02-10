@@ -83,7 +83,7 @@ describe("EventForm", () => {
   it("renders the Description field", () => {
     render(<EventForm {...defaultProps} />);
 
-    expect(screen.getByLabelText(/description/i)).toBeInTheDocument();
+    expect(screen.getByRole("textbox", { name: /description/i })).toBeInTheDocument();
   });
 
   it("renders the Venue field", () => {
@@ -259,7 +259,7 @@ describe("EventForm", () => {
     );
 
     expect(screen.getByLabelText(/name/i)).toHaveValue("Existing Event");
-    expect(screen.getByLabelText(/description/i)).toHaveValue(
+    expect(screen.getByRole("textbox", { name: /description/i })).toHaveValue(
       "Some description",
     );
     expect(screen.getByLabelText(/venue/i)).toHaveValue("Grand Hall");
@@ -364,7 +364,7 @@ describe("EventForm", () => {
     );
 
     expect(screen.getByLabelText(/name/i)).toHaveValue("Event");
-    expect(screen.getByLabelText(/description/i)).toHaveValue("");
+    expect(screen.getByRole("textbox", { name: /description/i })).toHaveValue("");
     expect(screen.getByLabelText(/venue/i)).toHaveValue("");
   });
 

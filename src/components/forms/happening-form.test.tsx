@@ -65,7 +65,7 @@ describe("HappeningForm", () => {
   it("renders the Description field as a textarea", () => {
     render(<HappeningForm {...defaultProps} />);
 
-    const description = screen.getByLabelText(/description/i);
+    const description = screen.getByRole("textbox", { name: /description/i });
     expect(description).toBeInTheDocument();
     expect(description.tagName).toBe("TEXTAREA");
   });
@@ -165,7 +165,7 @@ describe("HappeningForm", () => {
     );
 
     expect(screen.getByLabelText(/title/i)).toHaveValue("Existing Happening");
-    expect(screen.getByLabelText(/description/i)).toHaveValue(
+    expect(screen.getByRole("textbox", { name: /description/i })).toHaveValue(
       "Some description",
     );
     expect(screen.getByLabelText(/location/i)).toHaveValue("Hall A");
@@ -276,7 +276,7 @@ describe("HappeningForm", () => {
     );
 
     expect(screen.getByLabelText(/title/i)).toHaveValue("Happening");
-    expect(screen.getByLabelText(/description/i)).toHaveValue("");
+    expect(screen.getByRole("textbox", { name: /description/i })).toHaveValue("");
     expect(screen.getByLabelText(/location/i)).toHaveValue("");
     expect(screen.getByLabelText(/host name/i)).toHaveValue("");
   });

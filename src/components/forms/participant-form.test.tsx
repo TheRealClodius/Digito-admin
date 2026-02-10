@@ -144,7 +144,7 @@ describe("ParticipantForm", () => {
         <ParticipantForm onSubmit={vi.fn()} onCancel={vi.fn()} />,
       );
 
-      const bioField = screen.getByLabelText(/bio/i);
+      const bioField = screen.getByRole("textbox", { name: /bio/i });
       expect(bioField).toBeInTheDocument();
       expect(bioField.tagName.toLowerCase()).toBe("textarea");
     });
@@ -441,7 +441,7 @@ describe("ParticipantForm", () => {
       expect(screen.getByLabelText(/email/i)).toHaveValue("jane@example.com");
       expect(screen.getByLabelText(/company/i)).toHaveValue("Acme Corp");
       expect(screen.getByLabelText(/title/i)).toHaveValue("CTO");
-      expect(screen.getByLabelText(/bio/i)).toHaveValue("A short bio");
+      expect(screen.getByRole("textbox", { name: /bio/i })).toHaveValue("A short bio");
       expect(screen.getByLabelText(/website url/i)).toHaveValue("https://jane.dev");
       expect(screen.getByLabelText(/linkedin url/i)).toHaveValue("https://linkedin.com/in/jane");
     });
@@ -465,7 +465,7 @@ describe("ParticipantForm", () => {
       expect(screen.getByLabelText(/email/i)).toHaveValue("");
       expect(screen.getByLabelText(/company/i)).toHaveValue("");
       expect(screen.getByLabelText(/title/i)).toHaveValue("");
-      expect(screen.getByLabelText(/bio/i)).toHaveValue("");
+      expect(screen.getByRole("textbox", { name: /bio/i })).toHaveValue("");
     });
 
     it("enables the submit button when defaultValues includes first and last name", () => {

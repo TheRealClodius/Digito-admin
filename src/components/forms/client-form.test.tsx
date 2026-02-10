@@ -59,9 +59,8 @@ describe("ClientForm", () => {
         <ClientForm onSubmit={vi.fn()} onCancel={vi.fn()} />
       );
 
-      expect(screen.getByLabelText(/description/i)).toBeInTheDocument();
-      // Verify it is a textarea element
-      const descriptionField = screen.getByLabelText(/description/i);
+      const descriptionField = screen.getByRole("textbox", { name: /description/i });
+      expect(descriptionField).toBeInTheDocument();
       expect(descriptionField.tagName.toLowerCase()).toBe("textarea");
     });
 
@@ -146,7 +145,7 @@ describe("ClientForm", () => {
       const nameInput = screen.getByLabelText(/name/i);
       await user.type(nameInput, "New Client");
 
-      const descriptionInput = screen.getByLabelText(/description/i);
+      const descriptionInput = screen.getByRole("textbox", { name: /description/i });
       await user.type(descriptionInput, "A great client");
 
       const submitButton = screen.getByRole("button", { name: /save|submit|create/i });
@@ -258,7 +257,7 @@ describe("ClientForm", () => {
         />
       );
 
-      const descriptionInput = screen.getByLabelText(/description/i);
+      const descriptionInput = screen.getByRole("textbox", { name: /description/i });
       expect(descriptionInput).toHaveValue("Existing description");
     });
 
@@ -271,7 +270,7 @@ describe("ClientForm", () => {
         />
       );
 
-      const descriptionInput = screen.getByLabelText(/description/i);
+      const descriptionInput = screen.getByRole("textbox", { name: /description/i });
       expect(descriptionInput).toHaveValue("");
     });
 
