@@ -21,11 +21,10 @@ describe("auto-theme", () => {
   });
 
   describe("fetchCoordinates", () => {
-    it("fetches coordinates from ipapi.co successfully", async () => {
+    it("fetches coordinates from API route successfully", async () => {
       const mockResponse = {
-        latitude: 40.7128,
-        longitude: -74.006,
-        city: "New York",
+        lat: 40.7128,
+        lng: -74.006,
       };
 
       global.fetch = vi.fn().mockResolvedValue({
@@ -36,13 +35,13 @@ describe("auto-theme", () => {
       const result = await fetchCoordinates();
 
       expect(result).toEqual({ lat: 40.7128, lng: -74.006 });
-      expect(fetch).toHaveBeenCalledWith("https://ipapi.co/json/");
+      expect(fetch).toHaveBeenCalledWith("/api/theme/coordinates");
     });
 
     it("caches coordinates in localStorage after successful fetch", async () => {
       const mockResponse = {
-        latitude: 51.5074,
-        longitude: -0.1278,
+        lat: 51.5074,
+        lng: -0.1278,
       };
 
       global.fetch = vi.fn().mockResolvedValue({
@@ -88,8 +87,8 @@ describe("auto-theme", () => {
       localStorage.setItem("coordinatesCache", JSON.stringify(expiredData));
 
       const mockResponse = {
-        latitude: 40.7128,
-        longitude: -74.006,
+        lat: 40.7128,
+        lng: -74.006,
       };
 
       global.fetch = vi.fn().mockResolvedValue({
@@ -133,11 +132,8 @@ describe("auto-theme", () => {
   describe("fetchSunriseSunset", () => {
     it("fetches sunrise/sunset times successfully", async () => {
       const mockResponse = {
-        results: {
-          sunrise: "2024-01-15T07:15:00+00:00",
-          sunset: "2024-01-15T17:30:00+00:00",
-        },
-        status: "OK",
+        sunrise: "2024-01-15T07:15:00+00:00",
+        sunset: "2024-01-15T17:30:00+00:00",
       };
 
       global.fetch = vi.fn().mockResolvedValue({
@@ -150,7 +146,7 @@ describe("auto-theme", () => {
       expect(result.sunrise).toBeInstanceOf(Date);
       expect(result.sunset).toBeInstanceOf(Date);
       expect(fetch).toHaveBeenCalledWith(
-        expect.stringContaining("https://api.sunrise-sunset.org/json"),
+        expect.stringContaining("/api/theme/sunrise-sunset"),
       );
       expect(fetch).toHaveBeenCalledWith(
         expect.stringContaining("lat=40.7128"),
@@ -162,11 +158,8 @@ describe("auto-theme", () => {
 
     it("caches sunrise/sunset times after successful fetch", async () => {
       const mockResponse = {
-        results: {
-          sunrise: "2024-01-15T07:15:00+00:00",
-          sunset: "2024-01-15T17:30:00+00:00",
-        },
-        status: "OK",
+        sunrise: "2024-01-15T07:15:00+00:00",
+        sunset: "2024-01-15T17:30:00+00:00",
       };
 
       global.fetch = vi.fn().mockResolvedValue({
@@ -220,11 +213,8 @@ describe("auto-theme", () => {
       localStorage.setItem("sunriseSunsetCache", JSON.stringify(cachedData));
 
       const mockResponse = {
-        results: {
-          sunrise: "2024-01-15T07:20:00+00:00",
-          sunset: "2024-01-15T17:35:00+00:00",
-        },
-        status: "OK",
+        sunrise: "2024-01-15T07:20:00+00:00",
+        sunset: "2024-01-15T17:35:00+00:00",
       };
 
       global.fetch = vi.fn().mockResolvedValue({
@@ -249,17 +239,14 @@ describe("auto-theme", () => {
     });
 
     it("handles API error status gracefully", async () => {
-      const mockResponse = {
-        status: "INVALID_REQUEST",
-      };
-
       global.fetch = vi.fn().mockResolvedValue({
-        ok: true,
-        json: async () => mockResponse,
+        ok: false,
+        status: 500,
       } as Response);
 
       const result = await fetchSunriseSunset(40.7128, -74.006);
 
+      // Should fall back to default times
       expect(result.sunrise).toBeInstanceOf(Date);
       expect(result.sunset).toBeInstanceOf(Date);
     });

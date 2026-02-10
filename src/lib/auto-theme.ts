@@ -20,27 +20,27 @@ const FALLBACK_COORDINATES = { lat: 0, lng: 0 }; // Equator fallback
 
 /**
  * Fetches user's geographic coordinates from their IP address
- * Uses ipapi.co API with localStorage caching (24hr TTL)
+ * Uses Next.js API route that proxies ipapi.co with localStorage caching (24hr TTL)
  */
 export async function fetchCoordinates(): Promise<{ lat: number; lng: number }> {
   // Check cache first
   const cached = getCoordinatesFromCache();
   if (cached) return cached;
 
-  // Fetch from ipapi.co
+  // Fetch from Next.js API route (server-side proxy to avoid CORS)
   try {
-    const response = await fetch("https://ipapi.co/json/");
+    const response = await fetch("/api/theme/coordinates");
     if (response.ok) {
       const data = await response.json();
       const coordinates = {
-        lat: data.latitude,
-        lng: data.longitude,
+        lat: data.lat,
+        lng: data.lng,
       };
       cacheCoordinates(coordinates);
       return coordinates;
     }
   } catch (error) {
-    console.warn("Failed to fetch coordinates from ipapi.co:", error);
+    console.warn("Failed to fetch coordinates:", error);
   }
 
   // Fallback to default coordinates
@@ -49,7 +49,7 @@ export async function fetchCoordinates(): Promise<{ lat: number; lng: number }> 
 
 /**
  * Fetches sunrise and sunset times for given coordinates
- * Uses sunrise-sunset.org API with localStorage caching (daily refresh)
+ * Uses Next.js API route that proxies sunrise-sunset.org with localStorage caching (daily refresh)
  */
 export async function fetchSunriseSunset(
   lat: number,
@@ -59,18 +59,18 @@ export async function fetchSunriseSunset(
   const cached = getSunriseSunsetFromCache();
   if (cached) return cached;
 
-  // Fetch from sunrise-sunset.org
+  // Fetch from Next.js API route (server-side proxy to avoid CORS)
   try {
-    const url = `https://api.sunrise-sunset.org/json?lat=${lat}&lng=${lng}&formatted=0`;
+    const url = `/api/theme/sunrise-sunset?lat=${lat}&lng=${lng}`;
     const response = await fetch(url);
 
     if (response.ok) {
       const data = await response.json();
 
-      if (data.status === "OK") {
+      if (data.sunrise && data.sunset) {
         const times = {
-          sunrise: new Date(data.results.sunrise),
-          sunset: new Date(data.results.sunset),
+          sunrise: new Date(data.sunrise),
+          sunset: new Date(data.sunset),
         };
         cacheSunriseSunset(times);
         return times;
