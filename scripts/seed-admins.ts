@@ -1,6 +1,8 @@
 /**
- * One-time script to set admin custom claims and create superAdmins Firestore
- * documents for super admin users.
+ * Script to set superadmin custom claims and create userPermissions Firestore documents.
+ *
+ * MIGRATION MODE: Sets BOTH 'admin' and 'superadmin' claims for backward compatibility.
+ * After migration is complete, this will be updated to only set 'superadmin'.
  *
  * Prerequisites:
  *   1. Place your Firebase service account key at ./service-account-key.json
@@ -9,15 +11,24 @@
  *
  * Usage:
  *   ADMIN_EMAILS=admin1@example.com,admin2@example.com npx tsx scripts/seed-admins.ts
+ *
+ * Security:
+ *   Only emails in ALLOWED_SUPERADMINS can be granted superadmin access.
  */
 
 import { initializeApp, cert } from "firebase-admin/app";
 import { getAuth } from "firebase-admin/auth";
-import { getFirestore } from "firebase-admin/firestore";
+import { getFirestore, FieldValue } from "firebase-admin/firestore";
 import { readFileSync } from "fs";
 import { resolve } from "path";
 
 const SERVICE_ACCOUNT_PATH = resolve(process.cwd(), "service-account-key.json");
+
+// SECURITY: Hardcoded list of allowed superadmin emails
+const ALLOWED_SUPERADMINS = [
+  'andrei.clodius@goodgest.com',
+  'ga.ibba@goodgest.com'
+];
 
 // Read admin emails from environment variable
 // Format: ADMIN_EMAILS=email1@example.com,email2@example.com
@@ -47,31 +58,67 @@ initializeApp({ credential: cert(serviceAccount as Parameters<typeof cert>[0]) }
 const auth = getAuth();
 const db = getFirestore();
 
-async function seedAdmin(email: string) {
+async function seedSuperAdmin(email: string) {
+  // SECURITY CHECK: Only allow emails in the approved list
+  if (!ALLOWED_SUPERADMINS.includes(email)) {
+    console.error(`❌ SECURITY: ${email} is NOT in the allowed superadmin list. Skipping.`);
+    console.error(`   Allowed superadmins: ${ALLOWED_SUPERADMINS.join(', ')}`);
+    return;
+  }
+
   try {
     const user = await auth.getUserByEmail(email);
-    await auth.setCustomUserClaims(user.uid, { admin: true });
-    await db.collection("superAdmins").doc(user.uid).set({ email });
-    console.log(`Set admin claim + superAdmins doc for ${email} (uid: ${user.uid})`);
+
+    // MIGRATION: Set BOTH claims for backward compatibility
+    // After migration is complete, remove 'admin: true'
+    await auth.setCustomUserClaims(user.uid, {
+      admin: true,      // Legacy claim (for backward compatibility)
+      superadmin: true  // New claim
+    });
+
+    // Create userPermissions document
+    await db.collection("userPermissions").doc(user.uid).set({
+      userId: user.uid,
+      email: user.email,
+      role: 'superadmin',
+      clientIds: null,  // null = full access
+      eventIds: null,   // null = full access
+      createdAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
+      createdBy: user.uid,
+      updatedBy: user.uid,
+    });
+
+    // Keep legacy superAdmins collection for backward compatibility
+    await db.collection("superAdmins").doc(user.uid).set({ email: user.email });
+
+    console.log(`✅ Set superadmin claims + userPermissions for ${email} (uid: ${user.uid})`);
   } catch (error: unknown) {
     const code = (error as { code?: string }).code;
     if (code === "auth/user-not-found") {
       console.warn(
-        `User ${email} not found in Firebase Auth. ` +
+        `⚠️  User ${email} not found in Firebase Auth. ` +
         "They need to sign in with Google at least once before running this script."
       );
     } else {
-      console.error(`Failed to set admin claim for ${email}:`, error);
+      console.error(`❌ Failed to set superadmin for ${email}:`, error);
     }
   }
 }
 
 async function main() {
-  console.log("Seeding admin custom claims + Firestore superAdmins docs...\n");
+  console.log("\n========================================");
+  console.log("Seeding Superadmin Claims + Permissions");
+  console.log("========================================\n");
+  console.log(`Allowed superadmins: ${ALLOWED_SUPERADMINS.join(', ')}\n`);
+
   for (const email of ADMIN_EMAILS) {
-    await seedAdmin(email);
+    await seedSuperAdmin(email);
   }
-  console.log("\nDone.");
+
+  console.log("\n========================================");
+  console.log("Done");
+  console.log("========================================\n");
 }
 
 main();

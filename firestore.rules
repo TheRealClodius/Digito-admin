@@ -3,10 +3,51 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper: check if user is a super admin (via custom claim set by seed-admins script)
+    // ========================================
+    // HELPER FUNCTIONS
+    // ========================================
+
+    // Check if user is a super admin (via custom claim set by seed-admins script)
+    // MIGRATION: During transition, accepts both 'admin' (legacy) and 'superadmin' (new)
     function isSuperAdmin() {
       return request.auth != null
-        && request.auth.token.admin == true;
+        && (request.auth.token.superadmin == true || request.auth.token.admin == true);
+    }
+
+    // Future: Check if user has permission document with specific role
+    function hasRole(role) {
+      let permDoc = get(/databases/$(database)/documents/userPermissions/$(request.auth.uid));
+      return permDoc.data.role == role;
+    }
+
+    // Future: Check if user has access to specific client
+    function hasClientAccess(clientId) {
+      if (isSuperAdmin()) return true;
+
+      let permDoc = get(/databases/$(database)/documents/userPermissions/$(request.auth.uid));
+      return permDoc != null
+        && (permDoc.data.clientIds == null || clientId in permDoc.data.clientIds);
+    }
+
+    // Future: Check if user has access to specific event
+    function hasEventAccess(eventId) {
+      if (isSuperAdmin()) return true;
+
+      let permDoc = get(/databases/$(database)/documents/userPermissions/$(request.auth.uid));
+      return permDoc != null
+        && (permDoc.data.eventIds == null || eventId in permDoc.data.eventIds);
+    }
+
+    // ========================================
+    // USER PERMISSIONS COLLECTION
+    // ========================================
+
+    match /userPermissions/{userId} {
+      // Users can read their own permissions
+      allow read: if request.auth != null && request.auth.uid == userId;
+
+      // Only superadmins can create/update/delete permissions
+      allow write: if isSuperAdmin();
     }
 
     // Super admin collection — only readable by self
