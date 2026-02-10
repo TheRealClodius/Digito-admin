@@ -139,7 +139,6 @@ export function SessionForm({
         getCurrentValue={() => watch("description") ?? ""}
         onAccept={(text) => setValue("description", text, { shouldDirty: true })}
         textareaProps={register("description")}
-        showPreview={true}
       />
 
       <div className="space-y-2">
@@ -199,7 +198,6 @@ export function SessionForm({
         getCurrentValue={() => watch("speakerBio") ?? ""}
         onAccept={(text) => setValue("speakerBio", text, { shouldDirty: true })}
         textareaProps={register("speakerBio")}
-        showPreview={true}
       />
 
       <div className="flex items-center space-x-2">

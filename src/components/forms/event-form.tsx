@@ -137,7 +137,6 @@ export function EventForm({
         getCurrentValue={() => watch("description") ?? ""}
         onAccept={(text) => setValue("description", text, { shouldDirty: true })}
         textareaProps={register("description")}
-        showPreview={true}
       />
 
       <div className="space-y-2">

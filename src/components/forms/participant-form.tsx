@@ -184,7 +184,6 @@ export function ParticipantForm({
         getCurrentValue={() => watch("bio") ?? ""}
         onAccept={(text) => setValue("bio", text, { shouldDirty: true })}
         textareaProps={register("bio")}
-        showPreview={true}
       />
 
       <div className="col-span-2 space-y-2">
