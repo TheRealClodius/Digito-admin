@@ -5,6 +5,7 @@ import { useDropzone } from "react-dropzone";
 import { Loader2, Upload, X } from "lucide-react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "@/hooks/use-translation";
 import { Button } from "@/components/ui/button";
 
 interface ImageUploadProps {
@@ -28,6 +29,7 @@ export function ImageUpload({
   maxSize = 10 * 1024 * 1024, // 10MB
   accept = { "image/*": [".jpg", ".jpeg", ".png", ".webp", ".gif"] },
 }: ImageUploadProps) {
+  const { t } = useTranslation();
   const [preview, setPreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const prevObjectUrl = useRef<string | null>(null);
@@ -99,7 +101,7 @@ export function ImageUpload({
         <div className="relative inline-block">
           <Image
             src={displayUrl}
-            alt="Upload preview"
+            alt={t("common.uploadPreview")}
             width={200}
             height={200}
             className="rounded-md border object-cover"
@@ -133,11 +135,11 @@ export function ImageUpload({
           <Upload className="mb-2 size-8 text-muted-foreground" />
           <p className="text-sm text-muted-foreground">
             {isDragActive
-              ? "Drop the file here"
-              : "Drag & drop or click to upload"}
+              ? t("common.dropHere")
+              : t("common.dragAndDrop")}
           </p>
           <p className="mt-1 text-xs text-muted-foreground">
-            Max size: {Math.round(maxSize / 1024 / 1024)}MB
+            {t("common.maxSize", { size: Math.round(maxSize / 1024 / 1024) })}
           </p>
         </div>
       )}

@@ -1,3 +1,5 @@
+"use client";
+
 import { format } from "date-fns";
 import { memo } from "react";
 import type { Session } from "@/types/session";
@@ -13,6 +15,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Trash2 } from "lucide-react";
+import { useTranslation } from "@/hooks/use-translation";
 
 interface SessionsTableProps {
   sessions: Session[];
@@ -25,25 +28,24 @@ export const SessionsTable = memo(function SessionsTable({
   onEdit,
   onDelete,
 }: SessionsTableProps) {
-  const sessionCount = sessions.length;
-  const sessionLabel = sessionCount === 1 ? "session" : "sessions";
+  const { t } = useTranslation();
 
   if (sessions.length === 0) {
     return (
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Titolo</TableHead>
-            <TableHead>Tipo</TableHead>
-            <TableHead>Ora</TableHead>
-            <TableHead>Luogo</TableHead>
-            <TableHead>Speaker</TableHead>
-            <TableHead className="w-40">Azioni</TableHead>
+            <TableHead>{t("common.title")}</TableHead>
+            <TableHead>{t("common.type")}</TableHead>
+            <TableHead>{t("sessions.time")}</TableHead>
+            <TableHead>{t("common.location")}</TableHead>
+            <TableHead>{t("sessions.speaker")}</TableHead>
+            <TableHead className="w-40">{t("common.actions")}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           <TableRow>
-            <TableCell colSpan={6}>Nessuna sessione trovata</TableCell>
+            <TableCell colSpan={6}>{t("sessions.noSessionsFound")}</TableCell>
           </TableRow>
         </TableBody>
       </Table>
@@ -53,17 +55,17 @@ export const SessionsTable = memo(function SessionsTable({
   return (
     <>
       <div className="mb-2 text-sm text-muted-foreground">
-        {sessionCount} {sessionLabel}
+        {t("sessions.countLabel", { count: sessions.length })}
       </div>
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Titolo</TableHead>
-            <TableHead>Tipo</TableHead>
-            <TableHead>Ora</TableHead>
-            <TableHead>Luogo</TableHead>
-            <TableHead>Speaker</TableHead>
-            <TableHead className="w-40">Azioni</TableHead>
+            <TableHead>{t("common.title")}</TableHead>
+            <TableHead>{t("common.type")}</TableHead>
+            <TableHead>{t("sessions.time")}</TableHead>
+            <TableHead>{t("common.location")}</TableHead>
+            <TableHead>{t("sessions.speaker")}</TableHead>
+            <TableHead className="w-40">{t("common.actions")}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -90,13 +92,13 @@ export const SessionsTable = memo(function SessionsTable({
                       size="sm"
                       onClick={() => onEdit(session)}
                     >
-                      Edit
+                      {t("common.edit")}
                     </Button>
                     <Button
                       variant="destructive"
                       size="icon"
                       className="ml-2 size-8"
-                      aria-label="Delete"
+                      aria-label={t("common.delete")}
                       onClick={() => onDelete(session.id)}
                     >
                       <Trash2 className="size-4" />

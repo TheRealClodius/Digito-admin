@@ -76,7 +76,7 @@ describe("SessionsTable", () => {
   it("renders all expected column headers", () => {
     render(<SessionsTable sessions={[makeSession()]} {...defaultHandlers} />);
 
-    expect(screen.getByText("Titolo")).toBeInTheDocument();
+    expect(screen.getByText("Title")).toBeInTheDocument();
     expect(screen.getByText("Type")).toBeInTheDocument();
     expect(screen.getByText("Time")).toBeInTheDocument();
     expect(screen.getByText("Location")).toBeInTheDocument();

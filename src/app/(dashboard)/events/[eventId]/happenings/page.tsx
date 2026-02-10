@@ -5,6 +5,7 @@ import { Timestamp } from "firebase/firestore";
 import { useValidatedParams } from "@/hooks/use-validated-params";
 import { useCrudPage } from "@/hooks/use-crud-page";
 import { useEventContext } from "@/hooks/use-event-context";
+import { useTranslation } from "@/hooks/use-translation";
 import { toDate } from "@/lib/timestamps";
 import { CrudPage } from "@/components/crud-page";
 import { HappeningsTable } from "@/components/tables/happenings-table";
@@ -25,6 +26,7 @@ export default function HappeningsPage({
 }) {
   const { eventId } = useValidatedParams(params);
   const { selectedClientId } = useEventContext();
+  const { t } = useTranslation();
   const collectionPath = selectedClientId
     ? `clients/${selectedClientId}/events/${eventId}/happenings`
     : "";
@@ -45,8 +47,8 @@ export default function HappeningsPage({
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Eventi</h1> {/* Events/Happenings */}
-          <p className="text-muted-foreground">Gestisci demo, performance e attivazioni</p> {/* Manage demos, performances, and activations */}
+          <h1 className="text-2xl font-bold tracking-tight">{t("happenings.title")}</h1>
+          <p className="text-muted-foreground">{t("happenings.description")}</p>
         </div>
         <NoClientSelected />
       </div>
@@ -55,9 +57,9 @@ export default function HappeningsPage({
 
   return (
     <CrudPage
-      title="Eventi"
-      description="Gestisci demo, performance e attivazioni"
-      addButtonLabel="Add Happening"
+      title={t("happenings.title")}
+      description={t("happenings.description")}
+      addButtonLabel={t("happenings.addButton")}
       entityName="happening"
       {...crud}
       renderTable={(happenings, onEdit, onDelete) => (

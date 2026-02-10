@@ -2,11 +2,13 @@ import { Timestamp } from "firebase/firestore";
 
 export type ParticipantRole = "speaker" | "panelist" | "host" | "brand_rep" | "moderator" | "performer" | "other";
 
+export type AccessTier = "regular" | "premium" | "vip" | "staff";
+
 export interface Participant {
   id: string;
   firstName: string;
   lastName: string;
-  email?: string | null;
+  email: string;
   role: ParticipantRole;
   company?: string | null;
   title?: string | null;
@@ -18,7 +20,10 @@ export interface Participant {
   sessionIds?: string[];
   happeningIds?: string[];
   isHighlighted: boolean;
+  accessTier: AccessTier;
+  lockedFields?: string[];
   createdAt: Timestamp;
+  addedAt: Timestamp;
 }
 
-export type ParticipantFormData = Omit<Participant, "id" | "createdAt">;
+export type ParticipantFormData = Omit<Participant, "id" | "createdAt" | "addedAt">;

@@ -25,7 +25,7 @@ vi.mock("firebase/auth", () => ({
 vi.mock("firebase/firestore", () => ({ getFirestore: vi.fn() }));
 vi.mock("firebase/storage", () => ({ getStorage: vi.fn() }));
 
-import { signIn, signInWithGoogle, signOut, checkSuperAdmin, onAuthChange } from "./auth";
+import { signIn, signInWithGoogle, signOut, checkSuperAdmin, checkUserRole, onAuthChange } from "./auth";
 
 describe("auth", () => {
   beforeEach(() => {
@@ -165,6 +165,96 @@ describe("auth", () => {
         callback
       );
       expect(unsubscribe).toBe(mockUnsubscribe);
+    });
+  });
+
+  describe("checkUserRole", () => {
+    it("returns 'superadmin' when user has superadmin claim", async () => {
+      const mockUser = {
+        getIdTokenResult: vi.fn().mockResolvedValue({
+          claims: { superadmin: true },
+        }),
+      } as unknown as import("firebase/auth").User;
+
+      const result = await checkUserRole(mockUser);
+      expect(result).toBe("superadmin");
+    });
+
+    it("returns 'superadmin' when user has legacy admin claim", async () => {
+      const mockUser = {
+        getIdTokenResult: vi.fn().mockResolvedValue({
+          claims: { admin: true },
+        }),
+      } as unknown as import("firebase/auth").User;
+
+      const result = await checkUserRole(mockUser);
+      expect(result).toBe("superadmin");
+    });
+
+    it("returns 'clientAdmin' when user has role clientAdmin claim", async () => {
+      const mockUser = {
+        getIdTokenResult: vi.fn().mockResolvedValue({
+          claims: { role: "clientAdmin" },
+        }),
+      } as unknown as import("firebase/auth").User;
+
+      const result = await checkUserRole(mockUser);
+      expect(result).toBe("clientAdmin");
+    });
+
+    it("returns 'eventAdmin' when user has role eventAdmin claim", async () => {
+      const mockUser = {
+        getIdTokenResult: vi.fn().mockResolvedValue({
+          claims: { role: "eventAdmin" },
+        }),
+      } as unknown as import("firebase/auth").User;
+
+      const result = await checkUserRole(mockUser);
+      expect(result).toBe("eventAdmin");
+    });
+
+    it("returns null when user has no valid role claims", async () => {
+      const mockUser = {
+        getIdTokenResult: vi.fn().mockResolvedValue({
+          claims: {},
+        }),
+      } as unknown as import("firebase/auth").User;
+
+      const result = await checkUserRole(mockUser);
+      expect(result).toBeNull();
+    });
+
+    it("returns null when role claim is an unrecognized value", async () => {
+      const mockUser = {
+        getIdTokenResult: vi.fn().mockResolvedValue({
+          claims: { role: "unknownRole" },
+        }),
+      } as unknown as import("firebase/auth").User;
+
+      const result = await checkUserRole(mockUser);
+      expect(result).toBeNull();
+    });
+
+    it("prefers superadmin claim over role claim", async () => {
+      const mockUser = {
+        getIdTokenResult: vi.fn().mockResolvedValue({
+          claims: { superadmin: true, role: "clientAdmin" },
+        }),
+      } as unknown as import("firebase/auth").User;
+
+      const result = await checkUserRole(mockUser);
+      expect(result).toBe("superadmin");
+    });
+
+    it("force refreshes the token", async () => {
+      const mockUser = {
+        getIdTokenResult: vi.fn().mockResolvedValue({
+          claims: { superadmin: true },
+        }),
+      } as unknown as import("firebase/auth").User;
+
+      await checkUserRole(mockUser);
+      expect(mockUser.getIdTokenResult).toHaveBeenCalledWith(true);
     });
   });
 

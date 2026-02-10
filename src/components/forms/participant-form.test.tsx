@@ -79,12 +79,30 @@ describe("ParticipantForm", () => {
       expect(lastNameInput).toBeRequired();
     });
 
-    it("renders an Email input field", () => {
+    it("renders an Email input field as required", () => {
       render(
         <ParticipantForm onSubmit={vi.fn()} onCancel={vi.fn()} />,
       );
 
-      expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
+      const emailInput = screen.getByLabelText(/email/i);
+      expect(emailInput).toBeInTheDocument();
+      expect(emailInput).toBeRequired();
+    });
+
+    it("renders an Access Tier select field", () => {
+      render(
+        <ParticipantForm onSubmit={vi.fn()} onCancel={vi.fn()} />,
+      );
+
+      expect(screen.getByLabelText(/access tier/i)).toBeInTheDocument();
+    });
+
+    it("renders a Locked Fields input", () => {
+      render(
+        <ParticipantForm onSubmit={vi.fn()} onCancel={vi.fn()} />,
+      );
+
+      expect(screen.getByLabelText(/locked fields/i)).toBeInTheDocument();
     });
 
     it("renders a Role select field", () => {
@@ -277,7 +295,7 @@ describe("ParticipantForm", () => {
       );
     });
 
-    it("calls onSubmit with only names when optional fields are left empty", async () => {
+    it("calls onSubmit with only required fields when optional fields are left empty", async () => {
       const user = userEvent.setup();
       const onSubmit = vi.fn();
 
@@ -287,6 +305,7 @@ describe("ParticipantForm", () => {
 
       await user.type(screen.getByLabelText(/first name/i), "Minimal");
       await user.type(screen.getByLabelText(/last name/i), "Participant");
+      await user.type(screen.getByLabelText(/email/i), "minimal@test.com");
 
       const submitButton = screen.getByRole("button", { name: /save|submit|create/i });
       await user.click(submitButton);
@@ -299,6 +318,7 @@ describe("ParticipantForm", () => {
         expect.objectContaining({
           firstName: "Minimal",
           lastName: "Participant",
+          email: "minimal@test.com",
         }),
       );
     });

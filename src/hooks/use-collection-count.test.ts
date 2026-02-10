@@ -15,6 +15,7 @@ vi.mock("firebase/firestore", async () => {
 
 vi.mock("@/lib/firebase", () => ({
   db: {},
+  getDbInstance: () => ({}),
 }));
 
 describe("useCollectionCount", () => {

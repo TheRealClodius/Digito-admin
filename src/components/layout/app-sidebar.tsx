@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Image from "next/image";
@@ -13,7 +14,6 @@ import {
   Sparkles,
   Users,
   FileImage,
-  ListChecks,
   Settings,
   LogOut,
   ChevronsUp,
@@ -21,26 +21,30 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useEventContext } from "@/hooks/use-event-context";
+import { usePermissions } from "@/hooks/use-permissions";
+import { useTranslation } from "@/hooks/use-translation";
 import { ContextSelector } from "./context-selector";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { signOut } from "@/lib/auth";
+import type { TranslationKey } from "@/i18n/types";
 
-const mainNav = [
-  { label: "Dashboard", href: "/", icon: LayoutDashboard },
-  { label: "Clients", href: "/clients", icon: Building2 },
+const allMainNav = [
+  { labelKey: "nav.dashboard" as TranslationKey, href: "/", icon: LayoutDashboard, minRole: "superadmin" as const },
+  { labelKey: "nav.clients" as TranslationKey, href: "/clients", icon: Building2, minRole: "superadmin" as const },
 ];
 
+const ROLE_LEVEL = { superadmin: 3, clientAdmin: 2, eventAdmin: 1 } as const;
+
 const eventNav = [
-  { label: "Overview", href: "", icon: Calendar },
-  { label: "Brands", href: "/brands", icon: ShoppingBag },
-  { label: "Stands", href: "/stands", icon: MapPin },
-  { label: "Sessions", href: "/sessions", icon: Mic2 },
-  { label: "Happenings", href: "/happenings", icon: Sparkles },
-  { label: "Participants", href: "/participants", icon: Users },
-  { label: "Posts", href: "/posts", icon: FileImage },
-  { label: "Whitelist", href: "/whitelist", icon: ListChecks },
+  { labelKey: "nav.overview" as TranslationKey, href: "", icon: Calendar },
+  { labelKey: "nav.brands" as TranslationKey, href: "/brands", icon: ShoppingBag },
+  { labelKey: "nav.stands" as TranslationKey, href: "/stands", icon: MapPin },
+  { labelKey: "nav.sessions" as TranslationKey, href: "/sessions", icon: Mic2 },
+  { labelKey: "nav.happenings" as TranslationKey, href: "/happenings", icon: Sparkles },
+  { labelKey: "nav.participants" as TranslationKey, href: "/whitelist", icon: Users },
+  { labelKey: "nav.posts" as TranslationKey, href: "/posts", icon: FileImage },
 ];
 
 interface AppSidebarProps {
@@ -51,6 +55,16 @@ interface AppSidebarProps {
 export function AppSidebar({ collapsed = false, onToggleCollapse }: AppSidebarProps) {
   const pathname = usePathname();
   const { selectedEventId } = useEventContext();
+  const { role } = usePermissions();
+  const { t } = useTranslation();
+
+  const roleLevel = role ? ROLE_LEVEL[role] : 0;
+
+  // Filter main nav based on role
+  const mainNav = useMemo(
+    () => allMainNav.filter((item) => roleLevel >= ROLE_LEVEL[item.minRole]),
+    [roleLevel]
+  );
 
   return (
     <aside
@@ -69,7 +83,7 @@ export function AppSidebar({ collapsed = false, onToggleCollapse }: AppSidebarPr
           size="icon"
           className="ml-auto size-7 shrink-0 text-muted-foreground hover:text-foreground"
           onClick={onToggleCollapse}
-          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          aria-label={collapsed ? t("nav.expandSidebar") : t("nav.collapseSidebar")}
         >
           {collapsed ? (
             <ChevronsDown className="size-4" />
@@ -98,7 +112,7 @@ export function AppSidebar({ collapsed = false, onToggleCollapse }: AppSidebarPr
               )}
             >
               <item.icon className="size-4" />
-              {item.label}
+              {t(item.labelKey)}
             </Link>
           ))}
         </nav>
@@ -107,7 +121,7 @@ export function AppSidebar({ collapsed = false, onToggleCollapse }: AppSidebarPr
           <>
             <Separator className="my-3" />
             <p className="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Event
+              {t("nav.event")}
             </p>
             <nav className="flex flex-col gap-1">
               {eventNav.map((item) => {
@@ -127,7 +141,7 @@ export function AppSidebar({ collapsed = false, onToggleCollapse }: AppSidebarPr
                     )}
                   >
                     <item.icon className="size-4" />
-                    {item.label}
+                    {t(item.labelKey)}
                   </Link>
                 );
               })}
@@ -148,7 +162,7 @@ export function AppSidebar({ collapsed = false, onToggleCollapse }: AppSidebarPr
           )}
         >
           <Settings className="size-4" />
-          Settings
+          {t("nav.settings")}
         </Link>
         <Button
           variant="ghost"
@@ -156,7 +170,7 @@ export function AppSidebar({ collapsed = false, onToggleCollapse }: AppSidebarPr
           onClick={() => signOut()}
         >
           <LogOut className="size-4" />
-          Sign Out
+          {t("nav.signOut")}
         </Button>
       </div>
     </aside>

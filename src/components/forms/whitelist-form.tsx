@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { whitelistEntrySchema } from "@/lib/schemas";
+import { useTranslation } from "@/hooks/use-translation";
 
 type SubmitStatus = "idle" | "saving" | "success" | "error";
 
@@ -42,6 +43,7 @@ export function WhitelistForm({
   submitStatus = "idle",
 }: WhitelistFormProps) {
   const isSubmitting = submitStatus === "saving";
+  const { t } = useTranslation();
   const {
     register,
     handleSubmit,
@@ -80,7 +82,7 @@ export function WhitelistForm({
   return (
     <form onSubmit={handleSubmit(onFormSubmit)} className="grid grid-cols-2 gap-x-4 gap-y-6">
       <div className="space-y-2">
-        <Label htmlFor="email">Email</Label>
+        <Label htmlFor="email">{t("common.email")}</Label>
         <Input
           id="email"
           type="email"
@@ -94,7 +96,7 @@ export function WhitelistForm({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="accessTier">Livello Accesso</Label>
+        <Label htmlFor="accessTier">{t("whitelist.accessTier")}</Label>
         <select
           id="accessTier"
           {...register("accessTier")}
@@ -111,7 +113,7 @@ export function WhitelistForm({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="company">Azienda</Label>
+        <Label htmlFor="company">{t("common.company")}</Label>
         <Input
           id="company"
           {...register("company")}
@@ -119,14 +121,14 @@ export function WhitelistForm({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="lockedFields">Locked Fields</Label>
+        <Label htmlFor="lockedFields">{t("whitelist.lockedFields")}</Label>
         <Input
           id="lockedFields"
           {...register("lockedFields")}
-          placeholder="e.g. email, accessTier"
+          placeholder={t("whitelist.lockedFieldsPlaceholder")}
         />
         <p className="text-xs text-muted-foreground">
-          Comma-separated list of field names
+          {t("whitelist.lockedFieldsHint")}
         </p>
       </div>
 
@@ -135,7 +137,7 @@ export function WhitelistForm({
           type="submit"
           disabled={isEmailEmpty || isSubmitting}
         >
-          {isSubmitting ? "Saving..." : "Save"}
+          {isSubmitting ? t("common.saving") : t("common.save")}
         </Button>
         <Button
           type="button"
@@ -143,16 +145,16 @@ export function WhitelistForm({
           onClick={onCancel}
           disabled={isSubmitting}
         >
-          Cancel
+          {t("common.cancel")}
         </Button>
         {submitStatus === "success" && (
           <span className="flex items-center gap-1 text-sm text-green-600">
             <Check className="size-4" />
-            Saved
+            {t("common.saved")}
           </span>
         )}
         {submitStatus === "error" && (
-          <p className="text-sm text-destructive">Failed to save</p>
+          <p className="text-sm text-destructive">{t("common.failedToSave")}</p>
         )}
       </div>
     </form>

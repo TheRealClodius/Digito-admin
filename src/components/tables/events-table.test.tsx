@@ -68,9 +68,9 @@ describe("EventsTable", () => {
   it("renders all expected column headers", () => {
     render(<EventsTable events={[makeEvent()]} {...defaultHandlers} />);
 
-    expect(screen.getByText("Nome")).toBeInTheDocument();
+    expect(screen.getByText("Name")).toBeInTheDocument();
     expect(screen.getByText("Venue")).toBeInTheDocument();
-    expect(screen.getByText("Dates")).toBeInTheDocument();
+    expect(screen.getByText("Date")).toBeInTheDocument();
     expect(screen.getByText("Status")).toBeInTheDocument();
     expect(screen.getByText("Active")).toBeInTheDocument();
     expect(screen.getByText("Actions")).toBeInTheDocument();
@@ -147,7 +147,7 @@ describe("EventsTable", () => {
 
     render(<EventsTable events={[event]} {...defaultHandlers} />);
 
-    expect(screen.getByText("Live")).toBeInTheDocument();
+    expect(screen.getByText("Ongoing")).toBeInTheDocument();
   });
 
   // ---- Status badge: Ended ----

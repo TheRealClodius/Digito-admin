@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
-import { useAdminCheck } from "@/hooks/use-admin-check";
+import { usePermissions } from "@/hooks/use-permissions";
 import { signOut } from "@/lib/auth";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import { Header } from "@/components/layout/header";
@@ -18,7 +18,7 @@ export default function DashboardLayout({
 }) {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
-  const { isAdmin, loading: adminLoading } = useAdminCheck(user);
+  const { role, loading: permissionsLoading } = usePermissions();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [sidebarDetached, setSidebarDetached] = useState(false);
 
@@ -34,17 +34,17 @@ export default function DashboardLayout({
   }, [sidebarCollapsed]);
 
   useEffect(() => {
-    if (authLoading || adminLoading) return;
+    if (authLoading || permissionsLoading) return;
     if (!user) {
       router.push("/login");
-    } else if (isAdmin === false) {
+    } else if (!role) {
       signOut()
         .then(() => router.push("/unauthorized"))
         .catch(() => router.push("/unauthorized"));
     }
-  }, [user, isAdmin, authLoading, adminLoading, router]);
+  }, [user, role, authLoading, permissionsLoading, router]);
 
-  if (authLoading || adminLoading || !user || !isAdmin) {
+  if (authLoading || permissionsLoading || !user || !role) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="space-y-4 w-64">

@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { ImageUpload } from "@/components/image-upload";
 import { useUpload } from "@/hooks/use-upload";
 import { postSchema, type PostFormValues } from "@/lib/schemas";
+import { useTranslation } from "@/hooks/use-translation";
 
 type SubmitStatus = "idle" | "saving" | "success" | "error";
 
@@ -35,6 +36,7 @@ export function PostForm({
 }: PostFormProps) {
   const isSubmitting = submitStatus === "saving";
   const { upload, deleteFile } = useUpload({ basePath: storagePath ?? "" });
+  const { t } = useTranslation();
   const {
     register,
     handleSubmit,
@@ -58,7 +60,7 @@ export function PostForm({
   return (
     <form onSubmit={handleSubmit((data) => onSubmit(data))} className="grid grid-cols-2 gap-x-4 gap-y-6">
       <div className="space-y-2">
-        <Label>Immagine</Label>
+        <Label>{t("common.image")}</Label>
         <ImageUpload
           value={imageUrlValue || null}
           onChange={(url) => setValue("imageUrl", url ?? "", { shouldValidate: true })}
@@ -67,12 +69,12 @@ export function PostForm({
           disabled={isSubmitting}
         />
         {(errors.imageUrl || isImageEmpty) && (
-          <p className="text-sm text-destructive">Image is required</p>
+          <p className="text-sm text-destructive">{t("posts.imageRequired")}</p>
         )}
       </div>
 
       <div className="space-y-2">
-        <Label>Author Avatar</Label>
+        <Label>{t("posts.authorAvatar")}</Label>
         <ImageUpload
           value={authorAvatarUrlValue || null}
           onChange={(url) => setValue("authorAvatarUrl", url)}
@@ -83,7 +85,7 @@ export function PostForm({
       </div>
 
       <div className="col-span-2 space-y-2">
-        <Label htmlFor="description">Descrizione</Label>
+        <Label htmlFor="description">{t("common.description")}</Label>
         <Textarea
           id="description"
           {...register("description")}
@@ -91,7 +93,7 @@ export function PostForm({
       </div>
 
       <div className="col-span-2 space-y-2">
-        <Label htmlFor="authorName">Author Name</Label>
+        <Label htmlFor="authorName">{t("posts.authorName")}</Label>
         <Input
           id="authorName"
           {...register("authorName")}
@@ -103,7 +105,7 @@ export function PostForm({
           type="submit"
           disabled={isImageEmpty || isSubmitting}
         >
-          {isSubmitting ? "Saving..." : "Save"}
+          {isSubmitting ? t("common.saving") : t("common.save")}
         </Button>
         <Button
           type="button"
@@ -111,16 +113,16 @@ export function PostForm({
           onClick={onCancel}
           disabled={isSubmitting}
         >
-          Cancel
+          {t("common.cancel")}
         </Button>
         {submitStatus === "success" && (
           <span className="flex items-center gap-1 text-sm text-green-600">
             <Check className="size-4" />
-            Saved
+            {t("common.saved")}
           </span>
         )}
         {submitStatus === "error" && (
-          <p className="text-sm text-destructive">Failed to save</p>
+          <p className="text-sm text-destructive">{t("common.failedToSave")}</p>
         )}
       </div>
     </form>

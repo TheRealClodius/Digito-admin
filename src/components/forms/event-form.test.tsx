@@ -17,6 +17,22 @@ vi.mock("firebase/firestore", () => ({
 }));
 vi.mock("firebase/storage", () => ({ getStorage: vi.fn() }));
 
+vi.mock("@/hooks/use-upload", () => ({
+  useUpload: vi.fn(() => ({
+    upload: vi.fn(),
+    deleteFile: vi.fn(),
+    progress: 0,
+    uploading: false,
+    error: null,
+  })),
+}));
+
+vi.mock("@/components/image-upload", () => ({
+  ImageUpload: ({ value }: { value: string | null }) => (
+    <div data-testid="image-upload">{value || "empty"}</div>
+  ),
+}));
+
 // Mock next/image so it renders a plain <img> in jsdom
 vi.mock("next/image", () => ({
   __esModule: true,
@@ -34,6 +50,7 @@ const defaultProps = {
   clientId: "client-1",
   onSubmit: vi.fn(),
   onCancel: vi.fn(),
+  storagePath: "clients/client-1/events",
 };
 
 // ---------------------------------------------------------------------------
@@ -339,5 +356,31 @@ describe("EventForm", () => {
     expect(screen.getByLabelText(/name/i)).toHaveValue("Event");
     expect(screen.getByLabelText(/description/i)).toHaveValue("");
     expect(screen.getByLabelText(/venue/i)).toHaveValue("");
+  });
+
+  // ---- Image Upload components ----
+
+  it("renders two ImageUpload components for logo and banner", () => {
+    render(<EventForm {...defaultProps} />);
+
+    const uploads = screen.getAllByTestId("image-upload");
+    expect(uploads).toHaveLength(2);
+  });
+
+  it("passes existing logo and banner URLs to ImageUpload", () => {
+    render(
+      <EventForm
+        {...defaultProps}
+        defaultValues={{
+          name: "Event With Images",
+          logoUrl: "https://example.com/logo.png",
+          bannerUrl: "https://example.com/banner.png",
+        }}
+      />,
+    );
+
+    const uploads = screen.getAllByTestId("image-upload");
+    expect(uploads[0]).toHaveTextContent("https://example.com/logo.png");
+    expect(uploads[1]).toHaveTextContent("https://example.com/banner.png");
   });
 });

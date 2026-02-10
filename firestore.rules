@@ -4,36 +4,65 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     // ========================================
-    // HELPER FUNCTIONS
+    // ROLE DETECTION (no Firestore read)
     // ========================================
 
-    // Check if user is a super admin (via custom claim set by seed-admins script)
-    // MIGRATION: During transition, accepts both 'admin' (legacy) and 'superadmin' (new)
+    // SuperAdmin: via custom claim (supports legacy 'admin' claim during migration)
     function isSuperAdmin() {
       return request.auth != null
         && (request.auth.token.superadmin == true || request.auth.token.admin == true);
     }
 
-    // Future: Check if user has permission document with specific role
-    function hasRole(role) {
-      let permDoc = get(/databases/$(database)/documents/userPermissions/$(request.auth.uid));
-      return permDoc.data.role == role;
+    // Check if user has a specific role claim
+    function hasRoleClaim(role) {
+      return request.auth != null && request.auth.token.role == role;
     }
 
-    // Future: Check if user has access to specific client
+    // Any admin role (superadmin, clientAdmin, or eventAdmin)
+    function isAnyAdmin() {
+      return isSuperAdmin() || hasRoleClaim('clientAdmin') || hasRoleClaim('eventAdmin');
+    }
+
+    // ========================================
+    // ADMIN SCOPING (1 Firestore read, cached per rule evaluation)
+    // ========================================
+
+    // Get the user's permissions document
+    function getUserPerms() {
+      return get(/databases/$(database)/documents/userPermissions/$(request.auth.uid));
+    }
+
+    // Check if admin has access to a specific client
     function hasClientAccess(clientId) {
-      let permDoc = get(/databases/$(database)/documents/userPermissions/$(request.auth.uid));
       return isSuperAdmin()
-        || (permDoc != null
-          && (permDoc.data.clientIds == null || clientId in permDoc.data.clientIds));
+        || (isAnyAdmin() && clientId in getUserPerms().data.clientIds);
     }
 
-    // Future: Check if user has access to specific event
-    function hasEventAccess(eventId) {
-      let permDoc = get(/databases/$(database)/documents/userPermissions/$(request.auth.uid));
+    // Check if admin has access to a specific event
+    function hasEventAccess(clientId, eventId) {
       return isSuperAdmin()
-        || (permDoc != null
-          && (permDoc.data.eventIds == null || eventId in permDoc.data.eventIds));
+        || (hasRoleClaim('clientAdmin') && hasClientAccess(clientId))
+        || (hasRoleClaim('eventAdmin') && hasClientAccess(clientId)
+            && eventId in getUserPerms().data.eventIds);
+    }
+
+    // Check if admin can write event content (brands, sessions, whitelist, users, etc.)
+    function canWriteEventContent(clientId, eventId) {
+      return isSuperAdmin()
+        || (hasRoleClaim('clientAdmin') && hasClientAccess(clientId))
+        || (hasRoleClaim('eventAdmin') && hasEventAccess(clientId, eventId));
+    }
+
+    // ========================================
+    // FLUTTER USER ISOLATION (1 Firestore read, cached)
+    // ========================================
+
+    // Check if the requesting user is an active event participant
+    // Requires: user doc exists at events/{eventId}/users/{uid} with isActive == true
+    function isActiveEventUser(clientId, eventId) {
+      return request.auth != null
+        && exists(/databases/$(database)/documents/clients/$(clientId)/events/$(eventId)/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/clients/$(clientId)/events/$(eventId)/users/$(request.auth.uid)).data.isActive == true;
     }
 
     // ========================================
@@ -41,50 +70,85 @@ service cloud.firestore {
     // ========================================
 
     match /userPermissions/{userId} {
-      // Users can read their own permissions
-      allow read: if request.auth != null && request.auth.uid == userId;
+      // Admins can read their own permissions; SuperAdmins can read any
+      allow get: if isSuperAdmin()
+        || (request.auth != null && request.auth.uid == userId && isAnyAdmin());
 
-      // Only superadmins can create/update/delete permissions
+      // Only SuperAdmins can list all permissions
+      allow list: if isSuperAdmin();
+
+      // Only SuperAdmins can create/update/delete permissions
       allow write: if isSuperAdmin();
     }
 
-    // Super admin collection — only readable by self
+    // Legacy superAdmins collection — only readable by self
     match /superAdmins/{uid} {
       allow read: if request.auth != null && request.auth.uid == uid;
       allow write: if isSuperAdmin();
     }
 
-    // Users can read/write their own root profile
+    // Root users collection — users can read/write their own profile
     match /users/{userId} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
 
-    // Clients — admin-only (end users don't need to list clients)
+    // ========================================
+    // CLIENTS & EVENTS (role-based + user isolation)
+    // ========================================
+
     match /clients/{clientId} {
-      allow read: if isSuperAdmin();
+      // SuperAdmins: full access. Admins with client access: read only.
+      allow read: if isSuperAdmin() || hasClientAccess(clientId);
       allow write: if isSuperAdmin();
 
       match /events/{eventId} {
-        allow read: if request.auth != null;
-        allow write: if isSuperAdmin();
+        // Admins with event access can read.
+        // SuperAdmins and ClientAdmins (with client access) can write.
+        // Active Flutter users can read.
+        allow read: if hasEventAccess(clientId, eventId)
+          || isActiveEventUser(clientId, eventId);
+        allow write: if isSuperAdmin()
+          || (hasRoleClaim('clientAdmin') && hasClientAccess(clientId));
 
-        // Whitelist — read for all authed (needed for auth flow), write for admins
+        // --- Whitelist: readable by ALL authenticated users ---
+        // (needed for Flutter app COLLECTION_GROUP query on email)
         match /whitelist/{whitelistId} {
           allow read: if request.auth != null;
-          allow write: if isSuperAdmin();
+          allow write: if canWriteEventContent(clientId, eventId);
         }
 
-        // Event content (brands, posts, sessions, stands, happenings, participants)
-        // Read for all authed, write for admins
+        // --- Event users: self-access + admin access ---
+        match /users/{userId} {
+          // Self: read always, create always, update/delete only if active
+          // Admin: full access via canWriteEventContent
+          allow read: if (request.auth != null && request.auth.uid == userId)
+            || canWriteEventContent(clientId, eventId);
+          allow create: if (request.auth != null && request.auth.uid == userId)
+            || canWriteEventContent(clientId, eventId);
+          allow update: if (request.auth != null && request.auth.uid == userId
+              && resource.data.isActive == true)
+            || canWriteEventContent(clientId, eventId);
+          allow delete: if canWriteEventContent(clientId, eventId);
+
+          // --- User subcollections (favorites, chatMeta, chats, feedback) ---
+          match /{sub}/{docId} {
+            // Self: read always, write only if active
+            // Admin: read only
+            allow read: if (request.auth != null && request.auth.uid == userId)
+              || canWriteEventContent(clientId, eventId);
+            allow write: if request.auth != null && request.auth.uid == userId
+              && get(/databases/$(database)/documents/clients/$(clientId)/events/$(eventId)/users/$(request.auth.uid)).data.isActive == true;
+          }
+        }
+
+        // --- Event content subcollections ---
+        // (brands, sessions, happenings, posts, stands, participants)
+        // Excludes 'users' and 'whitelist' which have their own rules above.
         match /{subcollection}/{docId} {
-          allow read: if request.auth != null;
-          allow write: if isSuperAdmin();
-        }
-
-        // User data — owned by the user; admins can read and write locked fields
-        match /users/{userId}/{document=**} {
-          allow read, write: if request.auth != null && request.auth.uid == userId;
-          allow read, write: if isSuperAdmin();
+          allow read: if subcollection != 'users' && subcollection != 'whitelist'
+            && (canWriteEventContent(clientId, eventId) || isActiveEventUser(clientId, eventId));
+          allow write: if subcollection != 'users' && subcollection != 'whitelist'
+            && canWriteEventContent(clientId, eventId);
         }
       }
     }

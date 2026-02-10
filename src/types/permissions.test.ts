@@ -24,7 +24,7 @@ describe("UserPermissions types", () => {
     const clientAdminPerms: UserPermissions = {
       userId: "test-uid-456",
       email: "client-admin@example.com",
-      role: "client-admin",
+      role: "clientAdmin",
       createdAt: new Date(),
       updatedAt: new Date(),
       clientIds: ["client-1", "client-2"], // Scoped access
@@ -33,7 +33,7 @@ describe("UserPermissions types", () => {
       updatedBy: "superadmin-uid",
     };
 
-    expect(clientAdminPerms.role).toBe("client-admin");
+    expect(clientAdminPerms.role).toBe("clientAdmin");
     expect(clientAdminPerms.clientIds).toEqual(["client-1", "client-2"]);
   });
 
@@ -41,7 +41,7 @@ describe("UserPermissions types", () => {
     const eventAdminPerms: UserPermissions = {
       userId: "test-uid-789",
       email: "event-admin@example.com",
-      role: "event-admin",
+      role: "eventAdmin",
       createdAt: new Date(),
       updatedAt: new Date(),
       clientIds: ["client-1"], // Can only access specific client
@@ -50,17 +50,17 @@ describe("UserPermissions types", () => {
       updatedBy: "superadmin-uid",
     };
 
-    expect(eventAdminPerms.role).toBe("event-admin");
+    expect(eventAdminPerms.role).toBe("eventAdmin");
     expect(eventAdminPerms.eventIds).toEqual(["event-1", "event-2"]);
   });
 
   it("validates UserRole type constraints", () => {
-    const validRoles: UserRole[] = ["superadmin", "client-admin", "event-admin"];
+    const validRoles: UserRole[] = ["superadmin", "clientAdmin", "eventAdmin"];
 
     expect(validRoles).toHaveLength(3);
     expect(validRoles).toContain("superadmin");
-    expect(validRoles).toContain("client-admin");
-    expect(validRoles).toContain("event-admin");
+    expect(validRoles).toContain("clientAdmin");
+    expect(validRoles).toContain("eventAdmin");
   });
 
   it("allows optional clientIds and eventIds fields", () => {

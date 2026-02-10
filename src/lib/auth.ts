@@ -8,7 +8,7 @@ import {
 } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import { getAuthInstance, getDbInstance } from "./firebase";
-import type { UserPermissions } from "@/types/permissions";
+import type { UserPermissions, UserRole } from "@/types/permissions";
 
 const googleProvider = new GoogleAuthProvider();
 
@@ -33,6 +33,29 @@ export async function signOut() {
 export async function checkSuperAdmin(user: User): Promise<boolean> {
   const tokenResult = await user.getIdTokenResult(true); // Force refresh
   return tokenResult.claims.superadmin === true || tokenResult.claims.admin === true;
+}
+
+/**
+ * Check user's role from custom claims.
+ * Returns the UserRole or null if no valid role is found.
+ * Checks superadmin/admin claims first, then the 'role' claim.
+ */
+export async function checkUserRole(user: User): Promise<UserRole | null> {
+  const tokenResult = await user.getIdTokenResult(true);
+  const claims = tokenResult.claims;
+
+  // Superadmin takes priority (includes legacy 'admin' claim)
+  if (claims.superadmin === true || claims.admin === true) {
+    return "superadmin";
+  }
+
+  // Check for clientAdmin or eventAdmin role claim
+  const role = claims.role as string | undefined;
+  if (role === "clientAdmin" || role === "eventAdmin") {
+    return role;
+  }
+
+  return null;
 }
 
 /**

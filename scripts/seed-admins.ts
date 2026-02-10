@@ -1,9 +1,6 @@
 /**
  * Script to set superadmin custom claims and create userPermissions Firestore documents.
  *
- * MIGRATION MODE: Sets BOTH 'admin' and 'superadmin' claims for backward compatibility.
- * After migration is complete, this will be updated to only set 'superadmin'.
- *
  * Prerequisites:
  *   1. Place your Firebase service account key at ./service-account-key.json
  *      (download from Firebase Console → Project Settings → Service Accounts)
@@ -69,11 +66,8 @@ async function seedSuperAdmin(email: string) {
   try {
     const user = await auth.getUserByEmail(email);
 
-    // MIGRATION: Set BOTH claims for backward compatibility
-    // After migration is complete, remove 'admin: true'
     await auth.setCustomUserClaims(user.uid, {
-      admin: true,      // Legacy claim (for backward compatibility)
-      superadmin: true  // New claim
+      superadmin: true,
     });
 
     // Create userPermissions document
@@ -88,9 +82,6 @@ async function seedSuperAdmin(email: string) {
       createdBy: user.uid,
       updatedBy: user.uid,
     });
-
-    // Keep legacy superAdmins collection for backward compatibility
-    await db.collection("superAdmins").doc(user.uid).set({ email: user.email });
 
     console.log(`✅ Set superadmin claims + userPermissions for ${email} (uid: ${user.uid})`);
   } catch (error: unknown) {

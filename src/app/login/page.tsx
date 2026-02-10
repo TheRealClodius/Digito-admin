@@ -3,8 +3,9 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { signInWithGoogle, checkSuperAdmin, signOut } from "@/lib/auth";
+import { signInWithGoogle, checkUserRole, getUserPermissions, signOut } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
+import { useTranslation } from "@/hooks/use-translation";
 
 const BACKGROUND_IMAGES = [
   "/backgrounds/star-gazing-005.png",
@@ -13,6 +14,7 @@ const BACKGROUND_IMAGES = [
 
 export default function LoginPage() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -31,12 +33,16 @@ export default function LoginPage() {
 
     try {
       const user = await signInWithGoogle();
-      const isAdmin = await checkSuperAdmin(user);
+      const role = await checkUserRole(user);
 
-      if (!isAdmin) {
-        await signOut();
-        router.push("/unauthorized");
-        return;
+      if (!role) {
+        // Fallback: check Firestore for permissions (claim propagation delay)
+        const perms = await getUserPermissions(user.uid);
+        if (!perms) {
+          await signOut();
+          router.push("/unauthorized");
+          return;
+        }
       }
 
       router.push("/");
@@ -83,9 +89,9 @@ export default function LoginPage() {
                 />
               </div>
               <div className="text-center space-y-1">
-                <h1 className="text-2xl font-bold">Digito Admin</h1>
+                <h1 className="text-2xl font-bold">{t("login.title")}</h1>
                 <p className="text-sm text-muted-foreground max-w-[200px] mx-auto leading-relaxed">
-                  Create and manage your enterprise events end to end
+                  {t("login.subtitle")}
                 </p>
               </div>
             </div>
@@ -114,21 +120,21 @@ export default function LoginPage() {
                     fill="#EA4335"
                   />
                 </svg>
-                {loading ? "Signing in..." : "Sign in with Google"}
+                {loading ? t("login.signingIn") : t("login.signInWithGoogle")}
               </Button>
               <Button
                 variant="outline"
                 className="w-full"
                 disabled
               >
-                Login with SSO
+                {t("login.loginWithSSO")}
               </Button>
               <Button
                 variant="outline"
                 className="w-full"
                 disabled
               >
-                Connect with Magic Link
+                {t("login.connectWithMagicLink")}
               </Button>
               {error && (
                 <p className="text-sm text-destructive text-center">{error}</p>

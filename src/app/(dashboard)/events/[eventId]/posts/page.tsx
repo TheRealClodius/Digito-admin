@@ -3,6 +3,7 @@
 import { useValidatedParams } from "@/hooks/use-validated-params";
 import { useCrudPage } from "@/hooks/use-crud-page";
 import { useEventContext } from "@/hooks/use-event-context";
+import { useTranslation } from "@/hooks/use-translation";
 import { useUpload } from "@/hooks/use-upload";
 import { CrudPage } from "@/components/crud-page";
 import { PostsTable } from "@/components/tables/posts-table";
@@ -17,6 +18,7 @@ export default function PostsPage({
 }) {
   const { eventId } = useValidatedParams(params);
   const { selectedClientId } = useEventContext();
+  const { t } = useTranslation();
   const collectionPath = selectedClientId
     ? `clients/${selectedClientId}/events/${eventId}/posts`
     : "";
@@ -35,8 +37,8 @@ export default function PostsPage({
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Posts</h1>
-          <p className="text-muted-foreground">Manage event posts and announcements</p>
+          <h1 className="text-2xl font-bold tracking-tight">{t("posts.title")}</h1>
+          <p className="text-muted-foreground">{t("posts.description")}</p>
         </div>
         <NoClientSelected />
       </div>
@@ -45,9 +47,9 @@ export default function PostsPage({
 
   return (
     <CrudPage
-      title="Posts"
-      description="Manage event posts and announcements"
-      addButtonLabel="Add Post"
+      title={t("posts.title")}
+      description={t("posts.description")}
+      addButtonLabel={t("posts.addButton")}
       entityName="post"
       {...crud}
       renderTable={(posts, onEdit, onDelete) => (

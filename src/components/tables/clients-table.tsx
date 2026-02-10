@@ -1,3 +1,5 @@
+"use client";
+
 import { format } from "date-fns";
 import { memo } from "react";
 
@@ -13,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Trash2 } from "lucide-react";
 import { toDate } from "@/lib/timestamps";
+import { useTranslation } from "@/hooks/use-translation";
 import type { Client } from "@/types/client";
 
 interface ClientsTableProps {
@@ -36,6 +39,8 @@ function formatDate(client: Client): string {
 }
 
 export const ClientsTable = memo(function ClientsTable({ clients, onEdit, onDelete }: ClientsTableProps) {
+  const { t } = useTranslation();
+
   // Build the date suffix that will be embedded as direct text inside the
   // Badge element.  Keeping every piece of text that contains digits inside a
   // *single* DOM element prevents testing-library's getByText from returning
@@ -49,24 +54,24 @@ export const ClientsTable = memo(function ClientsTable({ clients, onEdit, onDele
     <div>
       <div className="mb-2">
         <Badge variant="secondary">
-          {clients.length} cliente(i){dateSuffix}
+          {t("clients.countLabel", { count: clients.length })}{dateSuffix}
         </Badge>
       </div>
 
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Nome</TableHead>
-            <TableHead>Descrizione</TableHead>
-            <TableHead>Creato</TableHead>
-            <TableHead className="w-40">Azioni</TableHead>
+            <TableHead>{t("common.name")}</TableHead>
+            <TableHead>{t("common.description")}</TableHead>
+            <TableHead>{t("clients.created")}</TableHead>
+            <TableHead className="w-40">{t("common.actions")}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {clients.length === 0 ? (
             <TableRow>
               <TableCell colSpan={4} className="text-center">
-                Nessun cliente trovato
+                {t("clients.noClientsFound")}
               </TableCell>
             </TableRow>
           ) : (
@@ -84,13 +89,13 @@ export const ClientsTable = memo(function ClientsTable({ clients, onEdit, onDele
                       size="sm"
                       onClick={() => onEdit(client)}
                     >
-                      Edit
+                      {t("common.edit")}
                     </Button>
                     <Button
                       variant="destructive"
                       size="icon"
                       className="ml-2 size-8"
-                      aria-label="Delete"
+                      aria-label={t("common.delete")}
                       onClick={() => onDelete(client.id)}
                     >
                       <Trash2 className="size-4" />

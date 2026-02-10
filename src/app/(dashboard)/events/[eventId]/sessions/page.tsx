@@ -5,6 +5,7 @@ import { Timestamp } from "firebase/firestore";
 import { useValidatedParams } from "@/hooks/use-validated-params";
 import { useCrudPage } from "@/hooks/use-crud-page";
 import { useEventContext } from "@/hooks/use-event-context";
+import { useTranslation } from "@/hooks/use-translation";
 import { toDate } from "@/lib/timestamps";
 import { CrudPage } from "@/components/crud-page";
 import { SessionsTable } from "@/components/tables/sessions-table";
@@ -19,6 +20,7 @@ export default function SessionsPage({
 }) {
   const { eventId } = useValidatedParams(params);
   const { selectedClientId } = useEventContext();
+  const { t } = useTranslation();
   const collectionPath = selectedClientId
     ? `clients/${selectedClientId}/events/${eventId}/sessions`
     : "";
@@ -39,8 +41,8 @@ export default function SessionsPage({
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Sessions</h1>
-          <p className="text-muted-foreground">Manage talks, workshops, and panels</p>
+          <h1 className="text-2xl font-bold tracking-tight">{t("sessions.title")}</h1>
+          <p className="text-muted-foreground">{t("sessions.description")}</p>
         </div>
         <NoClientSelected />
       </div>
@@ -49,9 +51,9 @@ export default function SessionsPage({
 
   return (
     <CrudPage
-      title="Sessions"
-      description="Manage talks, workshops, and panels"
-      addButtonLabel="Add Session"
+      title={t("sessions.title")}
+      description={t("sessions.description")}
+      addButtonLabel={t("sessions.addButton")}
       entityName="session"
       {...crud}
       renderTable={(sessions, onEdit, onDelete) => (

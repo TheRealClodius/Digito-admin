@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { ImageUpload } from "@/components/image-upload";
 import { useUpload } from "@/hooks/use-upload";
 import { clientSchema, type ClientFormValues } from "@/lib/schemas";
+import { useTranslation } from "@/hooks/use-translation";
 
 type SubmitStatus = "idle" | "saving" | "success" | "error";
 
@@ -34,6 +35,7 @@ export function ClientForm({
 }: ClientFormProps) {
   const isSubmitting = submitStatus === "saving";
   const { upload, deleteFile } = useUpload({ basePath: storagePath ?? "" });
+  const { t } = useTranslation();
   const {
     register,
     handleSubmit,
@@ -56,7 +58,7 @@ export function ClientForm({
   return (
     <form onSubmit={handleSubmit((data) => onSubmit(data))} className="grid grid-cols-2 gap-x-4 gap-y-6">
       <div className="col-span-2 space-y-2">
-        <Label htmlFor="name">Name</Label>
+        <Label htmlFor="name">{t("common.name")}</Label>
         <Input
           id="name"
           {...register("name")}
@@ -69,7 +71,7 @@ export function ClientForm({
       </div>
 
       <div className="col-span-2 space-y-2">
-        <Label htmlFor="description">Description</Label>
+        <Label htmlFor="description">{t("common.description")}</Label>
         <Textarea
           id="description"
           {...register("description")}
@@ -77,7 +79,7 @@ export function ClientForm({
       </div>
 
       <div className="col-span-2 space-y-2">
-        <Label>Logo</Label>
+        <Label>{t("common.logo")}</Label>
         <ImageUpload
           value={logoUrlValue || null}
           onChange={(url) => setValue("logoUrl", url)}
@@ -92,7 +94,7 @@ export function ClientForm({
           type="submit"
           disabled={isNameEmpty || isSubmitting}
         >
-          {isSubmitting ? "Saving..." : "Save"}
+          {isSubmitting ? t("common.saving") : t("common.save")}
         </Button>
         <Button
           type="button"
@@ -100,16 +102,16 @@ export function ClientForm({
           onClick={onCancel}
           disabled={isSubmitting}
         >
-          Cancel
+          {t("common.cancel")}
         </Button>
         {submitStatus === "success" && (
           <span className="flex items-center gap-1 text-sm text-green-600">
             <Check className="size-4" />
-            Saved
+            {t("common.saved")}
           </span>
         )}
         {submitStatus === "error" && (
-          <p className="text-sm text-destructive">Failed to save</p>
+          <p className="text-sm text-destructive">{t("common.failedToSave")}</p>
         )}
       </div>
     </form>

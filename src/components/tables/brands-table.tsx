@@ -1,3 +1,5 @@
+"use client";
+
 import {
   Table,
   TableHeader,
@@ -12,6 +14,7 @@ import { Switch } from "@/components/ui/switch";
 import { Trash2 } from "lucide-react";
 import type { Brand } from "@/types/brand";
 import { memo } from "react";
+import { useTranslation } from "@/hooks/use-translation";
 
 interface BrandsTableProps {
   brands: Brand[];
@@ -26,30 +29,32 @@ export const BrandsTable = memo(function BrandsTable({
   onDelete,
   onToggleHighlighted,
 }: BrandsTableProps) {
+  const { t } = useTranslation();
+
   return (
     <div>
       <div className="mb-2">
         <Badge variant="secondary">
-          {brands.length} brand(s)
+          {t("brands.countLabel", { count: brands.length })}
         </Badge>
       </div>
 
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className="w-16">Logo</TableHead>
-            <TableHead>Nome</TableHead>
-            <TableHead>Stall #</TableHead>
-            <TableHead>Website</TableHead>
-            <TableHead>In Evidenza</TableHead>
-            <TableHead className="w-40">Azioni</TableHead>
+            <TableHead className="w-16">{t("common.logo")}</TableHead>
+            <TableHead>{t("common.name")}</TableHead>
+            <TableHead>{t("brands.stallNumberShort")}</TableHead>
+            <TableHead>{t("brands.website")}</TableHead>
+            <TableHead>{t("common.highlighted")}</TableHead>
+            <TableHead className="w-40">{t("common.actions")}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {brands.length === 0 ? (
             <TableRow>
               <TableCell colSpan={6} className="text-center">
-                Nessun brand trovato
+                {t("brands.noBrandsFound")}
               </TableCell>
             </TableRow>
           ) : (
@@ -65,9 +70,9 @@ export const BrandsTable = memo(function BrandsTable({
                   ) : null}
                 </TableCell>
                 <TableCell>{brand.name}</TableCell>
-                <TableCell>{brand.stallNumber ?? "—"}</TableCell>
+                <TableCell>{brand.stallNumber ?? "\u2014"}</TableCell>
                 <TableCell>
-                  {brand.websiteUrl ? brand.websiteUrl : "—"}
+                  {brand.websiteUrl ? brand.websiteUrl : "\u2014"}
                 </TableCell>
                 <TableCell>
                   <Switch
@@ -84,13 +89,13 @@ export const BrandsTable = memo(function BrandsTable({
                       size="sm"
                       onClick={() => onEdit(brand)}
                     >
-                      Edit
+                      {t("common.edit")}
                     </Button>
                     <Button
                       variant="destructive"
                       size="icon"
                       className="ml-2 size-8"
-                      aria-label="Delete"
+                      aria-label={t("common.delete")}
                       onClick={() => onDelete(brand.id)}
                     >
                       <Trash2 className="size-4" />

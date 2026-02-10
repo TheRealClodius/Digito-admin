@@ -4,6 +4,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { addDocument, updateDocument, deleteDocument } from "@/lib/firestore";
 import { useCollection } from "@/hooks/use-collection";
+import { useTranslation } from "@/hooks/use-translation";
 import type { DocumentData, QueryConstraint } from "firebase/firestore";
 
 type SubmitStatus = "idle" | "saving" | "success" | "error";
@@ -33,6 +34,7 @@ export function useCrudPage<T extends DocumentData & { id: string }>({
   onDelete,
   onCleanupFiles,
 }: UseCrudPageOptions<T>) {
+  const { t } = useTranslation();
   const { data, loading, error } = useCollection<T>({
     path: collectionPath,
     orderByField,
@@ -74,7 +76,7 @@ export function useCrudPage<T extends DocumentData & { id: string }>({
       setSubmitStatus("success");
     } catch (err) {
       setSubmitStatus("error");
-      toast.error(`Failed to save ${entityName}`);
+      toast.error(t("crud.failedToSave", { entity: entityName }));
       console.error(err);
     }
   }
@@ -95,9 +97,9 @@ export function useCrudPage<T extends DocumentData & { id: string }>({
       } else {
         await deleteDocument(collectionPath, deletingEntityId);
       }
-      toast.success(`${entityName.charAt(0).toUpperCase() + entityName.slice(1)} deleted`);
+      toast.success(t("crud.entityDeleted", { entity: entityName }));
     } catch (err) {
-      toast.error(`Failed to delete ${entityName}`);
+      toast.error(t("crud.failedToDelete", { entity: entityName }));
       console.error(err);
     } finally {
       setDeletingEntityId(null);

@@ -6,6 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { ImageUpload } from "@/components/image-upload";
+import { useUpload } from "@/hooks/use-upload";
+import { useTranslation } from "@/hooks/use-translation";
 
 type SubmitStatus = "idle" | "saving" | "success" | "error";
 
@@ -30,6 +33,7 @@ interface EventFormProps {
   onSubmit: (data: Record<string, unknown>) => void;
   onCancel: () => void;
   submitStatus?: SubmitStatus;
+  storagePath?: string;
 }
 
 function formatDateForInput(date: Date | null | undefined): string {
@@ -62,8 +66,11 @@ export function EventForm({
   onSubmit,
   onCancel,
   submitStatus = "idle",
+  storagePath,
 }: EventFormProps) {
   const isSubmitting = submitStatus === "saving";
+  const { upload, deleteFile } = useUpload({ basePath: storagePath ?? "" });
+  const { t } = useTranslation();
   const {
     register,
     handleSubmit,
@@ -87,7 +94,7 @@ export function EventForm({
     mode: "onBlur",
   });
 
-  const [nameValue, isActiveValue] = watch(["name", "isActive"]);
+  const [nameValue, isActiveValue, logoUrlValue, bannerUrlValue] = watch(["name", "isActive", "logoUrl", "bannerUrl"]);
 
   const isSubmitDisabled = !nameValue?.trim() || isSubmitting;
 
@@ -101,11 +108,11 @@ export function EventForm({
   return (
     <form onSubmit={handleSubmit(onFormSubmit)} className="grid grid-cols-2 gap-x-4 gap-y-6">
       <div className="space-y-2">
-        <Label htmlFor="name">Nome</Label>
+        <Label htmlFor="name">{t("common.name")}</Label>
         <Input
           id="name"
           aria-label="Name"
-          {...register("name", { required: "Name is required" })}
+          {...register("name", { required: t("validation.nameRequired") })}
         />
         {errors.name && (
           <p className="text-sm text-destructive">{errors.name.message}</p>
@@ -113,7 +120,7 @@ export function EventForm({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="venue">Sede</Label>
+        <Label htmlFor="venue">{t("events.venue")}</Label>
         <Input
           id="venue"
           aria-label="Venue"
@@ -122,7 +129,7 @@ export function EventForm({
       </div>
 
       <div className="col-span-2 space-y-2">
-        <Label htmlFor="description">Descrizione</Label>
+        <Label htmlFor="description">{t("common.description")}</Label>
         <Textarea
           id="description"
           aria-label="Description"
@@ -131,13 +138,13 @@ export function EventForm({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="startDate">Data Inizio</Label>
+        <Label htmlFor="startDate">{t("events.startDate")}</Label>
         <input
           type="datetime-local"
           id="startDate"
           aria-label="Start Date"
           className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-          {...register("startDate", { required: "Start date is required" })}
+          {...register("startDate", { required: t("validation.startDateRequired") })}
         />
         {errors.startDate && (
           <p className="text-sm text-destructive">{errors.startDate.message}</p>
@@ -145,13 +152,13 @@ export function EventForm({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="endDate">Data Fine</Label>
+        <Label htmlFor="endDate">{t("events.endDate")}</Label>
         <input
           type="datetime-local"
           id="endDate"
           aria-label="End Date"
           className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-          {...register("endDate", { required: "End date is required" })}
+          {...register("endDate", { required: t("validation.endDateRequired") })}
         />
         {errors.endDate && (
           <p className="text-sm text-destructive">{errors.endDate.message}</p>
@@ -159,7 +166,7 @@ export function EventForm({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="websiteUrl">URL Sito Web</Label>
+        <Label htmlFor="websiteUrl">{t("common.websiteUrl")}</Label>
         <Input
           id="websiteUrl"
           aria-label="Website URL"
@@ -168,7 +175,7 @@ export function EventForm({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="instagramUrl">URL Instagram</Label>
+        <Label htmlFor="instagramUrl">{t("common.instagramUrl")}</Label>
         <Input
           id="instagramUrl"
           aria-label="Instagram URL"
@@ -177,11 +184,11 @@ export function EventForm({
       </div>
 
       <div className="col-span-2 space-y-2">
-        <Label htmlFor="chatPrompt">Prompt Chat</Label>
+        <Label htmlFor="chatPrompt">{t("events.chatPrompt")}</Label>
         <Input
           id="chatPrompt"
           aria-label="Chat Prompt"
-          placeholder="Ask me anything about your event"
+          placeholder={t("events.chatPromptPlaceholder")}
           {...register("chatPrompt")}
         />
       </div>
@@ -196,38 +203,46 @@ export function EventForm({
           onChange={(e) => setValue("isActive", e.target.checked)}
           className="h-4 w-4"
         />
-        <Label htmlFor="isActive">Attivo</Label>
+        <Label htmlFor="isActive">{t("common.active")}</Label>
       </div>
 
       <div className="space-y-2">
-        <Label>Logo</Label>
-        <div className="rounded-md border border-dashed p-6 text-center text-sm text-muted-foreground">
-          Drag & drop or click to upload
-        </div>
+        <Label>{t("common.logo")}</Label>
+        <ImageUpload
+          value={logoUrlValue || null}
+          onChange={(url) => setValue("logoUrl", url ?? "")}
+          uploadFn={storagePath ? (file) => upload(file, `logo_${Date.now()}_${file.name}`) : undefined}
+          deleteFileFn={deleteFile}
+          disabled={isSubmitting}
+        />
       </div>
 
       <div className="space-y-2">
-        <Label>Banner</Label>
-        <div className="rounded-md border border-dashed p-6 text-center text-sm text-muted-foreground">
-          Drag & drop or click to upload
-        </div>
+        <Label>{t("events.banner")}</Label>
+        <ImageUpload
+          value={bannerUrlValue || null}
+          onChange={(url) => setValue("bannerUrl", url ?? "")}
+          uploadFn={storagePath ? (file) => upload(file, `banner_${Date.now()}_${file.name}`) : undefined}
+          deleteFileFn={deleteFile}
+          disabled={isSubmitting}
+        />
       </div>
 
       <div className="col-span-2 flex items-center gap-4">
         <Button type="submit" disabled={isSubmitDisabled}>
-          {isSubmitting ? "Saving..." : "Save"}
+          {isSubmitting ? t("common.saving") : t("common.save")}
         </Button>
         <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
-          Cancel
+          {t("common.cancel")}
         </Button>
         {submitStatus === "success" && (
           <span className="flex items-center gap-1 text-sm text-green-600">
             <Check className="size-4" />
-            Saved
+            {t("common.saved")}
           </span>
         )}
         {submitStatus === "error" && (
-          <p className="text-sm text-destructive">Failed to save</p>
+          <p className="text-sm text-destructive">{t("common.failedToSave")}</p>
         )}
       </div>
     </form>

@@ -165,7 +165,7 @@ describe("PostsTable", () => {
     it("renders a thumbnail image for each post", () => {
       const post = makePost({
         id: "p-img",
-        imageUrl: "https://example.com/photo.jpg",
+        imageUrl: "https://firebasestorage.googleapis.com/v0/b/test/o/photo.jpg?alt=media",
       });
 
       render(
@@ -173,7 +173,7 @@ describe("PostsTable", () => {
       );
 
       const img = screen.getByRole("img");
-      expect(img).toHaveAttribute("src", "https://example.com/photo.jpg");
+      expect(img).toHaveAttribute("src", "https://firebasestorage.googleapis.com/v0/b/test/o/photo.jpg?alt=media");
     });
 
     it("handles null author name gracefully", () => {

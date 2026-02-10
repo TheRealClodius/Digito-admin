@@ -37,7 +37,7 @@ function makeParticipant(
     id: string;
     firstName: string;
     lastName: string;
-    email: string | null;
+    email: string;
     role: string;
     company: string | null;
     title: string | null;
@@ -49,14 +49,17 @@ function makeParticipant(
     sessionIds: string[];
     happeningIds: string[];
     isHighlighted: boolean;
+    accessTier: string;
+    lockedFields: string[];
     createdAt: { toDate: () => Date };
+    addedAt: { toDate: () => Date };
   }> = {},
 ) {
   return {
     id: overrides.id ?? "p-1",
     firstName: overrides.firstName ?? "Jane",
     lastName: overrides.lastName ?? "Doe",
-    email: overrides.email !== undefined ? overrides.email : "jane@example.com",
+    email: overrides.email ?? "jane@example.com",
     role: overrides.role ?? "speaker",
     company: overrides.company !== undefined ? overrides.company : "Acme Corp",
     title: overrides.title !== undefined ? overrides.title : "CTO",
@@ -68,14 +71,17 @@ function makeParticipant(
     sessionIds: overrides.sessionIds ?? [],
     happeningIds: overrides.happeningIds ?? [],
     isHighlighted: overrides.isHighlighted ?? false,
+    accessTier: overrides.accessTier ?? "regular",
+    lockedFields: overrides.lockedFields ?? [],
     createdAt: overrides.createdAt ?? { toDate: () => new Date("2025-06-15T10:00:00Z") },
+    addedAt: overrides.addedAt ?? { toDate: () => new Date("2025-06-15T10:00:00Z") },
   };
 }
 
 const sampleParticipants = [
-  makeParticipant({ id: "p1", firstName: "Jane", lastName: "Doe", role: "speaker", company: "Acme Corp", email: "jane@acme.com" }),
-  makeParticipant({ id: "p2", firstName: "John", lastName: "Smith", role: "panelist", company: "Globex Inc", email: "john@globex.com", isHighlighted: true }),
-  makeParticipant({ id: "p3", firstName: "Alice", lastName: "Wong", role: "host", company: null, email: null }),
+  makeParticipant({ id: "p1", firstName: "Jane", lastName: "Doe", role: "speaker", company: "Acme Corp", email: "jane@acme.com", accessTier: "regular" }),
+  makeParticipant({ id: "p2", firstName: "John", lastName: "Smith", role: "panelist", company: "Globex Inc", email: "john@globex.com", isHighlighted: true, accessTier: "vip" }),
+  makeParticipant({ id: "p3", firstName: "Alice", lastName: "Wong", role: "host", company: null, email: "alice@example.com" }),
 ];
 
 // ---------------------------------------------------------------------------
@@ -86,7 +92,7 @@ describe("ParticipantsTable", () => {
   // ----- Column headers -----
 
   describe("column headers", () => {
-    it("renders table column headers: Name, Role, Company, Email, Highlighted, Actions", () => {
+    it("renders table column headers: Name, Role, Company, Email, Access Tier, Highlighted, Actions", () => {
       render(
         <ParticipantsTable participants={sampleParticipants} onEdit={vi.fn()} onDelete={vi.fn()} />,
       );
@@ -95,6 +101,7 @@ describe("ParticipantsTable", () => {
       expect(screen.getByRole("columnheader", { name: /role/i })).toBeInTheDocument();
       expect(screen.getByRole("columnheader", { name: /company/i })).toBeInTheDocument();
       expect(screen.getByRole("columnheader", { name: /email/i })).toBeInTheDocument();
+      expect(screen.getByRole("columnheader", { name: /access tier/i })).toBeInTheDocument();
       expect(screen.getByRole("columnheader", { name: /highlighted/i })).toBeInTheDocument();
       expect(screen.getByRole("columnheader", { name: /actions/i })).toBeInTheDocument();
     });
@@ -151,15 +158,14 @@ describe("ParticipantsTable", () => {
       expect(screen.getByText("john@globex.com")).toBeInTheDocument();
     });
 
-    it("handles null email gracefully", () => {
-      const participant = makeParticipant({ id: "p-null-email", firstName: "No", lastName: "Email", email: null });
+    it("displays participant access tier as a badge", () => {
+      const participant = makeParticipant({ id: "p-tier", firstName: "VIP", lastName: "User", accessTier: "vip" });
 
       render(
         <ParticipantsTable participants={[participant]} onEdit={vi.fn()} onDelete={vi.fn()} />,
       );
 
-      // The row should still render without error
-      expect(screen.getByText("No Email")).toBeInTheDocument();
+      expect(screen.getByText("vip")).toBeInTheDocument();
     });
 
     it("handles null company gracefully", () => {
@@ -169,7 +175,7 @@ describe("ParticipantsTable", () => {
         <ParticipantsTable participants={[participant]} onEdit={vi.fn()} onDelete={vi.fn()} />,
       );
 
-      expect(screen.getByText("No Company")).toBeInTheDocument();
+      expect(screen.getByText("No Azienda")).toBeInTheDocument();
     });
   });
 

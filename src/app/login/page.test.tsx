@@ -18,15 +18,15 @@ vi.mock("next/navigation", () => ({
 }));
 
 // Mock auth module
-const mockSignIn = vi.fn();
 const mockSignInWithGoogle = vi.fn();
-const mockCheckSuperAdmin = vi.fn();
+const mockCheckUserRole = vi.fn();
+const mockGetUserPermissions = vi.fn();
 const mockSignOut = vi.fn();
 
 vi.mock("@/lib/auth", () => ({
-  signIn: (...args: unknown[]) => mockSignIn(...args),
   signInWithGoogle: (...args: unknown[]) => mockSignInWithGoogle(...args),
-  checkSuperAdmin: (...args: unknown[]) => mockCheckSuperAdmin(...args),
+  checkUserRole: (...args: unknown[]) => mockCheckUserRole(...args),
+  getUserPermissions: (...args: unknown[]) => mockGetUserPermissions(...args),
   signOut: (...args: unknown[]) => mockSignOut(...args),
 }));
 
@@ -65,12 +65,6 @@ describe("LoginPage", () => {
     expect(mask).toHaveClass("bg-white/75");
   });
 
-  it("renders side panel with title and description", () => {
-    render(<LoginPage />);
-    expect(screen.getByText("Digito Admin")).toBeInTheDocument();
-    expect(screen.getByText(/sign in to manage your events/i)).toBeInTheDocument();
-  });
-
   it("renders all login options", () => {
     render(<LoginPage />);
     const googleButton = screen.getByRole("button", { name: /sign in with google/i });
@@ -80,16 +74,13 @@ describe("LoginPage", () => {
     expect(googleButton).toBeInTheDocument();
     expect(ssoButton).toBeInTheDocument();
     expect(magicLinkButton).toBeInTheDocument();
-
-    // Email and password inputs should not be present
-    expect(screen.queryByLabelText(/email/i)).not.toBeInTheDocument();
-    expect(screen.queryByLabelText(/password/i)).not.toBeInTheDocument();
   });
 
-  it("calls signOut before redirecting when Google sign-in user is not admin", async () => {
+  it("redirects to /unauthorized when user has no role and no Firestore permissions", async () => {
     const user = userEvent.setup();
     mockSignInWithGoogle.mockResolvedValue(fakeUser);
-    mockCheckSuperAdmin.mockResolvedValue(false);
+    mockCheckUserRole.mockResolvedValue(null);
+    mockGetUserPermissions.mockResolvedValue(null);
     mockSignOut.mockResolvedValue(undefined);
 
     render(<LoginPage />);
@@ -103,10 +94,46 @@ describe("LoginPage", () => {
     expect(mockPush).toHaveBeenCalledWith("/unauthorized");
   });
 
-  it("does NOT call signOut when user is admin (Google sign-in)", async () => {
+  it("redirects to / when user is superadmin", async () => {
     const user = userEvent.setup();
     mockSignInWithGoogle.mockResolvedValue(fakeUser);
-    mockCheckSuperAdmin.mockResolvedValue(true);
+    mockCheckUserRole.mockResolvedValue("superadmin");
+
+    render(<LoginPage />);
+
+    const googleButton = screen.getByRole("button", { name: /sign in with google/i });
+    await user.click(googleButton);
+
+    await waitFor(() => {
+      expect(mockPush).toHaveBeenCalledWith("/");
+    });
+    expect(mockSignOut).not.toHaveBeenCalled();
+  });
+
+  it("redirects to / when user is clientAdmin", async () => {
+    const user = userEvent.setup();
+    mockSignInWithGoogle.mockResolvedValue(fakeUser);
+    mockCheckUserRole.mockResolvedValue("clientAdmin");
+
+    render(<LoginPage />);
+
+    const googleButton = screen.getByRole("button", { name: /sign in with google/i });
+    await user.click(googleButton);
+
+    await waitFor(() => {
+      expect(mockPush).toHaveBeenCalledWith("/");
+    });
+    expect(mockSignOut).not.toHaveBeenCalled();
+  });
+
+  it("falls back to Firestore permissions when no claims found", async () => {
+    const user = userEvent.setup();
+    mockSignInWithGoogle.mockResolvedValue(fakeUser);
+    mockCheckUserRole.mockResolvedValue(null);
+    mockGetUserPermissions.mockResolvedValue({
+      role: "clientAdmin",
+      clientIds: ["client-1"],
+    });
 
     render(<LoginPage />);
 

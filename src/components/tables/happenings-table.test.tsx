@@ -78,12 +78,12 @@ describe("HappeningsTable", () => {
       <HappeningsTable happenings={[makeHappening()]} {...defaultHandlers} />,
     );
 
-    expect(screen.getByText("Titolo")).toBeInTheDocument();
+    expect(screen.getByText("Title")).toBeInTheDocument();
     expect(screen.getByText("Type")).toBeInTheDocument();
     expect(screen.getByText("Time")).toBeInTheDocument();
     expect(screen.getByText("Location")).toBeInTheDocument();
     expect(screen.getByText("Host")).toBeInTheDocument();
-    expect(screen.getByText("In Evidenza")).toBeInTheDocument();
+    expect(screen.getByText("Highlighted")).toBeInTheDocument();
     expect(screen.getByText("Actions")).toBeInTheDocument();
   });
 

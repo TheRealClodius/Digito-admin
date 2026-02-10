@@ -6,9 +6,11 @@ import { toast } from "sonner";
 import { useValidatedParams } from "@/hooks/use-validated-params";
 import { useCrudPage } from "@/hooks/use-crud-page";
 import { useEventContext } from "@/hooks/use-event-context";
+import { useTranslation } from "@/hooks/use-translation";
+import { useCollection } from "@/hooks/use-collection";
 import { batchUpdateWhitelistAndUser } from "@/lib/firestore";
 import { CrudPage } from "@/components/crud-page";
-import { WhitelistTable } from "@/components/tables/whitelist-table";
+import { WhitelistTable, type EventUser } from "@/components/tables/whitelist-table";
 import { WhitelistForm } from "@/components/forms/whitelist-form";
 import { NoClientSelected } from "@/components/no-client-selected";
 import type { WhitelistEntry } from "@/types/whitelist-entry";
@@ -20,8 +22,12 @@ export default function WhitelistPage({
 }) {
   const { eventId } = useValidatedParams(params);
   const { selectedClientId } = useEventContext();
+  const { t } = useTranslation();
   const collectionPath = selectedClientId
     ? `clients/${selectedClientId}/events/${eventId}/whitelist`
+    : "";
+  const usersPath = selectedClientId
+    ? `clients/${selectedClientId}/events/${eventId}/users`
     : "";
 
   const crud = useCrudPage<WhitelistEntry>({
@@ -29,6 +35,12 @@ export default function WhitelistPage({
     orderByField: "addedAt",
     orderDirection: "desc",
     entityName: "whitelist entry",
+  });
+
+  const { data: users } = useCollection<EventUser>({
+    path: usersPath,
+    orderByField: "email",
+    orderDirection: "asc",
   });
 
   const [submitStatus, setSubmitStatus] = useState<"idle" | "saving" | "success" | "error">("idle");
@@ -51,7 +63,7 @@ export default function WhitelistPage({
       setSubmitStatus("success");
     } catch (err) {
       setSubmitStatus("error");
-      toast.error("Failed to save whitelist entry");
+      toast.error(t("whitelist.failedToSave"));
       console.error(err);
     }
   }
@@ -60,8 +72,8 @@ export default function WhitelistPage({
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Whitelist</h1>
-          <p className="text-muted-foreground">Manage pre-approved attendees</p>
+          <h1 className="text-2xl font-bold tracking-tight">{t("whitelist.title")}</h1>
+          <p className="text-muted-foreground">{t("whitelist.description")}</p>
         </div>
         <NoClientSelected />
       </div>
@@ -70,19 +82,24 @@ export default function WhitelistPage({
 
   return (
     <CrudPage
-      title="Whitelist"
-      description="Manage pre-approved attendees"
-      addButtonLabel="Add Entry"
+      title={t("whitelist.title")}
+      description={t("whitelist.description")}
+      addButtonLabel={t("whitelist.addButton")}
       entityName="whitelist entry"
-      deleteTitle="Remove Entry"
-      deleteDescription="Remove this person from the whitelist?"
-      deleteActionLabel="Remove"
-      newDescription="Add a new pre-approved attendee."
+      deleteTitle={t("whitelist.removeTitle")}
+      deleteDescription={t("whitelist.removeConfirm")}
+      deleteActionLabel={t("whitelist.removeAction")}
+      newDescription={t("whitelist.newDescription")}
       {...crud}
       submitStatus={submitStatus}
       handleSubmit={handleSubmit}
       renderTable={(entries, onEdit, onDelete) => (
-        <WhitelistTable entries={entries} onEdit={onEdit} onDelete={onDelete} />
+        <WhitelistTable
+          entries={entries}
+          users={users}
+          onEdit={onEdit}
+          onDelete={onDelete}
+        />
       )}
       renderForm={({ editingEntity, onSubmit, onCancel, submitStatus: status }) => (
         <WhitelistForm

@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import type { SessionType, AccessTier } from "@/types/session";
+import { useTranslation } from "@/hooks/use-translation";
 
 type SubmitStatus = "idle" | "saving" | "success" | "error";
 
@@ -70,6 +71,7 @@ export function SessionForm({
   submitStatus = "idle",
 }: SessionFormProps) {
   const isSubmitting = submitStatus === "saving";
+  const { t } = useTranslation();
   const {
     register,
     handleSubmit,
@@ -103,11 +105,11 @@ export function SessionForm({
   return (
     <form onSubmit={handleSubmit(onFormSubmit)} className="grid grid-cols-2 gap-x-4 gap-y-6">
       <div className="space-y-2">
-        <Label htmlFor="title">Titolo</Label>
+        <Label htmlFor="title">{t("common.title")}</Label>
         <Input
           id="title"
           aria-label="Title"
-          {...register("title", { required: "Title is required" })}
+          {...register("title", { required: t("validation.titleRequired") })}
         />
         {errors.title && (
           <p className="text-sm text-destructive">{errors.title.message}</p>
@@ -115,7 +117,7 @@ export function SessionForm({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="type">Tipo</Label>
+        <Label htmlFor="type">{t("common.type")}</Label>
         <select
           id="type"
           aria-label="Type"
@@ -131,7 +133,7 @@ export function SessionForm({
       </div>
 
       <div className="col-span-2 space-y-2">
-        <Label htmlFor="description">Descrizione</Label>
+        <Label htmlFor="description">{t("common.description")}</Label>
         <Textarea
           id="description"
           aria-label="Description"
@@ -140,13 +142,13 @@ export function SessionForm({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="startTime">Ora Inizio</Label>
+        <Label htmlFor="startTime">{t("sessions.startTime")}</Label>
         <input
           type="datetime-local"
           id="startTime"
           aria-label="Start Time"
           className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-          {...register("startTime", { required: "Start time is required" })}
+          {...register("startTime", { required: t("validation.startTimeRequired") })}
         />
         {errors.startTime && (
           <p className="text-sm text-destructive">
@@ -156,13 +158,13 @@ export function SessionForm({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="endTime">Ora Fine</Label>
+        <Label htmlFor="endTime">{t("sessions.endTime")}</Label>
         <input
           type="datetime-local"
           id="endTime"
           aria-label="End Time"
           className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-          {...register("endTime", { required: "End time is required" })}
+          {...register("endTime", { required: t("validation.endTimeRequired") })}
         />
         {errors.endTime && (
           <p className="text-sm text-destructive">{errors.endTime.message}</p>
@@ -170,7 +172,7 @@ export function SessionForm({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="location">Luogo</Label>
+        <Label htmlFor="location">{t("common.location")}</Label>
         <Input
           id="location"
           aria-label="Location"
@@ -179,7 +181,7 @@ export function SessionForm({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="speakerName">Speaker Name</Label>
+        <Label htmlFor="speakerName">{t("sessions.speakerName")}</Label>
         <Input
           id="speakerName"
           aria-label="Speaker Name"
@@ -188,7 +190,7 @@ export function SessionForm({
       </div>
 
       <div className="col-span-2 space-y-2">
-        <Label htmlFor="speakerBio">Speaker Bio</Label>
+        <Label htmlFor="speakerBio">{t("sessions.speakerBio")}</Label>
         <Textarea
           id="speakerBio"
           aria-label="Speaker Bio"
@@ -206,12 +208,12 @@ export function SessionForm({
           onChange={(e) => setValue("requiresAccess", e.target.checked)}
           className="h-4 w-4"
         />
-        <Label htmlFor="requiresAccess">Requires Access</Label>
+        <Label htmlFor="requiresAccess">{t("common.requiresAccess")}</Label>
       </div>
 
       {requiresAccessValue && (
         <div className="space-y-2">
-          <Label htmlFor="accessTier">Access Tier</Label>
+          <Label htmlFor="accessTier">{t("sessions.accessTier")}</Label>
           <select
             id="accessTier"
             aria-label="Access Tier"
@@ -229,7 +231,7 @@ export function SessionForm({
 
       <div className="col-span-2 flex items-center gap-4">
         <Button type="submit" disabled={isSubmitDisabled}>
-          {isSubmitting ? "Saving..." : "Save"}
+          {isSubmitting ? t("common.saving") : t("common.save")}
         </Button>
         <Button
           type="button"
@@ -237,16 +239,16 @@ export function SessionForm({
           onClick={onCancel}
           disabled={isSubmitting}
         >
-          Cancel
+          {t("common.cancel")}
         </Button>
         {submitStatus === "success" && (
           <span className="flex items-center gap-1 text-sm text-green-600">
             <Check className="size-4" />
-            Saved
+            {t("common.saved")}
           </span>
         )}
         {submitStatus === "error" && (
-          <p className="text-sm text-destructive">Failed to save</p>
+          <p className="text-sm text-destructive">{t("common.failedToSave")}</p>
         )}
       </div>
     </form>

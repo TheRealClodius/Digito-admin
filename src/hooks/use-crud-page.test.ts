@@ -221,7 +221,7 @@ describe("useCrudPage", () => {
       });
 
       expect(mockDeleteDocument).toHaveBeenCalledWith("test/collection", "123");
-      expect(toast.success).toHaveBeenCalledWith("Brand deleted");
+      expect(toast.success).toHaveBeenCalledWith("brand deleted");
       expect(result.current.deletingEntityId).toBe(null);
     });
 
@@ -306,7 +306,7 @@ describe("useCrudPage", () => {
 
       expect(customDelete).toHaveBeenCalledWith("c1");
       expect(mockDeleteDocument).not.toHaveBeenCalled();
-      expect(toast.success).toHaveBeenCalledWith("Client deleted");
+      expect(toast.success).toHaveBeenCalledWith("client deleted");
       expect(result.current.deletingEntityId).toBe(null);
     });
 
@@ -346,7 +346,7 @@ describe("useCrudPage", () => {
 
       expect(onCleanupFiles).toHaveBeenCalledWith(entity);
       expect(mockDeleteDocument).toHaveBeenCalledWith("test/brands", "b1");
-      expect(toast.success).toHaveBeenCalledWith("Brand deleted");
+      expect(toast.success).toHaveBeenCalledWith("brand deleted");
     });
 
     it("still deletes document when onCleanupFiles throws", async () => {
@@ -384,7 +384,7 @@ describe("useCrudPage", () => {
       expect(onCleanupFiles).toHaveBeenCalledWith(entity);
       // Document should still be deleted despite cleanup failure
       expect(mockDeleteDocument).toHaveBeenCalledWith("test/brands", "b2");
-      expect(toast.success).toHaveBeenCalledWith("Brand deleted");
+      expect(toast.success).toHaveBeenCalledWith("brand deleted");
     });
 
     it("does not call onCleanupFiles when entity is not found in data", async () => {

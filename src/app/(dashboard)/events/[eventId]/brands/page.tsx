@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { useValidatedParams } from "@/hooks/use-validated-params";
 import { useCrudPage } from "@/hooks/use-crud-page";
 import { useEventContext } from "@/hooks/use-event-context";
+import { useTranslation } from "@/hooks/use-translation";
 import { updateDocument } from "@/lib/firestore";
 import { useUpload } from "@/hooks/use-upload";
 import { CrudPage } from "@/components/crud-page";
@@ -20,6 +21,7 @@ export default function BrandsPage({
 }) {
   const { eventId } = useValidatedParams(params);
   const { selectedClientId } = useEventContext();
+  const { t } = useTranslation();
   const collectionPath = selectedClientId
     ? `clients/${selectedClientId}/events/${eventId}/brands`
     : "";
@@ -40,9 +42,9 @@ export default function BrandsPage({
     if (!collectionPath) return;
     try {
       await updateDocument(collectionPath, brandId, { isHighlighted });
-      toast.success(isHighlighted ? "Brand highlighted" : "Brand unhighlighted");
+      toast.success(isHighlighted ? t("brands.highlighted") : t("brands.unhighlighted"));
     } catch (err) {
-      toast.error("Failed to update brand");
+      toast.error(t("brands.failedToUpdate"));
       console.error(err);
     }
   }
@@ -51,8 +53,8 @@ export default function BrandsPage({
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Brand</h1>
-          <p className="text-muted-foreground">Gestisci i brand per questo evento</p> {/* Manage brands for this event */}
+          <h1 className="text-2xl font-bold tracking-tight">{t("brands.title")}</h1>
+          <p className="text-muted-foreground">{t("brands.description")}</p>
         </div>
         <NoClientSelected />
       </div>
@@ -61,9 +63,9 @@ export default function BrandsPage({
 
   return (
     <CrudPage
-      title="Brand"
-      description="Gestisci i brand per questo evento"
-      addButtonLabel="Add Brand"
+      title={t("brands.title")}
+      description={t("brands.description")}
+      addButtonLabel={t("brands.addButton")}
       entityName="brand"
       {...crud}
       renderTable={(brands, onEdit, onDelete) => (

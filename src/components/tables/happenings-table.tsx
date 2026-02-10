@@ -1,3 +1,5 @@
+"use client";
+
 import { format } from "date-fns";
 import { memo } from "react";
 import type { Happening } from "@/types/happening";
@@ -13,6 +15,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Trash2 } from "lucide-react";
+import { useTranslation } from "@/hooks/use-translation";
 
 interface HappeningsTableProps {
   happenings: Happening[];
@@ -20,37 +23,37 @@ interface HappeningsTableProps {
   onDelete: (happeningId: string) => void;
 }
 
-const headers = (
-  <TableRow>
-    <TableHead>Title</TableHead>
-    <TableHead>Type</TableHead>
-    <TableHead>Time</TableHead>
-    <TableHead>Location</TableHead>
-    <TableHead>Host</TableHead>
-    <TableHead>Highlighted</TableHead>
-    <TableHead className="w-40">Azioni</TableHead>
-  </TableRow>
-);
-
 export const HappeningsTable = memo(function HappeningsTable({
   happenings,
   onEdit,
   onDelete,
 }: HappeningsTableProps) {
+  const { t } = useTranslation();
+
+  const headers = (
+    <TableRow>
+      <TableHead>{t("common.title")}</TableHead>
+      <TableHead>{t("common.type")}</TableHead>
+      <TableHead>{t("happenings.time")}</TableHead>
+      <TableHead>{t("common.location")}</TableHead>
+      <TableHead>{t("happenings.host")}</TableHead>
+      <TableHead>{t("common.highlighted")}</TableHead>
+      <TableHead className="w-40">{t("common.actions")}</TableHead>
+    </TableRow>
+  );
+
   if (happenings.length === 0) {
     return (
       <Table>
         <TableHeader>{headers}</TableHeader>
         <TableBody>
           <TableRow>
-            <TableCell colSpan={7}>Nessun evento trovato</TableCell>
+            <TableCell colSpan={7}>{t("happenings.noHappeningsFound")}</TableCell>
           </TableRow>
         </TableBody>
       </Table>
     );
   }
-
-  const count = happenings.length;
 
   return (
     <div>
@@ -73,7 +76,7 @@ export const HappeningsTable = memo(function HappeningsTable({
                 </TableCell>
                 <TableCell>{happening.location ?? "-"}</TableCell>
                 <TableCell>{happening.hostName ?? "-"}</TableCell>
-                <TableCell>{happening.isHighlighted ? "Yes" : "No"}</TableCell>
+                <TableCell>{happening.isHighlighted ? t("common.yes") : t("common.no")}</TableCell>
                 <TableCell>
                   <div className="flex items-center">
                     <Button
@@ -81,13 +84,13 @@ export const HappeningsTable = memo(function HappeningsTable({
                       size="sm"
                       onClick={() => onEdit(happening)}
                     >
-                      Edit
+                      {t("common.edit")}
                     </Button>
                     <Button
                       variant="destructive"
                       size="icon"
                       className="ml-2 size-8"
-                      aria-label="Delete"
+                      aria-label={t("common.delete")}
                       onClick={() => onDelete(happening.id)}
                     >
                       <Trash2 className="size-4" />
@@ -100,7 +103,7 @@ export const HappeningsTable = memo(function HappeningsTable({
         </TableBody>
       </Table>
       <p className="mt-2 text-sm text-muted-foreground">
-        {count} {count === 1 ? "happening" : "happenings"}
+        {t("happenings.countLabel", { count: happenings.length })}
       </p>
     </div>
   );

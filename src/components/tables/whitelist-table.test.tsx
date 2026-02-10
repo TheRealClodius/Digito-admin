@@ -61,15 +61,16 @@ describe("WhitelistTable", () => {
   // ----- Column headers -----
 
   describe("column headers", () => {
-    it("renders table column headers: Email, Access Tier, Company, Locked Fields, Added, Actions", () => {
+    it("renders table column headers: Email, Name, Access Tier, Company, Status, Added, Actions", () => {
       render(
         <WhitelistTable entries={sampleEntries} onEdit={vi.fn()} onDelete={vi.fn()} />,
       );
 
       expect(screen.getByRole("columnheader", { name: /email/i })).toBeInTheDocument();
+      expect(screen.getByRole("columnheader", { name: /name/i })).toBeInTheDocument();
       expect(screen.getByRole("columnheader", { name: /access tier/i })).toBeInTheDocument();
       expect(screen.getByRole("columnheader", { name: /company/i })).toBeInTheDocument();
-      expect(screen.getByRole("columnheader", { name: /locked fields/i })).toBeInTheDocument();
+      expect(screen.getByRole("columnheader", { name: /status/i })).toBeInTheDocument();
       expect(screen.getByRole("columnheader", { name: /added/i })).toBeInTheDocument();
       expect(screen.getByRole("columnheader", { name: /actions/i })).toBeInTheDocument();
     });
@@ -121,7 +122,7 @@ describe("WhitelistTable", () => {
         <WhitelistTable entries={[]} onEdit={vi.fn()} onDelete={vi.fn()} />,
       );
 
-      expect(screen.getByText(/Nessun elemento trovato/i)).toBeInTheDocument();
+      expect(screen.getByText(/no entries found/i)).toBeInTheDocument();
     });
 
     it("does not render data rows when the entries array is empty", () => {
@@ -292,40 +293,6 @@ describe("WhitelistTable", () => {
 
       // The row should still render without error
       expect(screen.getByText("null@example.com")).toBeInTheDocument();
-    });
-  });
-
-  // ----- Locked fields display -----
-
-  describe("locked fields", () => {
-    it("displays locked fields as comma-separated text or badges", () => {
-      const entry = makeEntry({
-        id: "wl-locked",
-        email: "locked@example.com",
-        lockedFields: ["email", "accessTier"],
-      });
-
-      render(
-        <WhitelistTable entries={[entry]} onEdit={vi.fn()} onDelete={vi.fn()} />,
-      );
-
-      expect(screen.getByText(/email/)).toBeInTheDocument();
-      expect(screen.getByText(/accessTier/)).toBeInTheDocument();
-    });
-
-    it("handles empty locked fields gracefully", () => {
-      const entry = makeEntry({
-        id: "wl-no-locked",
-        email: "nolocked@example.com",
-        lockedFields: [],
-      });
-
-      render(
-        <WhitelistTable entries={[entry]} onEdit={vi.fn()} onDelete={vi.fn()} />,
-      );
-
-      // Should render without error
-      expect(screen.getByText("nolocked@example.com")).toBeInTheDocument();
     });
   });
 

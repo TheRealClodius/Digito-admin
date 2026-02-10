@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { ImageUpload } from "@/components/image-upload";
 import { useUpload } from "@/hooks/use-upload";
 import { participantSchema, type ParticipantFormValues } from "@/lib/schemas";
+import { useTranslation } from "@/hooks/use-translation";
 
 type SubmitStatus = "idle" | "saving" | "success" | "error";
 
@@ -21,6 +22,13 @@ const ROLE_OPTIONS = [
   "moderator",
   "performer",
   "other",
+] as const;
+
+const ACCESS_TIER_OPTIONS = [
+  "regular",
+  "premium",
+  "vip",
+  "staff",
 ] as const;
 
 interface ParticipantFormProps {
@@ -36,6 +44,8 @@ interface ParticipantFormProps {
     websiteUrl?: string | null;
     linkedinUrl?: string | null;
     isHighlighted?: boolean;
+    accessTier?: string;
+    lockedFields?: string | null;
   };
   onSubmit: (data: ParticipantFormValues) => void;
   onCancel: () => void;
@@ -52,6 +62,7 @@ export function ParticipantForm({
 }: ParticipantFormProps) {
   const isSubmitting = submitStatus === "saving";
   const { upload, deleteFile } = useUpload({ basePath: storagePath ?? "" });
+  const { t } = useTranslation();
   const {
     register,
     handleSubmit,
@@ -72,6 +83,8 @@ export function ParticipantForm({
       websiteUrl: defaultValues?.websiteUrl ?? "",
       linkedinUrl: defaultValues?.linkedinUrl ?? "",
       isHighlighted: defaultValues?.isHighlighted ?? false,
+      accessTier: (defaultValues?.accessTier as ParticipantFormValues["accessTier"]) ?? "regular",
+      lockedFields: defaultValues?.lockedFields ?? "",
     },
     mode: "onTouched",
   });
@@ -86,7 +99,7 @@ export function ParticipantForm({
   return (
     <form onSubmit={handleSubmit((data) => onSubmit(data))} className="grid grid-cols-2 gap-x-4 gap-y-6">
       <div className="space-y-2">
-        <Label htmlFor="firstName">Nome</Label>
+        <Label htmlFor="firstName">{t("participants.firstName")}</Label>
         <Input
           id="firstName"
           aria-label="First Name"
@@ -100,7 +113,7 @@ export function ParticipantForm({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="lastName">Cognome</Label>
+        <Label htmlFor="lastName">{t("participants.lastName")}</Label>
         <Input
           id="lastName"
           aria-label="Last Name"
@@ -114,17 +127,22 @@ export function ParticipantForm({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="email">Email</Label>
+        <Label htmlFor="email">{t("common.email")}</Label>
         <Input
           id="email"
           aria-label="Email"
           type="email"
           {...register("email")}
+          aria-required="true"
+          required
         />
+        {errors.email && (
+          <p className="text-sm text-destructive">{errors.email.message}</p>
+        )}
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="role">Ruolo</Label>
+        <Label htmlFor="role">{t("participants.role")}</Label>
         <select
           id="role"
           aria-label="Role"
@@ -140,7 +158,7 @@ export function ParticipantForm({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="company">Azienda</Label>
+        <Label htmlFor="company">{t("common.company")}</Label>
         <Input
           id="company"
           aria-label="Company"
@@ -149,7 +167,7 @@ export function ParticipantForm({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="title">Titolo</Label>
+        <Label htmlFor="title">{t("participants.jobTitle")}</Label>
         <Input
           id="title"
           aria-label="Title"
@@ -158,7 +176,7 @@ export function ParticipantForm({
       </div>
 
       <div className="col-span-2 space-y-2">
-        <Label htmlFor="bio">Biografia</Label>
+        <Label htmlFor="bio">{t("participants.bio")}</Label>
         <Textarea
           id="bio"
           aria-label="Bio"
@@ -167,7 +185,7 @@ export function ParticipantForm({
       </div>
 
       <div className="col-span-2 space-y-2">
-        <Label>Avatar</Label>
+        <Label>{t("participants.avatar")}</Label>
         <ImageUpload
           value={avatarUrlValue || null}
           onChange={(url) => setValue("avatarUrl", url)}
@@ -178,7 +196,7 @@ export function ParticipantForm({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="websiteUrl">URL Sito Web</Label>
+        <Label htmlFor="websiteUrl">{t("common.websiteUrl")}</Label>
         <Input
           id="websiteUrl"
           aria-label="Website URL"
@@ -187,11 +205,36 @@ export function ParticipantForm({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="linkedinUrl">URL LinkedIn</Label>
+        <Label htmlFor="linkedinUrl">{t("participants.linkedinUrl")}</Label>
         <Input
           id="linkedinUrl"
           aria-label="LinkedIn URL"
           {...register("linkedinUrl")}
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="accessTier">{t("participants.accessTier")}</Label>
+        <select
+          id="accessTier"
+          aria-label="Access Tier"
+          className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+          {...register("accessTier")}
+        >
+          {ACCESS_TIER_OPTIONS.map((tier) => (
+            <option key={tier} value={tier}>
+              {tier}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="lockedFields">{t("participants.lockedFields")}</Label>
+        <Input
+          id="lockedFields"
+          aria-label="Locked Fields"
+          {...register("lockedFields")}
         />
       </div>
 
@@ -205,7 +248,7 @@ export function ParticipantForm({
           onChange={(e) => setValue("isHighlighted", e.target.checked)}
           className="h-4 w-4"
         />
-        <Label htmlFor="isHighlighted">In Evidenza</Label>
+        <Label htmlFor="isHighlighted">{t("common.highlighted")}</Label>
       </div>
 
       <div className="col-span-2 flex items-center gap-2">
@@ -213,7 +256,7 @@ export function ParticipantForm({
           type="submit"
           disabled={isFirstNameEmpty || isLastNameEmpty || isSubmitting}
         >
-          {isSubmitting ? "Saving..." : "Save"}
+          {isSubmitting ? t("common.saving") : t("common.save")}
         </Button>
         <Button
           type="button"
@@ -221,16 +264,16 @@ export function ParticipantForm({
           onClick={onCancel}
           disabled={isSubmitting}
         >
-          Cancel
+          {t("common.cancel")}
         </Button>
         {submitStatus === "success" && (
           <span className="flex items-center gap-1 text-sm text-green-600">
             <Check className="size-4" />
-            Saved
+            {t("common.saved")}
           </span>
         )}
         {submitStatus === "error" && (
-          <p className="text-sm text-destructive">Failed to save</p>
+          <p className="text-sm text-destructive">{t("common.failedToSave")}</p>
         )}
       </div>
     </form>

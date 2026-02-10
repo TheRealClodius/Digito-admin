@@ -83,7 +83,7 @@ describe("CrudPage", () => {
         editingEntity={{ id: "1", name: "Brand A" }}
       />
     );
-    expect(screen.getByText("Modifica Brand")).toBeInTheDocument();
+    expect(screen.getByText("Edit Brand")).toBeInTheDocument();
   });
 
   it("shows new title when creating", () => {
@@ -94,7 +94,7 @@ describe("CrudPage", () => {
         editingEntity={null}
       />
     );
-    expect(screen.getByText("Nuovo Brand")).toBeInTheDocument();
+    expect(screen.getByText("New Brand")).toBeInTheDocument();
   });
 
   it("renders delete dialog when deletingEntityId is set", () => {
@@ -144,5 +144,22 @@ describe("CrudPage", () => {
       />
     );
     expect(screen.getByTestId("extra")).toBeInTheDocument();
+  });
+
+  // ---- readOnly button visibility (Phase 5 verification) ----
+
+  it("hides add button when readOnly is true", () => {
+    render(<CrudPage {...defaultProps} readOnly={true} />);
+    expect(screen.queryByRole("button", { name: /Add Brand/i })).not.toBeInTheDocument();
+  });
+
+  it("shows add button when readOnly is false", () => {
+    render(<CrudPage {...defaultProps} readOnly={false} />);
+    expect(screen.getByRole("button", { name: /Add Brand/i })).toBeInTheDocument();
+  });
+
+  it("shows add button by default (readOnly defaults to false)", () => {
+    render(<CrudPage {...defaultProps} />);
+    expect(screen.getByRole("button", { name: /Add Brand/i })).toBeInTheDocument();
   });
 });

@@ -6,6 +6,8 @@ import { Timestamp } from "firebase/firestore";
 import { toast } from "sonner";
 
 import { useValidatedParams } from "@/hooks/use-validated-params";
+import { usePermissions } from "@/hooks/use-permissions";
+import { useTranslation } from "@/hooks/use-translation";
 
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -42,6 +44,9 @@ export default function EventsPage({
   params: Promise<{ clientId: string }>;
 }) {
   const { clientId } = useValidatedParams(params);
+  const { isEventAdmin } = usePermissions();
+  const { t } = useTranslation();
+  const readOnly = isEventAdmin;
   const collectionPath = `clients/${clientId}/events`;
 
   const { data: events, loading, error } = useCollection<Event>({
@@ -87,7 +92,7 @@ export default function EventsPage({
       setSubmitStatus("success");
     } catch (err) {
       setSubmitStatus("error");
-      toast.error("Failed to save event");
+      toast.error(t("crud.failedToSave", { entity: "event" }));
       console.error(err);
     }
   }
@@ -95,9 +100,9 @@ export default function EventsPage({
   async function handleToggleActive(eventId: string, isActive: boolean) {
     try {
       await updateDocument(collectionPath, eventId, { isActive });
-      toast.success(isActive ? "Event activated" : "Event deactivated");
+      toast.success(isActive ? t("events.activated") : t("events.deactivated"));
     } catch (err) {
-      toast.error("Failed to update event status");
+      toast.error(t("events.failedToUpdateStatus"));
       console.error(err);
     }
   }
@@ -112,9 +117,9 @@ export default function EventsPage({
         await Promise.all(urls.map((url) => deleteFile(url).catch(() => {})));
       }
       await deleteEventCascade(collectionPath, deletingEventId);
-      toast.success("Event deleted");
+      toast.success(t("events.deleted"));
     } catch (err) {
-      toast.error("Failed to delete event");
+      toast.error(t("events.failedToDelete"));
       console.error(err);
     } finally {
       setDeletingEventId(null);
@@ -125,15 +130,17 @@ export default function EventsPage({
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Events</h1>
+          <h1 className="text-2xl font-bold tracking-tight">{t("events.title")}</h1>
           <p className="text-muted-foreground">
-            Manage events for this client
+            {t("events.description")}
           </p>
         </div>
-        <Button onClick={handleNew}>
-          <Plus className="mr-2 size-4" />
-          New Event
-        </Button>
+        {!readOnly && (
+          <Button onClick={handleNew}>
+            <Plus className="mr-2 size-4" />
+            {t("events.addButton")}
+          </Button>
+        )}
       </div>
 
       {error ? (
@@ -146,9 +153,9 @@ export default function EventsPage({
       ) : (
         <EventsTable
           events={events}
-          onEdit={handleEdit}
-          onDelete={(id) => setDeletingEventId(id)}
-          onToggleActive={handleToggleActive}
+          onEdit={readOnly ? () => {} : handleEdit}
+          onDelete={readOnly ? () => {} : (id) => setDeletingEventId(id)}
+          onToggleActive={readOnly ? () => {} : handleToggleActive}
         />
       )}
 
@@ -156,11 +163,11 @@ export default function EventsPage({
       <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
         <SheetContent className="overflow-y-auto">
           <SheetHeader>
-            <SheetTitle>{editingEvent ? "Edit Event" : "New Event"}</SheetTitle>
+            <SheetTitle>{editingEvent ? t("events.editTitle") : t("events.newTitle")}</SheetTitle>
             <SheetDescription>
               {editingEvent
-                ? "Update the event details below."
-                : "Fill in the details to create a new event."}
+                ? t("events.editDescription")
+                : t("events.newDescription")}
             </SheetDescription>
           </SheetHeader>
           <div className="mt-6">
@@ -187,6 +194,11 @@ export default function EventsPage({
               onSubmit={handleSubmit}
               onCancel={() => setSheetOpen(false)}
               submitStatus={submitStatus}
+              storagePath={
+                editingEvent
+                  ? `clients/${clientId}/events/${editingEvent.id}`
+                  : `clients/${clientId}/events`
+              }
             />
           </div>
         </SheetContent>
@@ -199,16 +211,14 @@ export default function EventsPage({
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Event</AlertDialogTitle>
+            <AlertDialogTitle>{t("events.deleteTitle")}</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this event? This action cannot be
-              undone and will remove all data (brands, sessions, etc.) under
-              this event.
+              {t("events.deleteConfirm")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
+            <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete}>{t("common.delete")}</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

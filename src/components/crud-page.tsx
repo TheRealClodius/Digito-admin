@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { Plus } from "lucide-react";
+import { useTranslation } from "@/hooks/use-translation";
 
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -51,6 +52,7 @@ interface CrudPageProps<T> {
   }) => ReactNode;
 
   // Optional customization
+  readOnly?: boolean;
   editDescription?: string;
   newDescription?: string;
   deleteTitle?: string;
@@ -79,12 +81,14 @@ export function CrudPage<T extends { id: string }>({
   handleDelete,
   renderTable,
   renderForm,
+  readOnly = false,
   editDescription,
   newDescription,
   deleteTitle,
   deleteDescription,
   deleteActionLabel,
 }: CrudPageProps<T>) {
+  const { t } = useTranslation();
   const capitalizedName = entityName.charAt(0).toUpperCase() + entityName.slice(1);
 
   return (
@@ -96,10 +100,12 @@ export function CrudPage<T extends { id: string }>({
         </div>
         <div className="flex items-center gap-2">
           {renderHeaderExtra?.()}
-          <Button onClick={handleNew}>
-            <Plus className="mr-2 size-4" />
-            {addButtonLabel}
-          </Button>
+          {!readOnly && (
+            <Button onClick={handleNew}>
+              <Plus className="mr-2 size-4" />
+              {addButtonLabel}
+            </Button>
+          )}
         </div>
       </div>
 
@@ -112,19 +118,23 @@ export function CrudPage<T extends { id: string }>({
           <Skeleton className="h-12 w-full" />
         </div>
       ) : (
-        renderTable(data, handleEdit, (id) => setDeletingEntityId(id))
+        renderTable(
+          data,
+          readOnly ? () => {} : handleEdit,
+          readOnly ? () => {} : (id) => setDeletingEntityId(id)
+        )
       )}
 
       <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
         <SheetContent className="overflow-y-auto">
           <SheetHeader>
             <SheetTitle>
-              {editingEntity ? `Edit ${capitalizedName}` : `New ${capitalizedName}`}
+              {editingEntity ? t("crud.editEntity", { entity: capitalizedName }) : t("crud.newEntity", { entity: capitalizedName })}
             </SheetTitle>
             <SheetDescription>
               {editingEntity
-                ? (editDescription ?? `Update the ${entityName} details.`)
-                : (newDescription ?? `Add a new ${entityName}.`)}
+                ? (editDescription ?? t("crud.updateDescription", { entity: entityName }))
+                : (newDescription ?? t("crud.addDescription", { entity: entityName }))}
             </SheetDescription>
           </SheetHeader>
           <div className="mt-6">
@@ -145,16 +155,16 @@ export function CrudPage<T extends { id: string }>({
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              {deleteTitle ?? `Delete ${capitalizedName}`}
+              {deleteTitle ?? t("crud.deleteEntity", { entity: capitalizedName })}
             </AlertDialogTitle>
             <AlertDialogDescription>
-              {deleteDescription ?? "Are you sure? This action cannot be undone."}
+              {deleteDescription ?? t("crud.deleteConfirm")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
             <AlertDialogAction onClick={handleDelete}>
-              {deleteActionLabel ?? "Delete"}
+              {deleteActionLabel ?? t("common.delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

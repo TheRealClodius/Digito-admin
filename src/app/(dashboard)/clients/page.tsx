@@ -3,12 +3,16 @@
 import { useCrudPage } from "@/hooks/use-crud-page";
 import { deleteClientCascade } from "@/lib/firestore";
 import { useUpload } from "@/hooks/use-upload";
+import { usePermissions } from "@/hooks/use-permissions";
+import { useTranslation } from "@/hooks/use-translation";
 import { CrudPage } from "@/components/crud-page";
 import { ClientsTable } from "@/components/tables/clients-table";
 import { ClientForm } from "@/components/forms/client-form";
 import type { Client } from "@/types/client";
 
 export default function ClientsPage() {
+  const { isSuperAdmin } = usePermissions();
+  const { t } = useTranslation();
   const { deleteFile } = useUpload({ basePath: "clients" });
   const crud = useCrudPage<Client>({
     collectionPath: "clients",
@@ -21,13 +25,25 @@ export default function ClientsPage() {
     },
   });
 
+  if (!isSuperAdmin) {
+    return (
+      <div className="flex min-h-[calc(100vh-8rem)] flex-col items-center justify-center gap-4">
+        <h1 className="text-2xl font-bold tracking-tight">{t("unauthorized.title")}</h1>
+        <p className="text-muted-foreground">
+          {t("unauthorized.description")}
+        </p>
+      </div>
+    );
+  }
+
   return (
     <CrudPage
-      title="Clients"
-      description="Manage your client organizations"
-      addButtonLabel="New Client"
+      title={t("clients.title")}
+      description={t("clients.description")}
+      addButtonLabel={t("clients.addButton")}
       entityName="client"
-      deleteDescription="Are you sure you want to delete this client? This action cannot be undone and will also remove all events under this client."
+      deleteDescription={t("clients.deleteConfirm")}
+      readOnly={!isSuperAdmin}
       {...crud}
       renderTable={(clients, onEdit, onDelete) => (
         <ClientsTable clients={clients} onEdit={onEdit} onDelete={onDelete} />

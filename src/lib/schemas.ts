@@ -78,7 +78,7 @@ export const happeningSchema = z.object({
 export const participantSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
   lastName: z.string().min(1, "Last name is required"),
-  email: z.string().email().nullable().optional().or(z.literal("")),
+  email: z.string().email("Valid email is required"),
   role: z.enum(["speaker", "panelist", "host", "brand_rep", "moderator", "performer", "other"]),
   company: z.string().nullable().optional(),
   title: z.string().nullable().optional(),
@@ -90,6 +90,8 @@ export const participantSchema = z.object({
   sessionIds: z.array(z.string()).optional(),
   happeningIds: z.array(z.string()).optional(),
   isHighlighted: z.boolean().optional(),
+  accessTier: z.enum(["regular", "premium", "vip", "staff"]).optional(),
+  lockedFields: z.string().nullable().optional(),
 });
 
 export const postSchema = z.object({

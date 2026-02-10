@@ -2,10 +2,10 @@
  * User role types for authorization
  *
  * - superadmin: Full access to all clients and events
- * - client-admin: Scoped access to specific clients
- * - event-admin: Scoped access to specific events
+ * - clientAdmin: Scoped access to specific clients and all their events
+ * - eventAdmin: Scoped access to specific events within assigned clients
  */
-export type UserRole = 'superadmin' | 'client-admin' | 'event-admin';
+export type UserRole = 'superadmin' | 'clientAdmin' | 'eventAdmin';
 
 /**
  * User permissions document stored in Firestore
@@ -28,7 +28,7 @@ export type UserRole = 'superadmin' | 'client-admin' | 'event-admin';
  * {
  *   userId: "def456",
  *   email: "client-admin@example.com",
- *   role: "client-admin",
+ *   role: "clientAdmin",
  *   clientIds: ["client-1", "client-2"],  // Specific clients
  *   eventIds: null,                        // All events in allowed clients
  *   createdAt: Timestamp,

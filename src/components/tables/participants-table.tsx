@@ -1,3 +1,5 @@
+"use client";
+
 import type { Participant } from "@/types/participant";
 import { memo } from "react";
 import {
@@ -11,6 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Trash2 } from "lucide-react";
+import { useTranslation } from "@/hooks/use-translation";
 
 interface ParticipantsTableProps {
   participants: Participant[];
@@ -23,30 +26,33 @@ export const ParticipantsTable = memo(function ParticipantsTable({
   onEdit,
   onDelete,
 }: ParticipantsTableProps) {
+  const { t } = useTranslation();
+
   return (
     <div>
       <div className="mb-2">
         <Badge variant="secondary">
-          {participants.length} participant(s)
+          {t("participants.countLabel", { count: participants.length })}
         </Badge>
       </div>
 
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Nome</TableHead>
-            <TableHead>Ruolo</TableHead>
-            <TableHead>Azienda</TableHead>
-            <TableHead>Email</TableHead>
-            <TableHead>Highlighted</TableHead>
-            <TableHead className="w-40">Azioni</TableHead>
+            <TableHead>{t("common.name")}</TableHead>
+            <TableHead>{t("participants.role")}</TableHead>
+            <TableHead>{t("common.company")}</TableHead>
+            <TableHead>{t("common.email")}</TableHead>
+            <TableHead>{t("participants.accessTier")}</TableHead>
+            <TableHead>{t("common.highlighted")}</TableHead>
+            <TableHead className="w-40">{t("common.actions")}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {participants.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={6} className="text-center">
-                Nessun partecipante trovato
+              <TableCell colSpan={7} className="text-center">
+                {t("participants.noParticipantsFound")}
               </TableCell>
             </TableRow>
           ) : (
@@ -60,7 +66,10 @@ export const ParticipantsTable = memo(function ParticipantsTable({
                 </TableCell>
                 <TableCell>{participant.company ?? ""}</TableCell>
                 <TableCell>{participant.email ?? ""}</TableCell>
-                <TableCell>{participant.isHighlighted ? "Yes" : "No"}</TableCell>
+                <TableCell>
+                  <Badge>{participant.accessTier}</Badge>
+                </TableCell>
+                <TableCell>{participant.isHighlighted ? t("common.yes") : t("common.no")}</TableCell>
                 <TableCell>
                   <div className="flex items-center">
                     <Button
@@ -68,13 +77,13 @@ export const ParticipantsTable = memo(function ParticipantsTable({
                       size="sm"
                       onClick={() => onEdit(participant)}
                     >
-                      Edit
+                      {t("common.edit")}
                     </Button>
                     <Button
                       variant="destructive"
                       size="icon"
                       className="ml-2 size-8"
-                      aria-label="Delete"
+                      aria-label={t("common.delete")}
                       onClick={() => onDelete(participant.id)}
                     >
                       <Trash2 className="size-4" />

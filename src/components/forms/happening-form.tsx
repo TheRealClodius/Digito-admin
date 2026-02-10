@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import type { HappeningType } from "@/types/happening";
+import { useTranslation } from "@/hooks/use-translation";
 
 type SubmitStatus = "idle" | "saving" | "success" | "error";
 
@@ -67,6 +68,7 @@ export function HappeningForm({
   submitStatus = "idle",
 }: HappeningFormProps) {
   const isSubmitting = submitStatus === "saving";
+  const { t } = useTranslation();
   const {
     register,
     handleSubmit,
@@ -99,11 +101,11 @@ export function HappeningForm({
   return (
     <form onSubmit={handleSubmit(onFormSubmit)} className="grid grid-cols-2 gap-x-4 gap-y-6">
       <div className="space-y-2">
-        <Label htmlFor="title">Title</Label>
+        <Label htmlFor="title">{t("common.title")}</Label>
         <Input
           id="title"
           aria-label="Title"
-          {...register("title", { required: "Title is required" })}
+          {...register("title", { required: t("validation.titleRequired") })}
         />
         {errors.title && (
           <p className="text-sm text-destructive">{errors.title.message}</p>
@@ -111,7 +113,7 @@ export function HappeningForm({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="type">Type</Label>
+        <Label htmlFor="type">{t("common.type")}</Label>
         <select
           id="type"
           aria-label="Type"
@@ -127,7 +129,7 @@ export function HappeningForm({
       </div>
 
       <div className="col-span-2 space-y-2">
-        <Label htmlFor="description">Description</Label>
+        <Label htmlFor="description">{t("common.description")}</Label>
         <Textarea
           id="description"
           aria-label="Description"
@@ -136,7 +138,7 @@ export function HappeningForm({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="startTime">Start Time</Label>
+        <Label htmlFor="startTime">{t("happenings.startTime")}</Label>
         <input
           type="datetime-local"
           id="startTime"
@@ -147,7 +149,7 @@ export function HappeningForm({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="endTime">End Time</Label>
+        <Label htmlFor="endTime">{t("happenings.endTime")}</Label>
         <input
           type="datetime-local"
           id="endTime"
@@ -158,7 +160,7 @@ export function HappeningForm({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="location">Location</Label>
+        <Label htmlFor="location">{t("common.location")}</Label>
         <Input
           id="location"
           aria-label="Location"
@@ -167,7 +169,7 @@ export function HappeningForm({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="hostName">Host Name</Label>
+        <Label htmlFor="hostName">{t("happenings.hostName")}</Label>
         <Input
           id="hostName"
           aria-label="Host Name"
@@ -185,7 +187,7 @@ export function HappeningForm({
           onChange={(e) => setValue("isHighlighted", e.target.checked)}
           className="h-4 w-4"
         />
-        <Label htmlFor="isHighlighted">Highlighted</Label>
+        <Label htmlFor="isHighlighted">{t("common.highlighted")}</Label>
       </div>
 
       <div className="flex items-center space-x-2">
@@ -198,24 +200,24 @@ export function HappeningForm({
           onChange={(e) => setValue("requiresAccess", e.target.checked)}
           className="h-4 w-4"
         />
-        <Label htmlFor="requiresAccess">Requires Access</Label>
+        <Label htmlFor="requiresAccess">{t("common.requiresAccess")}</Label>
       </div>
 
       <div className="col-span-2 flex items-center gap-4">
         <Button type="submit" disabled={isSubmitDisabled}>
-          {isSubmitting ? "Saving..." : "Save"}
+          {isSubmitting ? t("common.saving") : t("common.save")}
         </Button>
         <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
-          Cancel
+          {t("common.cancel")}
         </Button>
         {submitStatus === "success" && (
           <span className="flex items-center gap-1 text-sm text-green-600">
             <Check className="size-4" />
-            Saved
+            {t("common.saved")}
           </span>
         )}
         {submitStatus === "error" && (
-          <p className="text-sm text-destructive">Failed to save</p>
+          <p className="text-sm text-destructive">{t("common.failedToSave")}</p>
         )}
       </div>
     </form>

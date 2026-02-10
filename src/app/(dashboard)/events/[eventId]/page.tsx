@@ -11,6 +11,7 @@ import { useValidatedParams } from "@/hooks/use-validated-params";
 import { StatsCard } from "@/components/stats-card";
 import { useCollectionCount } from "@/hooks/use-collection-count";
 import { useEventContext } from "@/hooks/use-event-context";
+import { useTranslation } from "@/hooks/use-translation";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function EventOverviewPage({
@@ -20,6 +21,7 @@ export default function EventOverviewPage({
 }) {
   const { eventId } = useValidatedParams(params);
   const { selectedClientId } = useEventContext();
+  const { t } = useTranslation();
   const basePath = selectedClientId
     ? `clients/${selectedClientId}/events/${eventId}`
     : "";
@@ -50,7 +52,7 @@ export default function EventOverviewPage({
     return (
       <div className="flex min-h-[400px] items-center justify-center">
         <p className="text-muted-foreground">
-          Select a client from the sidebar to view event details.
+          {t("eventOverview.selectClientPrompt")}
         </p>
       </div>
     );
@@ -59,9 +61,9 @@ export default function EventOverviewPage({
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Event Overview</h1>
+        <h1 className="text-2xl font-bold tracking-tight">{t("eventOverview.title")}</h1>
         <p className="text-muted-foreground">
-          Summary of event data and quick actions
+          {t("eventOverview.description")}
         </p>
       </div>
 
@@ -74,27 +76,27 @@ export default function EventOverviewPage({
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           <StatsCard
-            title="Total Brands"
+            title={t("eventOverview.totalBrands")}
             value={brandsCount}
             icon={ShoppingBag}
           />
           <StatsCard
-            title="Total Sessions"
+            title={t("eventOverview.totalSessions")}
             value={sessionsCount}
             icon={Mic2}
           />
           <StatsCard
-            title="Total Happenings"
+            title={t("eventOverview.totalHappenings")}
             value={happeningsCount}
             icon={Sparkles}
           />
           <StatsCard
-            title="Participants"
+            title={t("eventOverview.participants")}
             value={participantsCount}
             icon={Users}
           />
           <StatsCard
-            title="Whitelisted"
+            title={t("eventOverview.whitelisted")}
             value={whitelistCount}
             icon={ListChecks}
           />

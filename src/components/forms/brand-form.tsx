@@ -11,6 +11,7 @@ import { Switch } from "@/components/ui/switch";
 import { ImageUpload } from "@/components/image-upload";
 import { useUpload } from "@/hooks/use-upload";
 import { brandSchema, type BrandFormValues } from "@/lib/schemas";
+import { useTranslation } from "@/hooks/use-translation";
 
 type SubmitStatus = "idle" | "saving" | "success" | "error";
 
@@ -31,6 +32,7 @@ export function BrandForm({
 }: BrandFormProps) {
   const isSubmitting = submitStatus === "saving";
   const { upload, deleteFile } = useUpload({ basePath: storagePath ?? "" });
+  const { t } = useTranslation();
   const {
     register,
     handleSubmit,
@@ -61,7 +63,7 @@ export function BrandForm({
       className="grid grid-cols-2 gap-x-4 gap-y-6"
     >
       <div className="space-y-2">
-        <Label htmlFor="name">Name</Label>
+        <Label htmlFor="name">{t("common.name")}</Label>
         <Input
           id="name"
           {...register("name")}
@@ -74,17 +76,17 @@ export function BrandForm({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="stallNumber">Stall Number</Label>
+        <Label htmlFor="stallNumber">{t("brands.stallNumber")}</Label>
         <Input id="stallNumber" {...register("stallNumber")} />
       </div>
 
       <div className="col-span-2 space-y-2">
-        <Label htmlFor="description">Description</Label>
+        <Label htmlFor="description">{t("common.description")}</Label>
         <Textarea id="description" {...register("description")} />
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="websiteUrl">Website URL</Label>
+        <Label htmlFor="websiteUrl">{t("common.websiteUrl")}</Label>
         <Input id="websiteUrl" {...register("websiteUrl")} type="url" />
         {errors.websiteUrl && (
           <p className="text-sm text-destructive">{errors.websiteUrl.message}</p>
@@ -92,7 +94,7 @@ export function BrandForm({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="instagramUrl">Instagram URL</Label>
+        <Label htmlFor="instagramUrl">{t("common.instagramUrl")}</Label>
         <Input id="instagramUrl" {...register("instagramUrl")} type="url" />
         {errors.instagramUrl && (
           <p className="text-sm text-destructive">{errors.instagramUrl.message}</p>
@@ -100,7 +102,7 @@ export function BrandForm({
       </div>
 
       <div className="space-y-2">
-        <Label>Logo</Label>
+        <Label>{t("common.logo")}</Label>
         <ImageUpload
           value={logoUrlValue || null}
           onChange={(url) => setValue("logoUrl", url)}
@@ -111,7 +113,7 @@ export function BrandForm({
       </div>
 
       <div className="space-y-2">
-        <Label>Image</Label>
+        <Label>{t("common.image")}</Label>
         <ImageUpload
           value={imageUrlValue || null}
           onChange={(url) => setValue("imageUrl", url)}
@@ -129,12 +131,12 @@ export function BrandForm({
             setValue("isHighlighted", checked as boolean)
           }
         />
-        <Label htmlFor="isHighlighted">Highlighted</Label>
+        <Label htmlFor="isHighlighted">{t("common.highlighted")}</Label>
       </div>
 
       <div className="col-span-2 flex items-center gap-2">
         <Button type="submit" disabled={isNameEmpty || isSubmitting}>
-          {isSubmitting ? "Saving..." : "Save"}
+          {isSubmitting ? t("common.saving") : t("common.save")}
         </Button>
         <Button
           type="button"
@@ -142,16 +144,16 @@ export function BrandForm({
           onClick={onCancel}
           disabled={isSubmitting}
         >
-          Cancel
+          {t("common.cancel")}
         </Button>
         {submitStatus === "success" && (
           <span className="flex items-center gap-1 text-sm text-green-600">
             <Check className="size-4" />
-            Saved
+            {t("common.saved")}
           </span>
         )}
         {submitStatus === "error" && (
-          <p className="text-sm text-destructive">Failed to save</p>
+          <p className="text-sm text-destructive">{t("common.failedToSave")}</p>
         )}
       </div>
     </form>

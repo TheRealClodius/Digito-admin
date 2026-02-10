@@ -617,6 +617,7 @@ describe("participantSchema", () => {
   const validParticipant = {
     firstName: "Jane",
     lastName: "Doe",
+    email: "jane@example.com",
     role: "speaker" as const,
   };
 
@@ -681,14 +682,14 @@ describe("participantSchema", () => {
     expect(result.success).toBe(true);
   });
 
-  it("accepts empty string for email", () => {
+  it("rejects empty string for email", () => {
     const result = participantSchema.safeParse({ ...validParticipant, email: "" });
-    expect(result.success).toBe(true);
+    expect(result.success).toBe(false);
   });
 
-  it("accepts null for email", () => {
+  it("rejects null for email", () => {
     const result = participantSchema.safeParse({ ...validParticipant, email: null });
-    expect(result.success).toBe(true);
+    expect(result.success).toBe(false);
   });
 
   it("rejects invalid email", () => {
