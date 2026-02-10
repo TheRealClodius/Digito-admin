@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { collection, getCountFromServer } from "firebase/firestore";
-import { getDbInstance } from "@/lib/firebase";
+import { onAuthStateChanged, type User } from "firebase/auth";
+import { getDbInstance, getAuthInstance } from "@/lib/firebase";
 
 interface UseCollectionCountOptions {
   path: string;
@@ -22,6 +23,13 @@ export function useCollectionCount({
   const [count, setCount] = useState(0);
   const [loading, setLoading] = useState(!!path);
   const [error, setError] = useState<Error | null>(null);
+  const [authUser, setAuthUser] = useState<User | null>(null);
+
+  // Track Firebase Auth state — avoids Firestore permission errors caused by
+  // querying before the auth token is propagated to the connection.
+  useEffect(() => {
+    return onAuthStateChanged(getAuthInstance(), setAuthUser);
+  }, []);
 
   useEffect(() => {
     // Don't fetch if path is empty
@@ -29,6 +37,13 @@ export function useCollectionCount({
       setCount(0);
       setLoading(false);
       setError(null);
+      return;
+    }
+
+    // Don't query until Firebase Auth has confirmed the user — sending
+    // a Firestore query before auth credentials are ready causes
+    // "Missing or insufficient permissions" errors.
+    if (!authUser) {
       return;
     }
 
@@ -60,7 +75,7 @@ export function useCollectionCount({
     return () => {
       cancelled = true;
     };
-  }, [path]);
+  }, [path, authUser]);
 
   return { count, loading, error };
 }

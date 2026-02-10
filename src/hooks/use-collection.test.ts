@@ -2,10 +2,15 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook, act } from "@testing-library/react";
 import { useCollection } from "./use-collection";
 
-const { mockUnsubscribe, mockOnSnapshot } = vi.hoisted(() => {
+const { mockUnsubscribe, mockOnSnapshot, mockOnAuthStateChanged } = vi.hoisted(() => {
   const mockUnsubscribe = vi.fn();
   const mockOnSnapshot = vi.fn(() => mockUnsubscribe);
-  return { mockUnsubscribe, mockOnSnapshot };
+  // By default, simulate a user already signed in (fires callback immediately)
+  const mockOnAuthStateChanged = vi.fn((_auth: unknown, callback: (user: unknown) => void) => {
+    callback({ uid: "test-user" });
+    return vi.fn(); // unsubscribe
+  });
+  return { mockUnsubscribe, mockOnSnapshot, mockOnAuthStateChanged };
 });
 
 // Mock Firebase modules
@@ -16,6 +21,7 @@ vi.mock("firebase/app", () => ({
 
 vi.mock("firebase/auth", () => ({
   getAuth: vi.fn(),
+  onAuthStateChanged: mockOnAuthStateChanged,
 }));
 
 vi.mock("firebase/firestore", () => ({
@@ -34,6 +40,11 @@ vi.mock("firebase/storage", () => ({
 describe("useCollection", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // Restore default: auth fires immediately with a user
+    mockOnAuthStateChanged.mockImplementation((_auth: unknown, callback: (user: unknown) => void) => {
+      callback({ uid: "test-user" });
+      return vi.fn();
+    });
   });
 
   it("subscribes to Firestore on mount with path", () => {
@@ -126,7 +137,6 @@ describe("useCollection", () => {
   });
 
   it("clears error when path changes", () => {
-    // First, set up a hook with a valid path that will trigger onSnapshot
     const { result, rerender } = renderHook(
       ({ path }) =>
         useCollection({ path, orderByField: "name", orderDirection: "asc" }),
@@ -210,5 +220,66 @@ describe("useCollection", () => {
     expect(result.current.error).toBeNull();
     expect(result.current.loading).toBe(false);
     expect(result.current.data).toEqual([]);
+  });
+
+  describe("auth gating", () => {
+    it("does not subscribe until Firebase Auth is ready", () => {
+      // Override: auth does NOT fire immediately
+      let authCallback: ((user: unknown) => void) | null = null;
+      mockOnAuthStateChanged.mockImplementationOnce((_auth: unknown, cb: (user: unknown) => void) => {
+        authCallback = cb;
+        return vi.fn();
+      });
+
+      const { result } = renderHook(() =>
+        useCollection({ path: "clients", orderByField: "name", orderDirection: "asc" })
+      );
+
+      // Should NOT subscribe — auth not ready
+      expect(mockOnSnapshot).not.toHaveBeenCalled();
+      expect(result.current.loading).toBe(true);
+
+      // Auth becomes ready
+      act(() => {
+        authCallback!({ uid: "test-user" });
+      });
+
+      // NOW it should subscribe
+      expect(mockOnSnapshot).toHaveBeenCalledTimes(1);
+      expect(result.current.loading).toBe(true); // loading until snapshot fires
+    });
+
+    it("does not subscribe when user signs out", () => {
+      const { result } = renderHook(() =>
+        useCollection({ path: "clients", orderByField: "name", orderDirection: "asc" })
+      );
+
+      // Initially subscribed (auth fired immediately with user)
+      expect(mockOnSnapshot).toHaveBeenCalledTimes(1);
+
+      // Simulate sign out: call the onAuthStateChanged callback with null
+      const authCb = mockOnAuthStateChanged.mock.calls[0][1];
+      act(() => {
+        authCb(null);
+      });
+
+      // Previous listener should be unsubscribed
+      expect(mockUnsubscribe).toHaveBeenCalled();
+      // Loading should be true since we lost auth
+      expect(result.current.loading).toBe(true);
+    });
+
+    it("still returns empty data for empty path even without auth", () => {
+      // Override: auth does NOT fire
+      mockOnAuthStateChanged.mockImplementationOnce(() => vi.fn());
+
+      const { result } = renderHook(() =>
+        useCollection({ path: "", orderByField: "name", orderDirection: "asc" })
+      );
+
+      expect(mockOnSnapshot).not.toHaveBeenCalled();
+      expect(result.current.data).toEqual([]);
+      expect(result.current.loading).toBe(false);
+    });
   });
 });

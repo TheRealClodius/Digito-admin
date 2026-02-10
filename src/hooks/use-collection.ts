@@ -10,7 +10,8 @@ import {
   type QueryConstraint,
   type DocumentData,
 } from "firebase/firestore";
-import { getDbInstance } from "@/lib/firebase";
+import { onAuthStateChanged, type User } from "firebase/auth";
+import { getDbInstance, getAuthInstance } from "@/lib/firebase";
 
 interface UseCollectionOptions {
   path: string;
@@ -34,12 +35,26 @@ export function useCollection<T extends DocumentData & { id: string }>({
   const [data, setData] = useState<T[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  const [authUser, setAuthUser] = useState<User | null>(null);
+
+  // Track Firebase Auth state — avoids Firestore permission errors caused by
+  // onSnapshot firing before the auth token is propagated to the connection.
+  useEffect(() => {
+    return onAuthStateChanged(getAuthInstance(), setAuthUser);
+  }, []);
 
   useEffect(() => {
     if (!path) {
       setData([]);
       setLoading(false);
       setError(null);
+      return;
+    }
+
+    // Don't subscribe until Firebase Auth has confirmed the user — sending
+    // a Firestore listener before auth credentials are ready causes
+    // "Missing or insufficient permissions" errors.
+    if (!authUser) {
       return;
     }
 
@@ -75,7 +90,7 @@ export function useCollection<T extends DocumentData & { id: string }>({
 
     return unsubscribe;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [path, orderByField, orderDirection, constraintsKey, pageSize]);
+  }, [path, orderByField, orderDirection, constraintsKey, pageSize, authUser]);
 
   return { data, loading, error };
 }
