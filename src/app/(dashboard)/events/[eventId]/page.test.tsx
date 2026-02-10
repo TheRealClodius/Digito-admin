@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render as rtlRender, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
@@ -16,6 +16,13 @@ vi.mock("firebase/firestore", () => ({
   },
 }));
 vi.mock("firebase/storage", () => ({ getStorage: vi.fn() }));
+
+import { TooltipProvider } from "@/components/ui/tooltip";
+
+// Wrap render to include TooltipProvider
+function render(ui: React.ReactElement, options = {}) {
+  return rtlRender(<TooltipProvider>{ui}</TooltipProvider>, options);
+}
 
 vi.mock("@/hooks/use-validated-params", () => ({
   useValidatedParams: () => ({ eventId: "evt-1" }),
@@ -97,6 +104,23 @@ function setupMocks(overrides?: { event?: typeof mockEvent | null; loading?: boo
     isEventAdmin: false,
   });
 }
+
+vi.mock("@/hooks/use-ai-improve", () => ({
+  useAIImprove: vi.fn(() => ({
+    isLoading: false,
+    error: null,
+    result: null,
+    improve: vi.fn(),
+    reset: vi.fn(),
+  })),
+}));
+
+vi.mock("@/contexts/ai-suggestion-context", () => ({
+  useAISuggestion: vi.fn(() => ({
+    hasActiveSuggestion: false,
+    setHasActiveSuggestion: vi.fn(),
+  })),
+}));
 
 describe("EventOverviewPage", () => {
   beforeEach(() => {

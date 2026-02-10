@@ -41,6 +41,25 @@ vi.mock("@/contexts/ai-suggestion-context", () => ({
   }),
 }));
 
+// Mock translation hook
+vi.mock("@/hooks/use-translation", () => ({
+  useTranslation: () => ({
+    t: (key: string) => {
+      const translations: Record<string, string> = {
+        "ai.improve": "Improve clarity",
+        "ai.shorten": "Shorten",
+        "ai.expand": "Expand",
+        "ai.longform": "Long form",
+        "ai.grammar": "Fix grammar",
+        "ai.improving": "Improving...",
+        "ai.assistantName": "Digito Writing Assistant",
+      };
+      return translations[key] || key;
+    },
+    locale: "en",
+  }),
+}));
+
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AITextarea } from "./ai-textarea";
 

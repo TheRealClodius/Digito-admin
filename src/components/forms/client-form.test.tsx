@@ -1,4 +1,10 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render as rtlRender, screen, waitFor } from "@testing-library/react";
+import { TooltipProvider } from "@/components/ui/tooltip";
+
+// Wrap render to include TooltipProvider
+function render(ui: React.ReactElement, options = {}) {
+  return rtlRender(<TooltipProvider>{ui}</TooltipProvider>, options);
+}
 import userEvent from "@testing-library/user-event";
 import { vi } from "vitest";
 
@@ -26,6 +32,13 @@ vi.mock("@/hooks/use-ai-improve", () => ({
     reset: vi.fn(),
   })),
 }));
+vi.mock("@/contexts/ai-suggestion-context", () => ({
+  useAISuggestion: vi.fn(() => ({
+    hasActiveSuggestion: false,
+    setHasActiveSuggestion: vi.fn(),
+  })),
+}));
+
 
 import { ClientForm } from "./client-form";
 

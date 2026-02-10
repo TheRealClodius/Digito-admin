@@ -5,7 +5,7 @@ import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { AITextarea } from "@/components/ai-textarea";
+import { MarkdownTextarea } from "@/components/markdown-textarea";
 import type { SessionType } from "@/types/session";
 import { useTranslation } from "@/hooks/use-translation";
 
@@ -130,7 +130,7 @@ export function SessionForm({
         </select>
       </div>
 
-      <AITextarea
+      <MarkdownTextarea
         className="col-span-2"
         label={t("common.description")}
         fieldName="description"
@@ -139,6 +139,7 @@ export function SessionForm({
         getCurrentValue={() => watch("description") ?? ""}
         onAccept={(text) => setValue("description", text, { shouldDirty: true })}
         textareaProps={register("description")}
+        showPreview={true}
       />
 
       <div className="space-y-2">
@@ -189,7 +190,7 @@ export function SessionForm({
         />
       </div>
 
-      <AITextarea
+      <MarkdownTextarea
         className="col-span-2"
         label={t("sessions.speakerBio")}
         fieldName="speakerBio"
@@ -198,6 +199,7 @@ export function SessionForm({
         getCurrentValue={() => watch("speakerBio") ?? ""}
         onAccept={(text) => setValue("speakerBio", text, { shouldDirty: true })}
         textareaProps={register("speakerBio")}
+        showPreview={true}
       />
 
       <div className="flex items-center space-x-2">

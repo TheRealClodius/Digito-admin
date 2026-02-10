@@ -5,7 +5,7 @@ import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { AITextarea } from "@/components/ai-textarea";
+import { MarkdownTextarea } from "@/components/markdown-textarea";
 import type { HappeningType } from "@/types/happening";
 import { useTranslation } from "@/hooks/use-translation";
 
@@ -128,7 +128,7 @@ export function HappeningForm({
         </select>
       </div>
 
-      <AITextarea
+      <MarkdownTextarea
         className="col-span-2"
         label={t("common.description")}
         fieldName="description"
@@ -137,6 +137,7 @@ export function HappeningForm({
         getCurrentValue={() => watch("description") ?? ""}
         onAccept={(text) => setValue("description", text, { shouldDirty: true })}
         textareaProps={register("description")}
+        showPreview={true}
       />
 
       <div className="space-y-2">

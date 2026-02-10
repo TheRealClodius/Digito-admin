@@ -6,7 +6,7 @@ import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { AITextarea } from "@/components/ai-textarea";
+import { MarkdownTextarea } from "@/components/markdown-textarea";
 import { ImageUpload } from "@/components/image-upload";
 import { useUpload } from "@/hooks/use-upload";
 import { participantSchema, type ParticipantFormValues } from "@/lib/schemas";
@@ -175,7 +175,7 @@ export function ParticipantForm({
         />
       </div>
 
-      <AITextarea
+      <MarkdownTextarea
         className="col-span-2"
         label={t("participants.bio")}
         fieldName="bio"
@@ -184,6 +184,7 @@ export function ParticipantForm({
         getCurrentValue={() => watch("bio") ?? ""}
         onAccept={(text) => setValue("bio", text, { shouldDirty: true })}
         textareaProps={register("bio")}
+        showPreview={true}
       />
 
       <div className="col-span-2 space-y-2">

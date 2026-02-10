@@ -86,7 +86,7 @@ function SheetContent({
         className={cn(
           sheetVariants({ side }),
           "flex flex-col overflow-hidden transition-[width] duration-300",
-          side === "right" && hasActiveSuggestion && "w-[65%]",
+          side === "right" && hasActiveSuggestion && "w-[75%]",
           className,
         )}
         {...props}

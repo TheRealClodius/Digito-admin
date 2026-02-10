@@ -6,7 +6,7 @@ import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { AITextarea } from "@/components/ai-textarea";
+import { MarkdownTextarea } from "@/components/markdown-textarea";
 import { ImageUpload } from "@/components/image-upload";
 import { useUpload } from "@/hooks/use-upload";
 import { postSchema, type PostFormValues } from "@/lib/schemas";
@@ -83,7 +83,7 @@ export function PostForm({
         )}
       </div>
 
-      <AITextarea
+      <MarkdownTextarea
         className="col-span-2"
         label={t("common.description")}
         fieldName="description"
@@ -91,6 +91,7 @@ export function PostForm({
         getCurrentValue={() => watch("description") ?? ""}
         onAccept={(text) => setValue("description", text, { shouldDirty: true })}
         textareaProps={register("description")}
+        showPreview={true}
       />
 
       <div className="col-span-2 space-y-2">

@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { AITextarea } from "@/components/ai-textarea";
+import { MarkdownTextarea } from "@/components/markdown-textarea";
 import { ImageUpload } from "@/components/image-upload";
 import { useUpload } from "@/hooks/use-upload";
 import { brandSchema, type BrandFormValues } from "@/lib/schemas";
@@ -80,7 +80,7 @@ export function BrandForm({
         <Input id="stallNumber" {...register("stallNumber")} />
       </div>
 
-      <AITextarea
+      <MarkdownTextarea
         className="col-span-2"
         label={t("common.description")}
         fieldName="description"
@@ -88,6 +88,7 @@ export function BrandForm({
         getCurrentValue={() => watch("description") ?? ""}
         onAccept={(text) => setValue("description", text, { shouldDirty: true })}
         textareaProps={register("description")}
+        showPreview={true}
       />
 
       <div className="space-y-2">

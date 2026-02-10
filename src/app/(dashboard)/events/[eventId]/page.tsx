@@ -30,6 +30,7 @@ import {
   SheetDescription,
 } from "@/components/ui/sheet";
 import { EventForm } from "@/components/forms/event-form";
+import { AISuggestionProvider } from "@/contexts/ai-suggestion-context";
 import type { Event } from "@/types/event";
 
 export default function EventOverviewPage({

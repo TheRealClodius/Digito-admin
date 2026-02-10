@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { render as rtlRender, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
@@ -16,6 +16,13 @@ vi.mock("firebase/firestore", () => ({
   },
 }));
 vi.mock("firebase/storage", () => ({ getStorage: vi.fn() }));
+
+import { TooltipProvider } from "@/components/ui/tooltip";
+
+// Wrap render to include TooltipProvider
+function render(ui: React.ReactElement, options = {}) {
+  return rtlRender(<TooltipProvider>{ui}</TooltipProvider>, options);
+}
 
 vi.mock("@/hooks/use-permissions", () => ({
   usePermissions: vi.fn(),
@@ -42,6 +49,24 @@ vi.mock("@/hooks/use-upload", () => ({
     upload: vi.fn(),
     deleteFile: vi.fn(),
   }),
+}));
+
+vi.mock("@/hooks/use-ai-improve", () => ({
+  useAIImprove: vi.fn(() => ({
+    isLoading: false,
+    error: null,
+    result: null,
+    improve: vi.fn(),
+    reset: vi.fn(),
+  })),
+}));
+
+vi.mock("@/contexts/ai-suggestion-context", () => ({
+  AISuggestionProvider: ({ children }: { children: React.ReactNode }) => children,
+  useAISuggestion: vi.fn(() => ({
+    hasActiveSuggestion: false,
+    setHasActiveSuggestion: vi.fn(),
+  })),
 }));
 
 import ClientsPage from "./page";
@@ -81,6 +106,23 @@ function setupMocks(overrides?: { clients?: typeof sampleClients; loading?: bool
     error: null,
   } as ReturnType<typeof useCollectionHook.useCollection>);
 }
+
+vi.mock("@/hooks/use-ai-improve", () => ({
+  useAIImprove: vi.fn(() => ({
+    isLoading: false,
+    error: null,
+    result: null,
+    improve: vi.fn(),
+    reset: vi.fn(),
+  })),
+}));
+
+vi.mock("@/contexts/ai-suggestion-context", () => ({
+  useAISuggestion: vi.fn(() => ({
+    hasActiveSuggestion: false,
+    setHasActiveSuggestion: vi.fn(),
+  })),
+}));
 
 describe("ClientsPage", () => {
   beforeEach(() => {

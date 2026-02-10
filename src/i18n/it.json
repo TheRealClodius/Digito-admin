@@ -9,6 +9,11 @@
     "actions": "Azioni",
     "name": "Nome",
     "description": "Descrizione",
+    "showPreview": "Modalità anteprima",
+    "hidePreview": "Modalità modifica",
+    "markdownPreview": "Anteprima",
+    "accept": "Accetta",
+    "reject": "Rifiuta",
     "email": "Email",
     "yes": "Si",
     "no": "No",
@@ -259,5 +264,14 @@
     "title": "Qualcosa è andato storto",
     "description": "Si è verificato un errore imprevisto. Prova a ricaricare la pagina.",
     "reload": "Ricarica Pagina"
+  },
+  "ai": {
+    "improve": "Migliora chiarezza",
+    "shorten": "Accorcia",
+    "expand": "Espandi",
+    "longform": "Forma estesa",
+    "grammar": "Correggi grammatica",
+    "improving": "Elaborazione...",
+    "assistantName": "Digito Writing Assistant"
   }
 }

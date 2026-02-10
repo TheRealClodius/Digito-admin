@@ -29,7 +29,8 @@ import {
 } from "@/components/ui/tooltip";
 import { useAIImprove } from "@/hooks/use-ai-improve";
 import { useAISuggestion } from "@/contexts/ai-suggestion-context";
-import { ACTION_LABELS, type AIAction } from "@/lib/ai";
+import { useTranslation } from "@/hooks/use-translation";
+import { type AIAction } from "@/lib/ai";
 import { cn } from "@/lib/utils";
 
 interface AITextareaProps {
@@ -65,6 +66,7 @@ export function AITextarea({
 }: AITextareaProps) {
   const { isLoading, error, result, improve, reset } = useAIImprove();
   const { setHasActiveSuggestion } = useAISuggestion();
+  const { t } = useTranslation();
 
   const currentValue = getCurrentValue();
   const isEmpty = !currentValue || currentValue.trim().length === 0;
@@ -109,7 +111,7 @@ export function AITextarea({
         {isLoading ? (
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Loader2 className="size-4 animate-spin" />
-            <span>Improving...</span>
+            <span>{t("ai.improving")}</span>
           </div>
         ) : (
           <DropdownMenu>
@@ -128,7 +130,7 @@ export function AITextarea({
                   </Button>
                 </DropdownMenuTrigger>
               </TooltipTrigger>
-              <TooltipContent>Digito Writing Assistant</TooltipContent>
+              <TooltipContent>{t("ai.assistantName")}</TooltipContent>
             </Tooltip>
             <DropdownMenuContent align="end">
               {ACTION_ORDER.map((action) => {
@@ -139,7 +141,7 @@ export function AITextarea({
                     onClick={() => handleAction(action)}
                   >
                     <Icon className="size-4" />
-                    {ACTION_LABELS[action]}
+                    {t(`ai.${action}`)}
                   </DropdownMenuItem>
                 );
               })}
@@ -160,7 +162,7 @@ export function AITextarea({
           <div className="flex-1 min-w-0 rounded-md border bg-muted/30 p-3 space-y-3 animate-shimmer-border">
             <div className="flex items-center gap-2 text-sm font-medium">
               <Wand2 className="size-4 text-primary" />
-              Digito Writing Assistant
+              {t("ai.assistantName")}
             </div>
             <div className="prose prose-sm dark:prose-invert max-w-none">
               <ReactMarkdown

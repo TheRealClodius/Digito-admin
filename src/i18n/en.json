@@ -9,6 +9,11 @@
     "actions": "Actions",
     "name": "Name",
     "description": "Description",
+    "showPreview": "Preview mode",
+    "hidePreview": "Edit mode",
+    "markdownPreview": "Preview",
+    "accept": "Accept",
+    "reject": "Reject",
     "email": "Email",
     "yes": "Yes",
     "no": "No",
@@ -259,5 +264,14 @@
     "title": "Something went wrong",
     "description": "An unexpected error occurred. Please try reloading the page.",
     "reload": "Reload Page"
+  },
+  "ai": {
+    "improve": "Improve clarity",
+    "shorten": "Shorten",
+    "expand": "Expand",
+    "longform": "Long form",
+    "grammar": "Fix grammar",
+    "improving": "Improving...",
+    "assistantName": "Digito Writing Assistant"
   }
 }
