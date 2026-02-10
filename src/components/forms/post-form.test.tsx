@@ -17,6 +17,16 @@ vi.mock("firebase/firestore", () => ({
 }));
 vi.mock("firebase/storage", () => ({ getStorage: vi.fn() }));
 
+vi.mock("@/hooks/use-ai-improve", () => ({
+  useAIImprove: vi.fn(() => ({
+    isLoading: false,
+    error: null,
+    result: null,
+    improve: vi.fn(),
+    reset: vi.fn(),
+  })),
+}));
+
 // Mock next/image so it renders a plain <img> in jsdom
 vi.mock("next/image", () => ({
   __esModule: true,
