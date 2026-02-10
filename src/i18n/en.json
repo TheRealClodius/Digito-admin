@@ -17,6 +17,8 @@
     "active": "Active",
     "highlighted": "Highlighted",
     "requiresAccess": "Requires Access",
+    "requiresRegistration": "Requires Registration",
+    "requiresVIPAccess": "Requires VIP Access",
     "title": "Title",
     "type": "Type",
     "location": "Location",
@@ -173,7 +175,6 @@
     "speakerName": "Speaker Name",
     "speakerBio": "Speaker Bio",
     "speaker": "Speaker",
-    "accessTier": "Access Tier",
     "countLabel": "{{count}} session(s)",
     "noSessionsFound": "No sessions found"
   },

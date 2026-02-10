@@ -459,7 +459,8 @@ describe("sessionSchema", () => {
     const result = sessionSchema.safeParse(validSession);
     expect(result.success).toBe(true);
     if (result.success) {
-      expect(result.data.requiresAccess).toBeUndefined();
+      expect(result.data.requiresRegistration).toBeUndefined();
+      expect(result.data.requiresVIPAccess).toBeUndefined();
     }
   });
 
@@ -497,20 +498,23 @@ describe("sessionSchema", () => {
     expect(sessionSchema.safeParse({ ...validSession, type: "meetup" }).success).toBe(false);
   });
 
-  it("accepts valid accessTier values", () => {
-    for (const accessTier of ["regular", "premium", "vip", "staff"]) {
-      expect(sessionSchema.safeParse({ ...validSession, accessTier }).success).toBe(true);
-    }
+  it("accepts requiresRegistration boolean", () => {
+    expect(sessionSchema.safeParse({ ...validSession, requiresRegistration: true }).success).toBe(true);
+    expect(sessionSchema.safeParse({ ...validSession, requiresRegistration: false }).success).toBe(true);
   });
 
-  it("rejects invalid accessTier", () => {
-    expect(sessionSchema.safeParse({ ...validSession, accessTier: "gold" }).success).toBe(false);
+  it("accepts requiresVIPAccess boolean", () => {
+    expect(sessionSchema.safeParse({ ...validSession, requiresVIPAccess: true }).success).toBe(true);
+    expect(sessionSchema.safeParse({ ...validSession, requiresVIPAccess: false }).success).toBe(true);
   });
 
-  it("leaves requiresAccess undefined when not provided", () => {
+  it("leaves requiresRegistration and requiresVIPAccess undefined when not provided", () => {
     const result = sessionSchema.safeParse(validSession);
     expect(result.success).toBe(true);
-    if (result.success) expect(result.data.requiresAccess).toBeUndefined();
+    if (result.success) {
+      expect(result.data.requiresRegistration).toBeUndefined();
+      expect(result.data.requiresVIPAccess).toBeUndefined();
+    }
   });
 
   it("accepts null for optional nullable fields", () => {
@@ -522,7 +526,6 @@ describe("sessionSchema", () => {
       speakerBio: null,
       speakerAvatarUrl: null,
       participantId: null,
-      accessTier: null,
       imageUrl: null,
     });
     expect(result.success).toBe(true);

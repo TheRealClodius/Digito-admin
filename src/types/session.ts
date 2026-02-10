@@ -1,8 +1,6 @@
 import { Timestamp } from "firebase/firestore";
 
 export type SessionType = "talk" | "workshop" | "panel" | "networking" | "other";
-export type AccessTier = "regular" | "premium" | "vip" | "staff";
-
 export interface Session {
   id: string;
   title: string;
@@ -15,8 +13,8 @@ export interface Session {
   speakerBio?: string | null;
   speakerAvatarUrl?: string | null;
   participantId?: string | null;
-  requiresAccess: boolean;
-  accessTier?: AccessTier | null;
+  requiresRegistration: boolean;
+  requiresVIPAccess: boolean;
   imageUrl?: string | null;
   createdAt: Timestamp;
 }

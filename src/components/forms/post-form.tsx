@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { AICopyTools } from "@/components/ai-copy-tools";
 import { ImageUpload } from "@/components/image-upload";
 import { useUpload } from "@/hooks/use-upload";
 import { postSchema, type PostFormValues } from "@/lib/schemas";
@@ -85,7 +86,14 @@ export function PostForm({
       </div>
 
       <div className="col-span-2 space-y-2">
-        <Label htmlFor="description">{t("common.description")}</Label>
+        <div className="flex items-center justify-between">
+          <Label htmlFor="description">{t("common.description")}</Label>
+          <AICopyTools
+            fieldName="description"
+            getCurrentValue={() => watch("description") ?? ""}
+            onAccept={(text) => setValue("description", text, { shouldDirty: true })}
+          />
+        </div>
         <Textarea
           id="description"
           {...register("description")}

@@ -5,6 +5,7 @@ import { useDropzone } from "react-dropzone";
 import { Loader2, Upload, X } from "lucide-react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
+import { isAllowedImageHost } from "@/lib/validation";
 import { useTranslation } from "@/hooks/use-translation";
 import { Button } from "@/components/ui/button";
 
@@ -99,13 +100,24 @@ export function ImageUpload({
     <div className={cn("space-y-2", className)}>
       {displayUrl ? (
         <div className="relative inline-block">
-          <Image
-            src={displayUrl}
-            alt={t("common.uploadPreview")}
-            width={200}
-            height={200}
-            className="rounded-md border object-cover"
-          />
+          {isAllowedImageHost(displayUrl) ? (
+            <Image
+              src={displayUrl}
+              alt={t("common.uploadPreview")}
+              width={200}
+              height={200}
+              className="rounded-md border object-cover"
+            />
+          ) : (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img
+              src={displayUrl}
+              alt={t("common.uploadPreview")}
+              width={200}
+              height={200}
+              className="rounded-md border object-cover"
+            />
+          )}
           {uploading && (
             <div className="absolute inset-0 flex items-center justify-center rounded-md bg-background/60">
               <Loader2 className="size-6 animate-spin text-muted-foreground" />

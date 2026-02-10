@@ -16,6 +16,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toDate } from "@/lib/timestamps";
+import { isAllowedImageHost } from "@/lib/validation";
 import { useTranslation } from "@/hooks/use-translation";
 import type { Post } from "@/types/post";
 
@@ -37,22 +38,6 @@ function truncateDescription(
 function formatDate(post: Post): string {
   const d = toDate(post.createdAt);
   return d ? format(d, "MMM d, yyyy") : "\u2014";
-}
-
-// Allowed image hostnames from next.config.ts
-const ALLOWED_IMAGE_HOSTS = [
-  "firebasestorage.googleapis.com",
-  "storage.googleapis.com",
-  "digito-poc.firebasestorage.app",
-];
-
-function isValidImageUrl(url: string): boolean {
-  try {
-    const urlObj = new URL(url);
-    return ALLOWED_IMAGE_HOSTS.some((host) => urlObj.hostname === host);
-  } catch {
-    return false;
-  }
 }
 
 export const PostsTable = memo(function PostsTable({ posts, onEdit, onDelete }: PostsTableProps) {
@@ -90,7 +75,7 @@ export const PostsTable = memo(function PostsTable({ posts, onEdit, onDelete }: 
             </TableRow>
           ) : (
             posts.map((post) => {
-              const hasValidImage = isValidImageUrl(post.imageUrl);
+              const hasValidImage = isAllowedImageHost(post.imageUrl);
               return (
                 <TableRow key={post.id}>
                   <TableCell>

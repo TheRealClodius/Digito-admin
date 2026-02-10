@@ -17,6 +17,16 @@ vi.mock("firebase/firestore", () => ({
 }));
 vi.mock("firebase/storage", () => ({ getStorage: vi.fn() }));
 
+vi.mock("@/hooks/use-ai-improve", () => ({
+  useAIImprove: vi.fn(() => ({
+    isLoading: false,
+    error: null,
+    result: null,
+    improve: vi.fn(),
+    reset: vi.fn(),
+  })),
+}));
+
 // ResizeObserver mock required by Radix UI primitives in jsdom
 beforeAll(() => {
   global.ResizeObserver = class {
@@ -84,10 +94,11 @@ describe("SessionForm", () => {
     expect(screen.getByLabelText(/speaker bio/i)).toBeInTheDocument();
   });
 
-  it("renders the Requires Access switch", () => {
+  it("renders the Requires Registration and Requires VIP Access checkboxes", () => {
     render(<SessionForm {...defaultProps} />);
 
-    expect(screen.getByLabelText(/requires access/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/requires registration/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/requires vip access/i)).toBeInTheDocument();
   });
 
   // ---- Submit and Cancel buttons ----
@@ -171,7 +182,8 @@ describe("SessionForm", () => {
           speakerName: "Alice",
           speakerBio: "Expert in testing",
           type: "workshop",
-          requiresAccess: false,
+          requiresRegistration: false,
+          requiresVIPAccess: false,
         }}
       />,
     );
@@ -258,30 +270,28 @@ describe("SessionForm", () => {
     expect(optionValues).toContain("other");
   });
 
-  // ---- Access Tier shown when requiresAccess is true ----
+  // ---- Checkboxes reflect default values ----
 
-  it("shows Access Tier select when Requires Access is enabled", async () => {
-    const user = userEvent.setup();
-
+  it("pre-fills requiresRegistration when defaultValues has it true", () => {
     render(
       <SessionForm
         {...defaultProps}
-        defaultValues={{ requiresAccess: true }}
+        defaultValues={{ requiresRegistration: true }}
       />,
     );
 
-    expect(screen.getByLabelText(/access tier/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/requires registration/i)).toBeChecked();
   });
 
-  it("hides Access Tier select when Requires Access is disabled", () => {
+  it("pre-fills requiresVIPAccess when defaultValues has it true", () => {
     render(
       <SessionForm
         {...defaultProps}
-        defaultValues={{ requiresAccess: false }}
+        defaultValues={{ requiresVIPAccess: true }}
       />,
     );
 
-    expect(screen.queryByLabelText(/access tier/i)).not.toBeInTheDocument();
+    expect(screen.getByLabelText(/requires vip access/i)).toBeChecked();
   });
 
   // ---- Calls onSubmit with form data on valid submission ----

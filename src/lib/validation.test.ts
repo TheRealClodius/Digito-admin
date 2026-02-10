@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { isValidFirestoreId, sanitizeFilename } from "./validation";
+import { isValidFirestoreId, sanitizeFilename, isAllowedImageHost } from "./validation";
 
 describe("isValidFirestoreId", () => {
   it("returns true for valid alphanumeric IDs", () => {
@@ -118,5 +118,44 @@ describe("sanitizeFilename", () => {
 
   it("handles edge case of empty string", () => {
     expect(sanitizeFilename("")).toBe("file");
+  });
+});
+
+describe("isAllowedImageHost", () => {
+  it("returns true for firebasestorage.googleapis.com URLs", () => {
+    expect(isAllowedImageHost("https://firebasestorage.googleapis.com/v0/b/bucket/o/file.jpg?alt=media")).toBe(true);
+  });
+
+  it("returns true for storage.googleapis.com URLs", () => {
+    expect(isAllowedImageHost("https://storage.googleapis.com/bucket/file.jpg")).toBe(true);
+  });
+
+  it("returns true for digito-poc.firebasestorage.app URLs", () => {
+    expect(isAllowedImageHost("https://digito-poc.firebasestorage.app/file.jpg")).toBe(true);
+  });
+
+  it("returns true for blob: URLs (local previews)", () => {
+    expect(isAllowedImageHost("blob:http://localhost:3000/abc-123")).toBe(true);
+  });
+
+  it("returns true for relative paths (local assets)", () => {
+    expect(isAllowedImageHost("/digito-logo.svg")).toBe(true);
+  });
+
+  it("returns false for picsum.photos URLs", () => {
+    expect(isAllowedImageHost("https://picsum.photos/seed/salone-logo/200")).toBe(false);
+  });
+
+  it("returns false for other unconfigured hosts", () => {
+    expect(isAllowedImageHost("https://example.com/image.jpg")).toBe(false);
+    expect(isAllowedImageHost("https://imgur.com/abc.png")).toBe(false);
+  });
+
+  it("returns false for empty strings", () => {
+    expect(isAllowedImageHost("")).toBe(false);
+  });
+
+  it("returns false for invalid URLs", () => {
+    expect(isAllowedImageHost("not-a-url")).toBe(false);
   });
 });

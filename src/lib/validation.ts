@@ -48,6 +48,37 @@ export function isValidFirestoreId(id: unknown): boolean {
 }
 
 /**
+ * Hostnames allowed by next.config.ts for next/image.
+ * Keep in sync with the remotePatterns array in next.config.ts.
+ */
+const ALLOWED_IMAGE_HOSTS = [
+  "firebasestorage.googleapis.com",
+  "storage.googleapis.com",
+  "digito-poc.firebasestorage.app",
+];
+
+/**
+ * Checks whether a URL is safe to pass to next/image.
+ * Returns true for configured remote hosts, blob: URLs, and relative paths.
+ */
+export function isAllowedImageHost(url: string): boolean {
+  if (!url) return false;
+
+  // Relative paths (local assets like /digito-logo.svg)
+  if (url.startsWith("/")) return true;
+
+  // Blob URLs from local file previews
+  if (url.startsWith("blob:")) return true;
+
+  try {
+    const parsed = new URL(url);
+    return ALLOWED_IMAGE_HOSTS.some((host) => parsed.hostname === host);
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Sanitizes a filename for safe use in Firebase Storage paths.
  *
  * - Removes path traversal sequences (../, ..\)

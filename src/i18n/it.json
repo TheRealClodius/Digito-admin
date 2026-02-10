@@ -17,6 +17,8 @@
     "active": "Attivo",
     "highlighted": "In evidenza",
     "requiresAccess": "Richiede accesso",
+    "requiresRegistration": "Richiede Registrazione",
+    "requiresVIPAccess": "Richiede Accesso VIP",
     "title": "Titolo",
     "type": "Tipo",
     "location": "Luogo",
@@ -173,7 +175,6 @@
     "speakerName": "Nome Relatore",
     "speakerBio": "Bio Relatore",
     "speaker": "Relatore",
-    "accessTier": "Livello Accesso",
     "countLabel": "{{count}} sessione/i",
     "noSessionsFound": "Nessuna sessione trovata"
   },

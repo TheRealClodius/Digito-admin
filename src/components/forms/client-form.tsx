@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { AICopyTools } from "@/components/ai-copy-tools";
 import { ImageUpload } from "@/components/image-upload";
 import { useUpload } from "@/hooks/use-upload";
 import { clientSchema, type ClientFormValues } from "@/lib/schemas";
@@ -71,7 +72,14 @@ export function ClientForm({
       </div>
 
       <div className="col-span-2 space-y-2">
-        <Label htmlFor="description">{t("common.description")}</Label>
+        <div className="flex items-center justify-between">
+          <Label htmlFor="description">{t("common.description")}</Label>
+          <AICopyTools
+            fieldName="description"
+            getCurrentValue={() => watch("description") ?? ""}
+            onAccept={(text) => setValue("description", text, { shouldDirty: true })}
+          />
+        </div>
         <Textarea
           id="description"
           {...register("description")}

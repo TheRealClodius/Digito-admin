@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { AICopyTools } from "@/components/ai-copy-tools";
 import { ImageUpload } from "@/components/image-upload";
 import { useUpload } from "@/hooks/use-upload";
 import { participantSchema, type ParticipantFormValues } from "@/lib/schemas";
@@ -176,7 +177,14 @@ export function ParticipantForm({
       </div>
 
       <div className="col-span-2 space-y-2">
-        <Label htmlFor="bio">{t("participants.bio")}</Label>
+        <div className="flex items-center justify-between">
+          <Label htmlFor="bio">{t("participants.bio")}</Label>
+          <AICopyTools
+            fieldName="bio"
+            getCurrentValue={() => watch("bio") ?? ""}
+            onAccept={(text) => setValue("bio", text, { shouldDirty: true })}
+          />
+        </div>
         <Textarea
           id="bio"
           aria-label="Bio"
