@@ -17,6 +17,16 @@ vi.mock("firebase/firestore", () => ({
 }));
 vi.mock("firebase/storage", () => ({ getStorage: vi.fn() }));
 
+vi.mock("@/hooks/use-ai-improve", () => ({
+  useAIImprove: vi.fn(() => ({
+    isLoading: false,
+    error: null,
+    result: null,
+    improve: vi.fn(),
+    reset: vi.fn(),
+  })),
+}));
+
 // ResizeObserver mock (needed by some UI primitives in jsdom)
 beforeAll(() => {
   global.ResizeObserver = class {
