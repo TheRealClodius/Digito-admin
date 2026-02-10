@@ -25,7 +25,7 @@ interface EventsTableProps {
   onToggleActive: (eventId: string, newValue: boolean) => void;
 }
 
-function getStatusKey(startDate: Date, endDate: Date): string {
+function getStatusKey(startDate: Date, endDate: Date): "events.statusUpcoming" | "events.statusEnded" | "events.statusOngoing" {
   const now = new Date();
   if (now < startDate) return "events.statusUpcoming";
   if (now > endDate) return "events.statusEnded";
