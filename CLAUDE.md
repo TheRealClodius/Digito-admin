@@ -1,5 +1,13 @@
 # Digito Admin Dashboard — Development Guidelines
 
+## Package Management
+
+**Always use pnpm instead of npm** for package management to keep the lockfile in sync with Vercel's build system.
+
+- Install dependencies: `pnpm install`
+- Add packages: `pnpm add <package-name>`
+- Add dev dependencies: `pnpm add -D <package-name>`
+
 ## TDD Rule
 
 Always create tests first, then implement. Every new feature, component, or utility must have its test written and committed before the implementation code. This applies to:
