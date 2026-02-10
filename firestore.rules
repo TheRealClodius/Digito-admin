@@ -22,20 +22,18 @@ service cloud.firestore {
 
     // Future: Check if user has access to specific client
     function hasClientAccess(clientId) {
-      if (isSuperAdmin()) return true;
-
       let permDoc = get(/databases/$(database)/documents/userPermissions/$(request.auth.uid));
-      return permDoc != null
-        && (permDoc.data.clientIds == null || clientId in permDoc.data.clientIds);
+      return isSuperAdmin()
+        || (permDoc != null
+          && (permDoc.data.clientIds == null || clientId in permDoc.data.clientIds));
     }
 
     // Future: Check if user has access to specific event
     function hasEventAccess(eventId) {
-      if (isSuperAdmin()) return true;
-
       let permDoc = get(/databases/$(database)/documents/userPermissions/$(request.auth.uid));
-      return permDoc != null
-        && (permDoc.data.eventIds == null || eventId in permDoc.data.eventIds);
+      return isSuperAdmin()
+        || (permDoc != null
+          && (permDoc.data.eventIds == null || eventId in permDoc.data.eventIds));
     }
 
     // ========================================
