@@ -77,7 +77,20 @@ describe("auth", () => {
   });
 
   describe("checkSuperAdmin", () => {
-    it("returns true when user has admin custom claim", async () => {
+    it("returns true when user has superadmin custom claim", async () => {
+      const mockUser = {
+        getIdTokenResult: vi.fn().mockResolvedValue({
+          claims: { superadmin: true },
+        }),
+      } as unknown as import("firebase/auth").User;
+
+      const result = await checkSuperAdmin(mockUser);
+
+      expect(result).toBe(true);
+      expect(mockUser.getIdTokenResult).toHaveBeenCalledWith(true); // Force refresh
+    });
+
+    it("returns true when user has legacy admin claim (backward compatibility)", async () => {
       const mockUser = {
         getIdTokenResult: vi.fn().mockResolvedValue({
           claims: { admin: true },
@@ -87,10 +100,22 @@ describe("auth", () => {
       const result = await checkSuperAdmin(mockUser);
 
       expect(result).toBe(true);
-      expect(mockUser.getIdTokenResult).toHaveBeenCalled();
+      expect(mockUser.getIdTokenResult).toHaveBeenCalledWith(true);
     });
 
-    it("returns false when user does not have admin claim", async () => {
+    it("returns true when user has BOTH superadmin and admin claims", async () => {
+      const mockUser = {
+        getIdTokenResult: vi.fn().mockResolvedValue({
+          claims: { superadmin: true, admin: true },
+        }),
+      } as unknown as import("firebase/auth").User;
+
+      const result = await checkSuperAdmin(mockUser);
+
+      expect(result).toBe(true);
+    });
+
+    it("returns false when user does not have superadmin or admin claim", async () => {
       const mockUser = {
         getIdTokenResult: vi.fn().mockResolvedValue({
           claims: {},
@@ -102,7 +127,19 @@ describe("auth", () => {
       expect(result).toBe(false);
     });
 
-    it("returns false when admin claim is false", async () => {
+    it("returns false when superadmin claim is false", async () => {
+      const mockUser = {
+        getIdTokenResult: vi.fn().mockResolvedValue({
+          claims: { superadmin: false },
+        }),
+      } as unknown as import("firebase/auth").User;
+
+      const result = await checkSuperAdmin(mockUser);
+
+      expect(result).toBe(false);
+    });
+
+    it("returns false when only admin claim is false", async () => {
       const mockUser = {
         getIdTokenResult: vi.fn().mockResolvedValue({
           claims: { admin: false },
@@ -130,4 +167,7 @@ describe("auth", () => {
       expect(unsubscribe).toBe(mockUnsubscribe);
     });
   });
+
+  // Note: getUserPermissions tests are in a separate test file
+  // since they require Firestore mocking which conflicts with these mocks
 });
