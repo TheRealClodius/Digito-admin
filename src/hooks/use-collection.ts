@@ -39,8 +39,12 @@ export function useCollection<T extends DocumentData & { id: string }>({
     if (!path) {
       setData([]);
       setLoading(false);
+      setError(null);
       return;
     }
+
+    setLoading(true);
+    setError(null);
 
     const queryConstraints: QueryConstraint[] = [
       orderBy(orderByField, orderDirection),
