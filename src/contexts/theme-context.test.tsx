@@ -89,6 +89,28 @@ describe("ThemeContext", () => {
   });
 
   describe("Auto Mode", () => {
+    beforeEach(() => {
+      // Mock matchMedia to return undefined by default, forcing fallback to geolocation
+      // For tests that need geolocation, we'll set matchMedia to undefined
+      // But for most tests, we should provide a mock to avoid fetch errors
+      const mockMatchMedia = vi.fn((query: string) => ({
+        matches: false,
+        media: query,
+        onchange: null,
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        dispatchEvent: vi.fn(),
+      }));
+
+      Object.defineProperty(window, "matchMedia", {
+        writable: true,
+        configurable: true,
+        value: mockMatchMedia,
+      });
+    });
+
     it("defaults to auto mode on first visit", async () => {
       const sunrise = new Date("2024-01-15T07:00:00");
       const sunset = new Date("2024-01-15T18:00:00");
@@ -110,7 +132,13 @@ describe("ThemeContext", () => {
       });
     });
 
-    it("fetches coordinates and sunrise/sunset times when mode is auto", async () => {
+    it("fetches coordinates and sunrise/sunset times when mode is auto (fallback)", async () => {
+      // Disable matchMedia to test geolocation fallback
+      Object.defineProperty(window, "matchMedia", {
+        writable: true,
+        value: undefined,
+      });
+
       const sunrise = new Date("2024-01-15T07:00:00");
       const sunset = new Date("2024-01-15T18:00:00");
 
@@ -153,7 +181,13 @@ describe("ThemeContext", () => {
       });
     });
 
-    it("calculates dark theme during night (sunset to sunrise)", async () => {
+    it("calculates dark theme during night (sunset to sunrise) - fallback", async () => {
+      // Disable matchMedia to test geolocation fallback
+      Object.defineProperty(window, "matchMedia", {
+        writable: true,
+        value: undefined,
+      });
+
       const sunrise = new Date("2024-01-15T07:00:00");
       const sunset = new Date("2024-01-15T18:00:00");
 
@@ -299,7 +333,13 @@ describe("ThemeContext", () => {
       clearIntervalSpy.mockRestore();
     });
 
-    it("uses cached sunrise/sunset times within same day", async () => {
+    it("uses cached sunrise/sunset times within same day - fallback", async () => {
+      // Disable matchMedia to test geolocation fallback
+      Object.defineProperty(window, "matchMedia", {
+        writable: true,
+        value: undefined,
+      });
+
       const sunrise = new Date("2024-01-15T07:00:00");
       const sunset = new Date("2024-01-15T18:00:00");
 
@@ -329,7 +369,13 @@ describe("ThemeContext", () => {
       });
     });
 
-    it("refetches sunrise/sunset times on new day", async () => {
+    it("refetches sunrise/sunset times on new day - fallback", async () => {
+      // Disable matchMedia to test geolocation fallback
+      Object.defineProperty(window, "matchMedia", {
+        writable: true,
+        value: undefined,
+      });
+
       const yesterday = new Date();
       yesterday.setDate(yesterday.getDate() - 1);
 
@@ -363,6 +409,112 @@ describe("ThemeContext", () => {
 
       await waitFor(() => {
         expect(fetchSunriseSunsetSpy).toHaveBeenCalled();
+      });
+    });
+
+    it("uses system color scheme preference when available (dark)", async () => {
+      // Mock matchMedia to simulate dark mode preference
+      const mockMatchMedia = vi.fn((query: string) => ({
+        matches: query === "(prefers-color-scheme: dark)",
+        media: query,
+        onchange: null,
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        dispatchEvent: vi.fn(),
+      }));
+
+      Object.defineProperty(window, "matchMedia", {
+        writable: true,
+        value: mockMatchMedia,
+      });
+
+      // These should not be called since system preference takes priority
+      const fetchCoordinatesSpy = vi
+        .spyOn(autoTheme, "fetchCoordinates")
+        .mockResolvedValue({ lat: 40.7128, lng: -74.006 });
+      const fetchSunriseSunsetSpy = vi
+        .spyOn(autoTheme, "fetchSunriseSunset")
+        .mockResolvedValue({
+          sunrise: new Date(),
+          sunset: new Date(),
+        });
+
+      const { result } = renderHook(() => useTheme(), { wrapper });
+
+      await waitFor(() => {
+        expect(result.current.theme).toBe("dark");
+      });
+
+      // Geolocation should not be fetched since system preference is used
+      expect(fetchCoordinatesSpy).not.toHaveBeenCalled();
+      expect(fetchSunriseSunsetSpy).not.toHaveBeenCalled();
+    });
+
+    it("uses system color scheme preference when available (light)", async () => {
+      // Mock matchMedia to simulate light mode preference
+      const mockMatchMedia = vi.fn((query: string) => ({
+        matches: false, // dark mode is not preferred
+        media: query,
+        onchange: null,
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        dispatchEvent: vi.fn(),
+      }));
+
+      Object.defineProperty(window, "matchMedia", {
+        writable: true,
+        value: mockMatchMedia,
+      });
+
+      const { result } = renderHook(() => useTheme(), { wrapper });
+
+      await waitFor(() => {
+        expect(result.current.theme).toBe("light");
+      });
+    });
+
+    it("listens to system color scheme changes", async () => {
+      let mediaQueryListener: ((e: MediaQueryListEvent) => void) | null = null;
+
+      const mockMatchMedia = vi.fn((query: string) => ({
+        matches: false, // start with light mode
+        media: query,
+        onchange: null,
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        addEventListener: vi.fn((event: string, listener: any) => {
+          if (event === "change") {
+            mediaQueryListener = listener;
+          }
+        }),
+        removeEventListener: vi.fn(),
+        dispatchEvent: vi.fn(),
+      }));
+
+      Object.defineProperty(window, "matchMedia", {
+        writable: true,
+        value: mockMatchMedia,
+      });
+
+      const { result } = renderHook(() => useTheme(), { wrapper });
+
+      await waitFor(() => {
+        expect(result.current.theme).toBe("light");
+      });
+
+      // Simulate system changing to dark mode
+      if (mediaQueryListener) {
+        act(() => {
+          mediaQueryListener({ matches: true } as MediaQueryListEvent);
+        });
+      }
+
+      await waitFor(() => {
+        expect(result.current.theme).toBe("dark");
       });
     });
   });

@@ -59,6 +59,14 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   // Handle auto-mode theme calculation
   const calculateAutoTheme = useCallback(async () => {
     try {
+      // Primary: Use system color scheme preference (most reliable)
+      if (typeof window !== "undefined" && window.matchMedia) {
+        const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        setThemeState(prefersDark ? "dark" : "light");
+        return;
+      }
+
+      // Fallback: Use IP-based geolocation + sunrise/sunset
       // Get coordinates
       const coords = await fetchCoordinates();
 
@@ -79,13 +87,21 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       setThemeState(calculatedTheme);
     } catch (error) {
       console.warn("Failed to calculate auto theme:", error);
-      // Fallback to light theme on error
+      // Final fallback to light theme on error
       setThemeState("light");
     }
   }, []);
 
-  // Recalculate theme using cached sun times
+  // Recalculate theme using cached sun times or system preference
   const recalculateTheme = useCallback(() => {
+    // Primary: Use system color scheme preference
+    if (typeof window !== "undefined" && window.matchMedia) {
+      const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+      setThemeState(prefersDark ? "dark" : "light");
+      return;
+    }
+
+    // Fallback: Use cached sun times
     if (sunTimesRef.current) {
       const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
       const calculatedTheme = calculateThemeFromSunTimes(
@@ -103,7 +119,19 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       // Calculate theme immediately
       calculateAutoTheme();
 
-      // Set up interval to recalculate every 60 seconds
+      // Listen for system color scheme changes
+      let mediaQuery: MediaQueryList | null = null;
+      let mediaQueryListener: ((e: MediaQueryListEvent) => void) | null = null;
+
+      if (typeof window !== "undefined" && window.matchMedia) {
+        mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+        mediaQueryListener = (e: MediaQueryListEvent) => {
+          setThemeState(e.matches ? "dark" : "light");
+        };
+        mediaQuery.addEventListener("change", mediaQueryListener);
+      }
+
+      // Set up interval to recalculate every 60 seconds (for fallback method)
       timerRef.current = setInterval(() => {
         recalculateTheme();
       }, 60000);
@@ -113,6 +141,9 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         if (timerRef.current) {
           clearInterval(timerRef.current);
           timerRef.current = null;
+        }
+        if (mediaQuery && mediaQueryListener) {
+          mediaQuery.removeEventListener("change", mediaQueryListener);
         }
       };
     } else {
