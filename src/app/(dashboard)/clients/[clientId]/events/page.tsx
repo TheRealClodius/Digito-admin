@@ -137,7 +137,7 @@ export default function EventsPage({
         </div>
         {!readOnly && (
           <Button onClick={handleNew}>
-            <Plus className="mr-2 size-4" />
+            <Plus className="size-4" />
             {t("events.addButton")}
           </Button>
         )}

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useDropzone } from "react-dropzone";
-import { Loader2, Upload, X } from "lucide-react";
+import { Loader2, Trash2, Upload } from "lucide-react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { isAllowedImageHost } from "@/lib/validation";
@@ -99,7 +99,7 @@ export function ImageUpload({
   return (
     <div className={cn("space-y-2", className)}>
       {displayUrl ? (
-        <div className="relative inline-block">
+        <div className="group relative inline-block">
           {isAllowedImageHost(displayUrl) ? (
             <Image
               src={displayUrl}
@@ -125,13 +125,14 @@ export function ImageUpload({
           )}
           <Button
             type="button"
-            variant="destructive"
+            variant="ghost"
             size="icon"
-            className="absolute -right-2 -top-2 size-6"
+            className="absolute right-1 top-1 size-6 bg-white text-foreground shadow-sm opacity-0 transition-opacity group-hover:opacity-100 focus:opacity-100 hover:bg-white/90 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
             onClick={handleRemove}
             disabled={disabled || uploading}
+            aria-label={t("common.delete")}
           >
-            <X className="size-3" />
+            <Trash2 className="size-3" />
           </Button>
         </div>
       ) : (

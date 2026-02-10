@@ -4,9 +4,8 @@ import { useForm } from "react-hook-form";
 import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { AICopyTools } from "@/components/ai-copy-tools";
+import { AITextarea } from "@/components/ai-textarea";
 import type { HappeningType } from "@/types/happening";
 import { useTranslation } from "@/hooks/use-translation";
 
@@ -129,21 +128,16 @@ export function HappeningForm({
         </select>
       </div>
 
-      <div className="col-span-2 space-y-2">
-        <div className="flex items-center justify-between">
-          <Label htmlFor="description">{t("common.description")}</Label>
-          <AICopyTools
-            fieldName="description"
-            getCurrentValue={() => watch("description") ?? ""}
-            onAccept={(text) => setValue("description", text, { shouldDirty: true })}
-          />
-        </div>
-        <Textarea
-          id="description"
-          aria-label="Description"
-          {...register("description")}
-        />
-      </div>
+      <AITextarea
+        className="col-span-2"
+        label={t("common.description")}
+        fieldName="description"
+        id="description"
+        ariaLabel="Description"
+        getCurrentValue={() => watch("description") ?? ""}
+        onAccept={(text) => setValue("description", text, { shouldDirty: true })}
+        textareaProps={register("description")}
+      />
 
       <div className="space-y-2">
         <Label htmlFor="startTime">{t("happenings.startTime")}</Label>

@@ -37,7 +37,6 @@
     "dashboard": "Dashboard",
     "clients": "Clients",
     "overview": "Overview",
-    "brands": "Brands",
     "stands": "Stands",
     "sessions": "Sessions",
     "happenings": "Happenings",
@@ -144,7 +143,7 @@
   "eventOverview": {
     "title": "Event Overview",
     "description": "Summary of event data and quick actions",
-    "totalBrands": "Total Brands",
+    "totalBrands": "Total Stands",
     "totalSessions": "Total Sessions",
     "totalHappenings": "Total Happenings",
     "participants": "Participants",
@@ -152,18 +151,18 @@
     "selectClientPrompt": "Select a client from the sidebar to view event details."
   },
   "brands": {
-    "title": "Brand",
-    "pluralTitle": "Brands",
-    "description": "Manage brands for this event",
-    "addButton": "Add Brand",
+    "title": "Stands",
+    "pluralTitle": "Stands",
+    "description": "Manage stands for this event",
+    "addButton": "Add Stand",
     "stallNumber": "Stall Number",
     "stallNumberShort": "Stall #",
     "website": "Website",
-    "highlighted": "Brand highlighted",
-    "unhighlighted": "Brand unhighlighted",
-    "failedToUpdate": "Failed to update brand",
-    "countLabel": "{{count}} brand(s)",
-    "noBrandsFound": "No brands found"
+    "highlighted": "Stand highlighted",
+    "unhighlighted": "Stand unhighlighted",
+    "failedToUpdate": "Failed to update stand",
+    "countLabel": "{{count}} stand(s)",
+    "noBrandsFound": "No stands found"
   },
   "sessions": {
     "title": "Sessions",
@@ -236,14 +235,6 @@
     "countLabelPlural": "{{count}} entries",
     "noEntriesFound": "No entries found",
     "failedToSave": "Failed to save whitelist entry"
-  },
-  "stands": {
-    "title": "Stands",
-    "description": "Manage booth locations for this event",
-    "addButton": "Add Stand",
-    "noStandsYet": "No stands yet",
-    "addFirst": "Add first stand",
-    "countLabel": "{{count}} stand(s) found"
   },
   "crud": {
     "newEntity": "New {{entity}}",

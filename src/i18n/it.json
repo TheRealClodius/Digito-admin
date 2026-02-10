@@ -37,7 +37,6 @@
     "dashboard": "Dashboard",
     "clients": "Clienti",
     "overview": "Panoramica",
-    "brands": "Brand",
     "stands": "Stand",
     "sessions": "Sessioni",
     "happenings": "Happening",
@@ -144,7 +143,7 @@
   "eventOverview": {
     "title": "Panoramica Evento",
     "description": "Riepilogo dei dati dell'evento e azioni rapide",
-    "totalBrands": "Brand Totali",
+    "totalBrands": "Stand Totali",
     "totalSessions": "Sessioni Totali",
     "totalHappenings": "Happening Totali",
     "participants": "Partecipanti",
@@ -152,18 +151,18 @@
     "selectClientPrompt": "Seleziona un cliente dalla barra laterale per visualizzare i dettagli dell'evento."
   },
   "brands": {
-    "title": "Brand",
-    "pluralTitle": "Brand",
-    "description": "Gestisci i brand per questo evento",
-    "addButton": "Aggiungi Brand",
+    "title": "Stand",
+    "pluralTitle": "Stand",
+    "description": "Gestisci gli stand per questo evento",
+    "addButton": "Aggiungi Stand",
     "stallNumber": "Numero Stand",
     "stallNumberShort": "Stand #",
     "website": "Sito Web",
-    "highlighted": "Brand in evidenza",
-    "unhighlighted": "Brand rimosso dall'evidenza",
-    "failedToUpdate": "Impossibile aggiornare il brand",
-    "countLabel": "{{count}} brand",
-    "noBrandsFound": "Nessun brand trovato"
+    "highlighted": "Stand in evidenza",
+    "unhighlighted": "Stand rimosso dall'evidenza",
+    "failedToUpdate": "Impossibile aggiornare lo stand",
+    "countLabel": "{{count}} stand",
+    "noBrandsFound": "Nessuno stand trovato"
   },
   "sessions": {
     "title": "Sessioni",
@@ -236,14 +235,6 @@
     "countLabelPlural": "{{count}} voci",
     "noEntriesFound": "Nessuna voce trovata",
     "failedToSave": "Impossibile salvare la voce della whitelist"
-  },
-  "stands": {
-    "title": "Stand",
-    "description": "Gestisci le postazioni per questo evento",
-    "addButton": "Aggiungi Stand",
-    "noStandsYet": "Nessuno stand ancora",
-    "addFirst": "Aggiungi il primo stand",
-    "countLabel": "{{count}} stand trovati"
   },
   "crud": {
     "newEntity": "Nuovo {{entity}}",

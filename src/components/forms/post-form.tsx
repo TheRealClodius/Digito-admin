@@ -4,10 +4,9 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { AICopyTools } from "@/components/ai-copy-tools";
+import { AITextarea } from "@/components/ai-textarea";
 import { ImageUpload } from "@/components/image-upload";
 import { useUpload } from "@/hooks/use-upload";
 import { postSchema, type PostFormValues } from "@/lib/schemas";
@@ -22,6 +21,7 @@ interface PostFormProps {
     authorName?: string | null;
     authorAvatarUrl?: string | null;
   };
+  eventLogoUrl?: string | null;
   onSubmit: (data: PostFormValues) => void;
   onCancel: () => void;
   submitStatus?: SubmitStatus;
@@ -30,6 +30,7 @@ interface PostFormProps {
 
 export function PostForm({
   defaultValues,
+  eventLogoUrl,
   onSubmit,
   onCancel,
   submitStatus = "idle",
@@ -55,12 +56,20 @@ export function PostForm({
     mode: "onTouched",
   });
 
-  const [imageUrlValue, authorAvatarUrlValue] = watch(["imageUrl", "authorAvatarUrl"]);
+  const imageUrlValue = watch("imageUrl");
   const isImageEmpty = !imageUrlValue || imageUrlValue.trim() === "";
 
+  const handleFormSubmit = (data: PostFormValues) => {
+    // Automatically use event logo as author avatar
+    onSubmit({
+      ...data,
+      authorAvatarUrl: eventLogoUrl ?? "",
+    });
+  };
+
   return (
-    <form onSubmit={handleSubmit((data) => onSubmit(data))} className="grid grid-cols-2 gap-x-4 gap-y-6">
-      <div className="space-y-2">
+    <form onSubmit={handleSubmit(handleFormSubmit)} className="grid grid-cols-2 gap-x-4 gap-y-6">
+      <div className="col-span-2 space-y-2">
         <Label>{t("common.image")}</Label>
         <ImageUpload
           value={imageUrlValue || null}
@@ -74,31 +83,15 @@ export function PostForm({
         )}
       </div>
 
-      <div className="space-y-2">
-        <Label>{t("posts.authorAvatar")}</Label>
-        <ImageUpload
-          value={authorAvatarUrlValue || null}
-          onChange={(url) => setValue("authorAvatarUrl", url)}
-          uploadFn={storagePath ? (file) => upload(file, `avatar_${Date.now()}_${file.name}`) : undefined}
-          deleteFileFn={deleteFile}
-          disabled={isSubmitting}
-        />
-      </div>
-
-      <div className="col-span-2 space-y-2">
-        <div className="flex items-center justify-between">
-          <Label htmlFor="description">{t("common.description")}</Label>
-          <AICopyTools
-            fieldName="description"
-            getCurrentValue={() => watch("description") ?? ""}
-            onAccept={(text) => setValue("description", text, { shouldDirty: true })}
-          />
-        </div>
-        <Textarea
-          id="description"
-          {...register("description")}
-        />
-      </div>
+      <AITextarea
+        className="col-span-2"
+        label={t("common.description")}
+        fieldName="description"
+        id="description"
+        getCurrentValue={() => watch("description") ?? ""}
+        onAccept={(text) => setValue("description", text, { shouldDirty: true })}
+        textareaProps={register("description")}
+      />
 
       <div className="col-span-2 space-y-2">
         <Label htmlFor="authorName">{t("posts.authorName")}</Label>

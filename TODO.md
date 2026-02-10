@@ -66,11 +66,12 @@
 
 ## P2 — Medium Priority
 
-### [ ] 8. Extract generic CRUD page component to eliminate ~1000 lines of duplication
+### [x] 8. Extract generic CRUD page component to eliminate ~1000 lines of duplication
 - **Files:** `src/app/(dashboard)/events/[eventId]/brands/page.tsx`, `happenings/page.tsx`, `participants/page.tsx`, `posts/page.tsx`, `sessions/page.tsx`, `whitelist/page.tsx`, `clients/page.tsx`
 - **Problem:** All 7 CRUD pages follow the exact same ~150-line template: unwrap params, build path, 4x useState, handleNew/Edit/Submit/Delete, JSX with header+table+Sheet+AlertDialog. This is ~1000 lines of near-identical code.
 - **Task:** Create a generic `useCrudPage<T>` hook (or `CrudPage` component) that accepts: collection path, table component, form component, entity-to-defaultValues mapper, and optional submit transformer (for Timestamp conversion). Refactor all 7 pages to use it.
 - **Test:** Ensure all existing page tests still pass after refactoring.
+- **DONE:** `useCrudPage` hook and `CrudPage` component exist. All CRUD pages (clients, sessions, happenings, posts, whitelist, stands) use them. Brands redirects to stands.
 
 ### [ ] 9. Use canonical Zod schemas in form components
 - **Files:** `src/lib/schemas.ts`, `src/components/forms/brand-form.tsx`, `client-form.tsx`, `post-form.tsx`, `whitelist-form.tsx`, `session-form.tsx`, `happening-form.tsx`, `participant-form.tsx`
@@ -89,12 +90,14 @@
 - **Problem:** When an image is replaced (e.g., updating a brand logo), the old file stays in Firebase Storage. When a document with images is deleted, its files are never cleaned up. Orphaned files accumulate indefinitely.
 - **Task:** In `ImageUpload`, when `onChange` is called with a new URL and the old `value` was a Firebase Storage URL, call `deleteFile` on the old URL. In page delete handlers, before deleting the document, read its image URL fields and delete associated storage files.
 - **Test:** Write a test that mocks `deleteObject` and verifies it's called when an image is replaced.
+- **DONE:** `ImageUpload` calls `deleteFileFn` on replacement and on remove. Forms pass `deleteFile` to `ImageUpload`. Delete handlers (clients, events, posts, stands) delete storage files before deleting documents. Tests in `image-upload.test.tsx`.
 
-### [ ] 12. Fix `constraints` missing from `useCollection` dependency array
+### [x] 12. Fix `constraints` missing from `useCollection` dependency array
 - **File:** `src/hooks/use-collection.ts` (line 61)
 - **Problem:** The `constraints` array is used in the `useEffect` body but excluded from the dependency array. If callers pass new constraint objects on re-render, the hook uses stale constraints. Including raw constraints in deps would cause infinite loops.
 - **Task:** Either: (a) serialize constraints to a stable key (JSON.stringify or a custom hash) and use that as a dep, or (b) require callers to memoize constraints with `useMemo` and include them in deps, or (c) accept a constraint-builder function instead.
 - **Test:** Write a test that changes constraints and verifies the hook re-subscribes.
+- **DONE:** Added `constraintsKey` option for stable constraint identity. Dependency array now includes `constraintsKey` instead of raw constraints.
 
 ---
 

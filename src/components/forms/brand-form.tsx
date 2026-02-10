@@ -5,10 +5,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { AICopyTools } from "@/components/ai-copy-tools";
+import { AITextarea } from "@/components/ai-textarea";
 import { ImageUpload } from "@/components/image-upload";
 import { useUpload } from "@/hooks/use-upload";
 import { brandSchema, type BrandFormValues } from "@/lib/schemas";
@@ -81,17 +80,15 @@ export function BrandForm({
         <Input id="stallNumber" {...register("stallNumber")} />
       </div>
 
-      <div className="col-span-2 space-y-2">
-        <div className="flex items-center justify-between">
-          <Label htmlFor="description">{t("common.description")}</Label>
-          <AICopyTools
-            fieldName="description"
-            getCurrentValue={() => watch("description") ?? ""}
-            onAccept={(text) => setValue("description", text, { shouldDirty: true })}
-          />
-        </div>
-        <Textarea id="description" {...register("description")} />
-      </div>
+      <AITextarea
+        className="col-span-2"
+        label={t("common.description")}
+        fieldName="description"
+        id="description"
+        getCurrentValue={() => watch("description") ?? ""}
+        onAccept={(text) => setValue("description", text, { shouldDirty: true })}
+        textareaProps={register("description")}
+      />
 
       <div className="space-y-2">
         <Label htmlFor="websiteUrl">{t("common.websiteUrl")}</Label>

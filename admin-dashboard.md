@@ -64,14 +64,16 @@ The dashboard writes data. The Flutter app and AI agent read it. No API layer ne
 | **Framework** | Next.js 16 (App Router) | SSR, file-based routing, server components, Turbopack default |
 | **UI Library** | shadcn/ui + Tailwind CSS 4 | Beautiful defaults, copy-paste components, no vendor lock |
 | **Firebase SDK** | `firebase` JS SDK v12 (client-side) | Direct Firestore/Storage/Auth access |
-| **Auth** | Firebase Auth (email/password) | Same project, custom claims for admin role |
+| **Auth** | Firebase Auth (Google OAuth) | Same project, custom claims for role-based access control |
+| **AI** | Google Gemini (`@google/genai` v1.40.0) | AI writing assistant for text improvements (improve, shorten, expand, grammar) |
 | **Forms** | React Hook Form + Zod 4 | Type-safe validation |
 | **Date/Time** | `date-fns` | Lightweight, tree-shakable |
 | **File Upload** | Firebase Storage + `react-dropzone` | Drag-and-drop with preview |
-| **State** | React Server Components + `useSWR` or TanStack Query for client | Minimal client state, Firestore as source of truth |
+| **State** | React Server Components + custom hooks | Minimal client state, Firestore as source of truth |
+| **Testing** | Vitest + React Testing Library | Fast unit/integration tests, 500+ tests |
 | **Icons** | Lucide (ships with shadcn) | Consistent icon set |
 | **Hosting** | Firebase Hosting | Single project, auto-SSL, CDN |
-| **Package Manager** | pnpm | Fast, disk-efficient |
+| **Package Manager** | npm | Standard Node.js package manager |
 
 ---
 
@@ -79,23 +81,41 @@ The dashboard writes data. The Flutter app and AI agent read it. No API layer ne
 
 These are **new collections** that extend the existing schema. The Flutter app's existing collections (`brands`, `sessions`, `posts`, `whitelist`, `users`) remain unchanged.
 
-### 3.1 New Collection: `stands`
+### 3.1 Brands/Stands (UI Terminology Update)
 
-Physical booth/stall locations at the event. Brands are assigned to stands.
+**Current Implementation (as of Feb 2026):**
 
-**Path:** `clients/{clientId}/events/{eventId}/stands/{standId}`
+The dashboard manages **exhibitor booths** using the existing `brands` Firestore collection. In the UI, these are displayed as "Stands" to reflect the business terminology for physical booth locations at events.
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `name` | string | yes | Stand display name (e.g., "A-12", "Hall B Stand 5") |
-| `description` | string | no | About this stand location |
-| `hallOrZone` | string | no | Hall/area grouping (e.g., "Hall A", "Innovation Zone") |
-| `size` | string | no | Stand size category: `small`, `medium`, `large`, `custom` |
-| `brandId` | string | no | Assigned brand ID (FK to `brands/{brandId}`) |
-| `imageUrl` | string | no | Stand photo or layout image |
-| `createdAt` | timestamp | yes | Creation timestamp |
+**Firestore Collection:** `clients/{clientId}/events/{eventId}/brands/{brandId}` (existing, shared with Flutter app)
 
-**Relationship:** A stand can be assigned to one brand. A brand can occupy one or more stands. The existing `brand.stallNumber` field is kept for backwards compatibility in the Flutter app — the dashboard writes both the stand document AND updates `brand.stallNumber` when assigning.
+**UI Terminology:**
+- Navigation: "Stands" (sidebar menu item)
+- Page titles: "Stands" (via i18n `brands.title`)
+- URLs: `/events/[eventId]/stands` (the `/brands` route redirects here)
+
+**Data Model:** Uses the `Brand` TypeScript type with these key fields:
+- `stallNumber` - Booth/stand identifier (e.g., "A-12", "Hall B Stand 5")
+- `name`, `description`, `logoUrl`, `imageUrl`, `videoUrl`
+- `websiteUrl`, `instagramUrl`
+- `isHighlighted` - Featured exhibitor flag
+
+**Future Planning (not yet implemented):**
+
+A separate `stands` collection is planned to represent physical booth locations that exhibitors can be assigned to. The `Stand` type exists in the codebase but is not currently used:
+
+**Planned Path:** `clients/{clientId}/events/{eventId}/stands/{standId}`
+
+**Planned Schema:**
+| Field | Type | Description |
+|-------|------|-------------|
+| `name` | string | Stand location identifier |
+| `hallOrZone` | string | Hall/area grouping |
+| `size` | string | Stand size category |
+| `brandId` | string | Assigned brand (FK) |
+| `imageUrl` | string | Stand layout image |
+
+**Relationship (planned):** A physical stand location can be assigned to one brand. A brand could occupy multiple stands. This would separate the "company exhibiting" (brand) from the "physical booth location" (stand).
 
 ### 3.2 New Collection: `happenings`
 
@@ -688,6 +708,10 @@ digito-admin/
 │   └── logo.svg
 │
 ├── src/
+│   ├── actions/                     # Next.js Server Actions
+│   │   ├── ai.ts                    # Gemini AI text improvement server action
+│   │   └── ai.test.ts               # Server action tests (38 tests)
+│   │
 │   ├── app/
 │   │   ├── layout.tsx               # Root layout (sidebar, auth guard)
 │   │   ├── page.tsx                 # Dashboard home
@@ -704,9 +728,9 @@ digito-admin/
 │   │   │   └── [eventId]/
 │   │   │       ├── page.tsx         # Event overview (stats)
 │   │   │       ├── brands/
-│   │   │       │   └── page.tsx
+│   │   │       │   └── page.tsx     # Redirects to /stands (legacy)
 │   │   │       ├── stands/
-│   │   │       │   └── page.tsx
+│   │   │       │   └── page.tsx     # Exhibitor stands/booths (brands)
 │   │   │       ├── sessions/
 │   │   │       │   └── page.tsx
 │   │   │       ├── happenings/
@@ -749,23 +773,43 @@ digito-admin/
 │   │   │   ├── posts-grid.tsx
 │   │   │   ├── whitelist-table.tsx
 │   │   │   └── users-table.tsx
+│   │   ├── ai-copy-tools.tsx        # AI writing assistant UI component
+│   │   ├── ai-copy-tools.test.tsx   # AI component tests (18 tests)
 │   │   ├── image-upload.tsx         # Reusable drag-drop image uploader
 │   │   ├── video-upload.tsx         # Video upload with preview
+│   │   ├── error-boundary.tsx       # Error boundary component
+│   │   ├── crud-page.tsx            # Generic CRUD page component
 │   │   └── stats-card.tsx           # Dashboard stat card
 │   │
 │   ├── lib/
+│   │   ├── ai.ts                    # AI actions, prompts, and types configuration
 │   │   ├── firebase.ts              # Firebase app init + exports (db, auth, storage)
+│   │   ├── firebase-admin.ts        # Firebase Admin SDK setup
+│   │   ├── firestore.ts             # Firestore CRUD utilities with cascade deletes
 │   │   ├── auth.ts                  # Auth helpers (signIn, signOut, checkAdmin)
 │   │   ├── schemas.ts               # Zod schemas for all entities
+│   │   ├── validation.ts            # Validation utilities (sanitizeFilename, isValidFirestoreId)
 │   │   └── utils.ts                 # Shared utilities
 │   │
 │   ├── hooks/
+│   │   ├── use-ai-improve.ts        # AI text improvement hook
+│   │   ├── use-ai-improve.test.ts   # AI hook tests (9 tests)
 │   │   ├── use-auth.ts              # Auth state hook
 │   │   ├── use-admin-check.ts       # Super-admin verification
 │   │   ├── use-collection.ts        # Generic Firestore collection hook (list, realtime)
+│   │   ├── use-collection-count.ts  # Firestore collection count hook (optimized)
 │   │   ├── use-document.ts          # Generic Firestore document hook
 │   │   ├── use-upload.ts            # File upload hook (progress, URL)
+│   │   ├── use-crud-page.ts         # Generic CRUD page logic hook
 │   │   └── use-event-context.ts     # Current client+event context
+│   │
+│   ├── contexts/
+│   │   ├── event-context.tsx        # React context for selected client+event
+│   │   └── theme-provider.tsx       # Theme (dark/light mode) context
+│   │
+│   ├── i18n/
+│   │   ├── en.json                  # English translations
+│   │   └── it.json                  # Italian translations
 │   │
 │   ├── types/
 │   │   ├── client.ts
@@ -780,8 +824,10 @@ digito-admin/
 │   │   ├── user-profile.ts
 │   │   └── index.ts
 │   │
-│   └── contexts/
-│       └── event-context.tsx        # React context for selected client+event
+│   └── test/                        # Test setup and utilities
+│       ├── setup.ts                 # Global test configuration
+│       ├── firebase-mock.ts         # Firebase SDK mocks
+│       └── firestore-rules.test.ts  # Firestore security rules tests
 │
 └── docs/
     └── (this file, mirrored)
@@ -842,11 +888,37 @@ digito-admin/
 
 - [x] Happenings page: DataTable + create/edit Sheet + highlighted/access toggles
 - [x] Participants page: DataTable + create/edit Sheet + role badges
-- [ ] Stands page: DataTable + create/edit + brand assignment
+- [x] Stands page: Uses brands collection, UI rebrand to "Stands" terminology
 - [ ] Wire up denormalization (participant → session speaker fields)
 - [ ] Wire up stand → brand.stallNumber sync
 
-### Phase 5 — Dashboard Home & Polish
+> **Note:** Brands/Stands terminology: The `brands` Firestore collection is displayed as "Stands" in the UI (exhibitor booths). The `/brands` page redirects to `/stands`. The `Stand` type exists for future physical booth location tracking but is not yet implemented.
+
+### Phase 5 — AI Writing Assistant ✅
+
+- [x] Install `@google/genai` SDK (v1.40.0)
+- [x] Create AI configuration in `src/lib/ai.ts` (4 actions: improve, shorten, expand, grammar)
+- [x] Implement `improveText` server action in `src/actions/ai.ts`
+- [x] Build `useAIImprove` hook for state management
+- [x] Create `AICopyTools` UI component with dropdown menu (3 states: default, loading, result)
+- [x] Integrate AI tools into 7 forms (Post, Brand, Session, Happening, Participant, Client, Event)
+- [x] Comprehensive test coverage:
+  - 38 tests in `ai.test.ts` (server action + Gemini integration)
+  - 18 tests in `ai-copy-tools.test.tsx` (component UI states)
+  - 9 tests in `use-ai-improve.test.ts` (hook state management)
+- [x] Environment setup: `GEMINI_API_KEY` and `GEMINI_MODEL` configuration
+- [x] Graceful degradation when API key is not configured
+
+> **Implementation Details:**
+> - Uses Google Gemini `gemini-2.5-flash-lite` model by default
+> - AI features available on all form description fields (textarea inputs)
+> - Each action has custom system prompt optimized for specific text improvements
+> - Error handling with user-friendly toast notifications
+> - Accessible UI with proper ARIA labels and keyboard navigation
+> - Server-side API key (not exposed to client)
+> - TDD approach: tests written before implementation
+
+### Phase 6 — Dashboard Home & Polish
 
 - [ ] Dashboard overview page (stat cards, quick actions) — _stat cards created, needs live data_
 - [ ] Command palette (Cmd+K) for quick navigation and search
@@ -857,7 +929,7 @@ digito-admin/
 - [ ] Update Firestore security rules (deploy via `firebase deploy --only firestore:rules`)
 - [ ] Update Storage security rules
 
-### Phase 6 — Settings & Deployment
+### Phase 7 — Settings & Deployment
 
 - [ ] Settings page (admin info, manage super admins) — _stub created_
 - [ ] Final Firebase Hosting deployment config

@@ -39,6 +39,10 @@ Notion's UI is defined by radical simplicity and content-first design. The inter
 - No bouncy animations or spring physics. Everything is fast and subtle
 - Hover states are slight background shifts: `hover:bg-neutral-100 rounded-sm`
 
+## Taste
+
+- **Page CTA buttons:** Use `pl-3 pr-4` (tighter left padding). Never add `mr-*` on icons — rely on the Button's built-in `gap-2` for icon-to-text spacing.
+
 ## Anti-Patterns (things to avoid)
 
 - No heavy shadows or elevation (no `shadow-lg` on cards)

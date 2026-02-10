@@ -12,6 +12,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { ErrorBanner } from "@/components/error-banner";
+import { AISuggestionProvider } from "@/contexts/ai-suggestion-context";
 
 interface CrudPageProps<T> {
   // Header
@@ -102,7 +103,7 @@ export function CrudPage<T extends { id: string }>({
           {renderHeaderExtra?.()}
           {!readOnly && (
             <Button onClick={handleNew}>
-              <Plus className="mr-2 size-4" />
+              <Plus className="size-4" />
               {addButtonLabel}
             </Button>
           )}
@@ -125,28 +126,30 @@ export function CrudPage<T extends { id: string }>({
         )
       )}
 
-      <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-        <SheetContent className="overflow-y-auto">
-          <SheetHeader>
-            <SheetTitle>
-              {editingEntity ? t("crud.editEntity", { entity: capitalizedName }) : t("crud.newEntity", { entity: capitalizedName })}
-            </SheetTitle>
-            <SheetDescription>
-              {editingEntity
-                ? (editDescription ?? t("crud.updateDescription", { entity: entityName }))
-                : (newDescription ?? t("crud.addDescription", { entity: entityName }))}
-            </SheetDescription>
-          </SheetHeader>
-          <div className="mt-6">
-            {renderForm({
-              editingEntity,
-              onSubmit: handleSubmit,
-              onCancel: () => setSheetOpen(false),
-              submitStatus,
-            })}
-          </div>
-        </SheetContent>
-      </Sheet>
+      <AISuggestionProvider>
+        <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
+          <SheetContent className="overflow-y-auto">
+            <SheetHeader>
+              <SheetTitle>
+                {editingEntity ? t("crud.editEntity", { entity: capitalizedName }) : t("crud.newEntity", { entity: capitalizedName })}
+              </SheetTitle>
+              <SheetDescription>
+                {editingEntity
+                  ? (editDescription ?? t("crud.updateDescription", { entity: entityName }))
+                  : (newDescription ?? t("crud.addDescription", { entity: entityName }))}
+              </SheetDescription>
+            </SheetHeader>
+            <div className="mt-6">
+              {renderForm({
+                editingEntity,
+                onSubmit: handleSubmit,
+                onCancel: () => setSheetOpen(false),
+                submitStatus,
+              })}
+            </div>
+          </SheetContent>
+        </Sheet>
+      </AISuggestionProvider>
 
       <AlertDialog
         open={!!deletingEntityId}

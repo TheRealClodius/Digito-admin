@@ -1,15 +1,18 @@
 "use client";
 
-import { Plus } from "lucide-react";
+import { toast } from "sonner";
 
 import { useValidatedParams } from "@/hooks/use-validated-params";
-import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
-import { useCollection } from "@/hooks/use-collection";
+import { useCrudPage } from "@/hooks/use-crud-page";
 import { useEventContext } from "@/hooks/use-event-context";
-import { ErrorBanner } from "@/components/error-banner";
+import { useTranslation } from "@/hooks/use-translation";
+import { updateDocument } from "@/lib/firestore";
+import { useUpload } from "@/hooks/use-upload";
+import { CrudPage } from "@/components/crud-page";
+import { BrandsTable } from "@/components/tables/brands-table";
+import { BrandForm } from "@/components/forms/brand-form";
 import { NoClientSelected } from "@/components/no-client-selected";
-import type { Stand } from "@/types/stand";
+import type { Brand } from "@/types/brand";
 
 export default function StandsPage({
   params,
@@ -18,20 +21,40 @@ export default function StandsPage({
 }) {
   const { eventId } = useValidatedParams(params);
   const { selectedClientId } = useEventContext();
-  const { data: stands, loading, error } = useCollection<Stand & { id: string }>({
-    path: selectedClientId
-      ? `clients/${selectedClientId}/events/${eventId}/stands`
-      : "",
+  const { t } = useTranslation();
+  const collectionPath = selectedClientId
+    ? `clients/${selectedClientId}/events/${eventId}/brands`
+    : "";
+
+  const { deleteFile } = useUpload({ basePath: collectionPath });
+  const crud = useCrudPage<Brand>({
+    collectionPath,
     orderByField: "name",
     orderDirection: "asc",
+    entityName: "stand",
+    onCleanupFiles: async (brand) => {
+      const urls = [brand.logoUrl, brand.imageUrl].filter(Boolean) as string[];
+      await Promise.allSettled(urls.map((url) => deleteFile(url)));
+    },
   });
+
+  async function handleToggleHighlighted(brandId: string, isHighlighted: boolean) {
+    if (!collectionPath) return;
+    try {
+      await updateDocument(collectionPath, brandId, { isHighlighted });
+      toast.success(isHighlighted ? t("brands.highlighted") : t("brands.unhighlighted"));
+    } catch (err) {
+      toast.error(t("brands.failedToUpdate"));
+      console.error(err);
+    }
+  }
 
   if (!selectedClientId) {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Stands</h1>
-          <p className="text-muted-foreground">Manage booth locations for this event</p>
+          <h1 className="text-2xl font-bold tracking-tight">{t("brands.title")}</h1>
+          <p className="text-muted-foreground">{t("brands.description")}</p>
         </div>
         <NoClientSelected />
       </div>
@@ -39,42 +62,38 @@ export default function StandsPage({
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Stands</h1>
-          <p className="text-muted-foreground">Manage booth locations for this event</p>
-        </div>
-        <Button>
-          <Plus className="mr-2 size-4" />
-          Add Stand
-        </Button>
-      </div>
-
-      {error ? (
-        <ErrorBanner error={error} />
-      ) : loading ? (
-        <div className="space-y-3">
-          <Skeleton className="h-12 w-full" />
-          <Skeleton className="h-12 w-full" />
-        </div>
-      ) : stands.length === 0 ? (
-        <div className="flex min-h-[400px] flex-col items-center justify-center rounded-md border border-dashed">
-          <p className="text-muted-foreground">No stands yet</p>
-          <Button variant="outline" className="mt-4">
-            <Plus className="mr-2 size-4" />
-            Add first stand
-          </Button>
-        </div>
-      ) : (
-        <div className="rounded-md border">
-          <div className="p-4">
-            <p className="text-sm text-muted-foreground">
-              {stands.length} stand(s) found
-            </p>
-          </div>
-        </div>
+    <CrudPage
+      title={t("brands.title")}
+      description={t("brands.description")}
+      addButtonLabel={t("brands.addButton")}
+      entityName="stand"
+      {...crud}
+      renderTable={(brands, onEdit, onDelete) => (
+        <BrandsTable
+          brands={brands}
+          onEdit={onEdit}
+          onDelete={onDelete}
+          onToggleHighlighted={handleToggleHighlighted}
+        />
       )}
-    </div>
+      renderForm={({ editingEntity, onSubmit, onCancel, submitStatus }) => (
+        <BrandForm
+          defaultValues={editingEntity ? {
+            name: editingEntity.name,
+            description: editingEntity.description ?? null,
+            logoUrl: editingEntity.logoUrl ?? null,
+            imageUrl: editingEntity.imageUrl ?? null,
+            websiteUrl: editingEntity.websiteUrl ?? null,
+            instagramUrl: editingEntity.instagramUrl ?? null,
+            stallNumber: editingEntity.stallNumber ?? null,
+            isHighlighted: editingEntity.isHighlighted,
+          } : undefined}
+          onSubmit={onSubmit}
+          onCancel={onCancel}
+          submitStatus={submitStatus}
+          storagePath={collectionPath}
+        />
+      )}
+    />
   );
 }

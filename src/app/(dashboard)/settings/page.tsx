@@ -169,7 +169,7 @@ export default function SettingsPage() {
                 </CardDescription>
               </div>
               <Button size="sm" onClick={() => setSheetOpen(true)}>
-                <Plus className="mr-2 size-4" />
+                <Plus className="size-4" />
                 Add Admin
               </Button>
             </CardHeader>

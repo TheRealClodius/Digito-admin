@@ -117,7 +117,7 @@ export default function EventOverviewPage({
               setSheetOpen(true);
             }}
           >
-            <Pencil className="mr-2 size-4" />
+            <Pencil className="size-4" />
             {t("common.edit")}
           </Button>
         )}

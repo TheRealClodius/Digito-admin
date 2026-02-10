@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @plugin "tailwindcss-animate";
+@plugin "@tailwindcss/typography";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -80,6 +81,9 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+  --shimmer-base: oklch(0.88 0.02 250);
+  --shimmer-peak: oklch(0.76 0.06 250);
+  --shimmer-glow: rgba(100, 140, 200, 0.15);
 }
 
 .dark {
@@ -115,6 +119,9 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(0.269 0 0);
   --sidebar-ring: oklch(0.439 0 0);
+  --shimmer-base: oklch(0.35 0.03 250);
+  --shimmer-peak: oklch(0.50 0.08 250);
+  --shimmer-glow: rgba(100, 150, 220, 0.2);
 }
 
 @layer base {
@@ -140,4 +147,64 @@
 
 .animate-fade-in-delayed {
   animation: fadeInDelayed 1800ms ease-in-out forwards;
+}
+
+@keyframes shimmer-border {
+  0% {
+    border-color: var(--shimmer-base);
+    box-shadow: 0 0 0 0 transparent;
+  }
+  50% {
+    border-color: var(--shimmer-peak);
+    box-shadow: 0 0 12px 1px var(--shimmer-glow);
+  }
+  100% {
+    border-color: var(--shimmer-base);
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+
+.animate-shimmer-border {
+  animation: shimmer-border 2.5s ease-in-out infinite;
+}
+
+@keyframes scroll-mask {
+  0% {
+    /* At scroll start: no fade at top, fade at bottom */
+    mask-image: linear-gradient(
+      to bottom,
+      black 0%,
+      black calc(100% - 2rem),
+      transparent 100%
+    );
+  }
+  1% {
+    /* Scrolling: fade at both top and bottom */
+    mask-image: linear-gradient(
+      to bottom,
+      transparent 0%,
+      black 2rem,
+      black calc(100% - 2rem),
+      transparent 100%
+    );
+  }
+  99% {
+    /* Still scrolling: fade at both top and bottom */
+    mask-image: linear-gradient(
+      to bottom,
+      transparent 0%,
+      black 2rem,
+      black calc(100% - 2rem),
+      transparent 100%
+    );
+  }
+  100% {
+    /* At scroll end: fade at top, no fade at bottom */
+    mask-image: linear-gradient(
+      to bottom,
+      transparent 0%,
+      black 2rem,
+      black 100%
+    );
+  }
 }

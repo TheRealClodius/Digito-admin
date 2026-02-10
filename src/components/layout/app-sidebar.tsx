@@ -39,7 +39,6 @@ const ROLE_LEVEL = { superadmin: 3, clientAdmin: 2, eventAdmin: 1 } as const;
 
 const eventNav = [
   { labelKey: "nav.overview" as TranslationKey, href: "", icon: Calendar },
-  { labelKey: "nav.brands" as TranslationKey, href: "/brands", icon: ShoppingBag },
   { labelKey: "nav.stands" as TranslationKey, href: "/stands", icon: MapPin },
   { labelKey: "nav.sessions" as TranslationKey, href: "/sessions", icon: Mic2 },
   { labelKey: "nav.happenings" as TranslationKey, href: "/happenings", icon: Sparkles },
@@ -99,7 +98,8 @@ export function AppSidebar({ collapsed = false, onToggleCollapse }: AppSidebarPr
 
       <Separator />
 
-      <ScrollArea className="flex-1 px-3 py-2">
+      <ScrollArea className="flex-1 px-3 py-0">
+        <div className="flex flex-col py-2">
         <nav className="flex flex-col gap-1">
           {mainNav.map((item) => (
             <Link
@@ -148,6 +148,7 @@ export function AppSidebar({ collapsed = false, onToggleCollapse }: AppSidebarPr
             </nav>
           </>
         )}
+        </div>
       </ScrollArea>
 
       <Separator />

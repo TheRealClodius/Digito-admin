@@ -136,7 +136,7 @@ describe("AppSidebar - Role-based navigation", () => {
     render(<AppSidebar />);
 
     expect(screen.getByText("Overview")).toBeInTheDocument();
-    expect(screen.getByText("Brands")).toBeInTheDocument();
+    expect(screen.getByText("Stands")).toBeInTheDocument();
     expect(screen.getByText("Sessions")).toBeInTheDocument();
   });
 
@@ -153,7 +153,7 @@ describe("AppSidebar - Role-based navigation", () => {
     render(<AppSidebar />);
 
     expect(screen.queryByText("Overview")).not.toBeInTheDocument();
-    expect(screen.queryByText("Brands")).not.toBeInTheDocument();
+    expect(screen.queryByText("Stands")).not.toBeInTheDocument();
   });
 
   it("always shows Settings and Sign Out", () => {

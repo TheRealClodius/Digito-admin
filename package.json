@@ -12,7 +12,7 @@
     "test:rules": "firebase emulators:exec --only firestore --project digito-rules-test 'npx vitest run src/test/firestore-rules.test.ts'"
   },
   "dependencies": {
-    "@google/generative-ai": "^0.24.1",
+    "@google/genai": "^1.40.0",
     "@hookform/resolvers": "^5.2.2",
     "@radix-ui/react-alert-dialog": "^1.1.15",
     "@radix-ui/react-avatar": "^1.1.11",
@@ -43,6 +43,9 @@
     "react-dom": "19.2.4",
     "react-dropzone": "^14.4.0",
     "react-hook-form": "^7.71.1",
+    "react-markdown": "^10.1.0",
+    "rehype-sanitize": "^6.0.0",
+    "remark-gfm": "^4.0.1",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.4.0",
     "tailwindcss-animate": "^1.0.7",
@@ -51,6 +54,7 @@
   "devDependencies": {
     "@firebase/rules-unit-testing": "^5.0.0",
     "@tailwindcss/postcss": "^4.1.18",
+    "@tailwindcss/typography": "^0.5.19",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",

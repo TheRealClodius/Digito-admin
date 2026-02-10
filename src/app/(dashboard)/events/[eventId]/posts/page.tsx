@@ -5,11 +5,13 @@ import { useCrudPage } from "@/hooks/use-crud-page";
 import { useEventContext } from "@/hooks/use-event-context";
 import { useTranslation } from "@/hooks/use-translation";
 import { useUpload } from "@/hooks/use-upload";
+import { useDocument } from "@/hooks/use-document";
 import { CrudPage } from "@/components/crud-page";
 import { PostsTable } from "@/components/tables/posts-table";
 import { PostForm } from "@/components/forms/post-form";
 import { NoClientSelected } from "@/components/no-client-selected";
 import type { Post } from "@/types/post";
+import type { Event } from "@/types/event";
 
 export default function PostsPage({
   params,
@@ -23,13 +25,19 @@ export default function PostsPage({
     ? `clients/${selectedClientId}/events/${eventId}/posts`
     : "";
 
+  // Fetch event data to get the logo
+  const eventPath = selectedClientId ? `clients/${selectedClientId}/events` : "";
+  const { data: event } = useDocument<Event>(eventPath, eventId);
+
   const { deleteFile } = useUpload({ basePath: collectionPath });
   const crud = useCrudPage<Post>({
     collectionPath,
     entityName: "post",
     onCleanupFiles: async (post) => {
-      const urls = [post.imageUrl, post.authorAvatarUrl].filter(Boolean) as string[];
-      await Promise.allSettled(urls.map((url) => deleteFile(url)));
+      // Only delete post's own image, not the event logo (authorAvatarUrl)
+      if (post.imageUrl) {
+        await deleteFile(post.imageUrl);
+      }
     },
   });
 
@@ -63,6 +71,7 @@ export default function PostsPage({
             authorName: editingEntity.authorName ?? null,
             authorAvatarUrl: editingEntity.authorAvatarUrl ?? null,
           } : undefined}
+          eventLogoUrl={event?.logoUrl ?? null}
           onSubmit={onSubmit}
           onCancel={onCancel}
           submitStatus={submitStatus}

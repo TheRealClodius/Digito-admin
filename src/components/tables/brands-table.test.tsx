@@ -276,7 +276,7 @@ describe("BrandsTable", () => {
         />,
       );
 
-      expect(screen.getByText(/no brands found/i)).toBeInTheDocument();
+      expect(screen.getByText(/no stands found/i)).toBeInTheDocument();
     });
 
     it("does not render data rows when the brands array is empty", () => {
@@ -477,7 +477,7 @@ describe("BrandsTable", () => {
         />,
       );
 
-      expect(screen.getByText(/3 brand/)).toBeInTheDocument();
+      expect(screen.getByText(/3 stand/)).toBeInTheDocument();
     });
 
     it("displays a count of 0 when no brands exist", () => {
@@ -490,7 +490,7 @@ describe("BrandsTable", () => {
         />,
       );
 
-      expect(screen.getByText(/0 brand/)).toBeInTheDocument();
+      expect(screen.getByText(/0 stand/)).toBeInTheDocument();
     });
 
     it("updates count when a different number of brands is provided", () => {
@@ -505,7 +505,7 @@ describe("BrandsTable", () => {
         />,
       );
 
-      expect(screen.getByText(/2 brand/)).toBeInTheDocument();
+      expect(screen.getByText(/2 stand/)).toBeInTheDocument();
     });
   });
 

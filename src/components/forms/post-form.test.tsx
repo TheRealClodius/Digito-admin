@@ -70,12 +70,6 @@ describe("PostForm", () => {
       expect(screen.getByLabelText(/author name/i)).toBeInTheDocument();
     });
 
-    it("renders an Author Avatar upload area", () => {
-      render(<PostForm onSubmit={vi.fn()} onCancel={vi.fn()} />);
-
-      expect(screen.getByText(/author avatar/i)).toBeInTheDocument();
-    });
-
     it("renders a submit button", () => {
       render(<PostForm onSubmit={vi.fn()} onCancel={vi.fn()} />);
 
@@ -239,6 +233,67 @@ describe("PostForm", () => {
       expect(onSubmit).toHaveBeenCalledWith(
         expect.objectContaining({
           description: "Updated description",
+        }),
+      );
+    });
+  });
+
+  // ----- Event logo as author avatar -----
+
+  describe("event logo as author avatar", () => {
+    it("automatically sets authorAvatarUrl to eventLogoUrl when submitting", async () => {
+      const user = userEvent.setup();
+      const onSubmit = vi.fn();
+
+      render(
+        <PostForm
+          defaultValues={{ imageUrl: "https://example.com/photo.jpg" }}
+          eventLogoUrl="https://example.com/event-logo.jpg"
+          onSubmit={onSubmit}
+          onCancel={vi.fn()}
+        />,
+      );
+
+      const submitButton = screen.getByRole("button", {
+        name: /save|submit|create/i,
+      });
+      await user.click(submitButton);
+
+      await waitFor(() => {
+        expect(onSubmit).toHaveBeenCalledTimes(1);
+      });
+
+      expect(onSubmit).toHaveBeenCalledWith(
+        expect.objectContaining({
+          authorAvatarUrl: "https://example.com/event-logo.jpg",
+        }),
+      );
+    });
+
+    it("uses empty string for authorAvatarUrl when eventLogoUrl is not provided", async () => {
+      const user = userEvent.setup();
+      const onSubmit = vi.fn();
+
+      render(
+        <PostForm
+          defaultValues={{ imageUrl: "https://example.com/photo.jpg" }}
+          onSubmit={onSubmit}
+          onCancel={vi.fn()}
+        />,
+      );
+
+      const submitButton = screen.getByRole("button", {
+        name: /save|submit|create/i,
+      });
+      await user.click(submitButton);
+
+      await waitFor(() => {
+        expect(onSubmit).toHaveBeenCalledTimes(1);
+      });
+
+      expect(onSubmit).toHaveBeenCalledWith(
+        expect.objectContaining({
+          authorAvatarUrl: "",
         }),
       );
     });
