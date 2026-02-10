@@ -220,10 +220,10 @@ export function MarkdownTextarea({
             </div>
             <div className="flex items-center gap-2">
               <Button size="sm" onClick={handleAccept}>
-                Accept
+                {t("common.accept")}
               </Button>
               <Button size="sm" variant="outline" onClick={handleReject}>
-                Reject
+                {t("common.reject")}
               </Button>
             </div>
           </div>
