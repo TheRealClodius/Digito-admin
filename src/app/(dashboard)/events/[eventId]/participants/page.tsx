@@ -36,8 +36,8 @@ export default function ParticipantsPage({
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Partecipanti</h1> {/* Participants */}
-          <p className="text-muted-foreground">Gestisci relatori, host e rappresentanti</p> {/* Manage speakers, hosts, and representatives */}
+          <h1 className="text-2xl font-bold tracking-tight">Participants</h1>
+          <p className="text-muted-foreground">Manage speakers, hosts, and representatives</p>
         </div>
         <NoClientSelected />
       </div>
@@ -46,8 +46,8 @@ export default function ParticipantsPage({
 
   return (
     <CrudPage
-      title="Partecipanti"
-      description="Gestisci relatori, host e rappresentanti"
+      title="Participants"
+      description="Manage speakers, hosts, and representatives"
       addButtonLabel="Add Participant"
       entityName="participant"
       {...crud}

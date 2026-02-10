@@ -9,6 +9,7 @@ import { toDate } from "@/lib/timestamps";
 import { CrudPage } from "@/components/crud-page";
 import { SessionsTable } from "@/components/tables/sessions-table";
 import { SessionForm } from "@/components/forms/session-form";
+import { NoClientSelected } from "@/components/no-client-selected";
 import type { Session } from "@/types/session";
 
 export default function SessionsPage({
@@ -33,6 +34,18 @@ export default function SessionsPage({
       endTime: data.endTime instanceof Date ? Timestamp.fromDate(data.endTime) : data.endTime,
     }),
   });
+
+  if (!selectedClientId) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Sessions</h1>
+          <p className="text-muted-foreground">Manage talks, workshops, and panels</p>
+        </div>
+        <NoClientSelected />
+      </div>
+    );
+  }
 
   return (
     <CrudPage

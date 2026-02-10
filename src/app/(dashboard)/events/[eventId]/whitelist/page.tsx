@@ -60,8 +60,8 @@ export default function WhitelistPage({
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Lista Autorizzati</h1> {/* Whitelist */}
-          <p className="text-muted-foreground">Gestisci i partecipanti pre-approvati</p> {/* Manage pre-approved attendees */}
+          <h1 className="text-2xl font-bold tracking-tight">Whitelist</h1>
+          <p className="text-muted-foreground">Manage pre-approved attendees</p>
         </div>
         <NoClientSelected />
       </div>
@@ -70,8 +70,8 @@ export default function WhitelistPage({
 
   return (
     <CrudPage
-      title="Lista Autorizzati"
-      description="Gestisci i partecipanti pre-approvati"
+      title="Whitelist"
+      description="Manage pre-approved attendees"
       addButtonLabel="Add Entry"
       entityName="whitelist entry"
       deleteTitle="Remove Entry"

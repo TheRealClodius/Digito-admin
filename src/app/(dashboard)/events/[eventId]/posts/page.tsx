@@ -7,6 +7,7 @@ import { useUpload } from "@/hooks/use-upload";
 import { CrudPage } from "@/components/crud-page";
 import { PostsTable } from "@/components/tables/posts-table";
 import { PostForm } from "@/components/forms/post-form";
+import { NoClientSelected } from "@/components/no-client-selected";
 import type { Post } from "@/types/post";
 
 export default function PostsPage({
@@ -29,6 +30,18 @@ export default function PostsPage({
       await Promise.allSettled(urls.map((url) => deleteFile(url)));
     },
   });
+
+  if (!selectedClientId) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Posts</h1>
+          <p className="text-muted-foreground">Manage event posts and announcements</p>
+        </div>
+        <NoClientSelected />
+      </div>
+    );
+  }
 
   return (
     <CrudPage

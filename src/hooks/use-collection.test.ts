@@ -211,4 +211,57 @@ describe("useCollection", () => {
     expect(result.current.loading).toBe(false);
     expect(result.current.data).toEqual([]);
   });
+
+  it("resets loading to true when path changes from valid to valid", () => {
+    const { result, rerender } = renderHook(
+      ({ path }) => useCollection({ path, orderByField: "name", orderDirection: "asc" }),
+      { initialProps: { path: "clients" } }
+    );
+
+    // Simulate successful data load
+    const successCallback = mockOnSnapshot.mock.calls[0][1];
+
+    act(() => {
+      successCallback({ docs: [] });
+    });
+
+    // Loading should be false after data loads
+    expect(result.current.loading).toBe(false);
+
+    // Change path
+    act(() => {
+      rerender({ path: "events" });
+    });
+
+    // Loading should reset to true
+    expect(result.current.loading).toBe(true);
+    expect(result.current.error).toBeNull();
+  });
+
+  it("clears error when path changes from one valid path to another", () => {
+    const { result, rerender } = renderHook(
+      ({ path }) => useCollection({ path, orderByField: "name", orderDirection: "asc" }),
+      { initialProps: { path: "clients" } }
+    );
+
+    // Simulate an error on first path
+    const errorCallback = mockOnSnapshot.mock.calls[0][2];
+    const testError = new Error("Permission denied");
+
+    act(() => {
+      errorCallback(testError);
+    });
+
+    expect(result.current.error).toBe(testError);
+    expect(result.current.loading).toBe(false);
+
+    // Change to different valid path
+    act(() => {
+      rerender({ path: "events" });
+    });
+
+    // Error should be cleared, loading should restart
+    expect(result.current.error).toBeNull();
+    expect(result.current.loading).toBe(true);
+  });
 });
