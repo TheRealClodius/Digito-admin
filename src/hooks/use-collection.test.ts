@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { renderHook } from "@testing-library/react";
+import { renderHook, act } from "@testing-library/react";
 import { useCollection } from "./use-collection";
 
 const { mockUnsubscribe, mockOnSnapshot } = vi.hoisted(() => {
@@ -107,5 +107,108 @@ describe("useCollection", () => {
     // Re-render with different key — should re-subscribe
     rerender({ key: "v2" });
     expect(mockOnSnapshot).toHaveBeenCalledTimes(2);
+  });
+
+  it("resets loading to true when path changes from empty to valid", () => {
+    const { result, rerender } = renderHook(
+      ({ path }) =>
+        useCollection({ path, orderByField: "name", orderDirection: "asc" }),
+      { initialProps: { path: "" } }
+    );
+
+    // Empty path → loading should be false
+    expect(result.current.loading).toBe(false);
+    expect(result.current.data).toEqual([]);
+
+    // Change to valid path → loading should reset to true
+    rerender({ path: "clients/c1/events/e1/stands" });
+    expect(result.current.loading).toBe(true);
+  });
+
+  it("clears error when path changes", () => {
+    // First, set up a hook with a valid path that will trigger onSnapshot
+    const { result, rerender } = renderHook(
+      ({ path }) =>
+        useCollection({ path, orderByField: "name", orderDirection: "asc" }),
+      { initialProps: { path: "clients" } }
+    );
+
+    // Simulate an error by calling the onSnapshot error callback
+    const errorCallback = mockOnSnapshot.mock.calls[0][2];
+    act(() => {
+      errorCallback(new Error("Missing or insufficient permissions."));
+    });
+
+    expect(result.current.error).not.toBeNull();
+    expect(result.current.error?.message).toBe("Missing or insufficient permissions.");
+
+    // Change path → error should be cleared
+    rerender({ path: "clients/c1/events/e1/participants" });
+    expect(result.current.error).toBeNull();
+    expect(result.current.loading).toBe(true);
+  });
+
+  it("updates data when onSnapshot succeeds", () => {
+    const { result } = renderHook(() =>
+      useCollection({ path: "clients", orderByField: "name", orderDirection: "asc" })
+    );
+
+    expect(result.current.loading).toBe(true);
+
+    // Simulate successful snapshot
+    const successCallback = mockOnSnapshot.mock.calls[0][1];
+    act(() => {
+      successCallback({
+        docs: [
+          { id: "doc1", data: () => ({ name: "Test" }) },
+          { id: "doc2", data: () => ({ name: "Test 2" }) },
+        ],
+      });
+    });
+
+    expect(result.current.loading).toBe(false);
+    expect(result.current.data).toEqual([
+      { id: "doc1", name: "Test" },
+      { id: "doc2", name: "Test 2" },
+    ]);
+    expect(result.current.error).toBeNull();
+  });
+
+  it("sets error when onSnapshot fails", () => {
+    const { result } = renderHook(() =>
+      useCollection({ path: "clients", orderByField: "name", orderDirection: "asc" })
+    );
+
+    // Simulate error
+    const errorCallback = mockOnSnapshot.mock.calls[0][2];
+    act(() => {
+      errorCallback(new Error("permission-denied"));
+    });
+
+    expect(result.current.loading).toBe(false);
+    expect(result.current.error?.message).toBe("permission-denied");
+    expect(result.current.data).toEqual([]);
+  });
+
+  it("clears error state when empty path follows an error", () => {
+    const { result, rerender } = renderHook(
+      ({ path }) =>
+        useCollection({ path, orderByField: "name", orderDirection: "asc" }),
+      { initialProps: { path: "clients" } }
+    );
+
+    // Simulate error
+    const errorCallback = mockOnSnapshot.mock.calls[0][2];
+    act(() => {
+      errorCallback(new Error("network error"));
+    });
+
+    expect(result.current.error).not.toBeNull();
+
+    // Switch to empty path → error should clear
+    rerender({ path: "" });
+    expect(result.current.error).toBeNull();
+    expect(result.current.loading).toBe(false);
+    expect(result.current.data).toEqual([]);
   });
 });
