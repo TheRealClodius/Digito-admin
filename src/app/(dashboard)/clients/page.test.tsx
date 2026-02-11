@@ -51,6 +51,16 @@ vi.mock("@/hooks/use-upload", () => ({
   }),
 }));
 
+// Mock WysiwygEditor as a simple textarea so getByDisplayValue works
+vi.mock("@/components/wysiwyg-editor", () => ({
+  WysiwygEditor: ({ label, value, onChange, id }: { label: string; value: string; onChange: (v: string) => void; id: string }) => (
+    <div>
+      <label htmlFor={id}>{label}</label>
+      <textarea id={id} value={value} onChange={(e) => onChange(e.target.value)} />
+    </div>
+  ),
+}));
+
 vi.mock("@/hooks/use-ai-improve", () => ({
   useAIImprove: vi.fn(() => ({
     isLoading: false,
@@ -106,23 +116,6 @@ function setupMocks(overrides?: { clients?: typeof sampleClients; loading?: bool
     error: null,
   } as ReturnType<typeof useCollectionHook.useCollection>);
 }
-
-vi.mock("@/hooks/use-ai-improve", () => ({
-  useAIImprove: vi.fn(() => ({
-    isLoading: false,
-    error: null,
-    result: null,
-    improve: vi.fn(),
-    reset: vi.fn(),
-  })),
-}));
-
-vi.mock("@/contexts/ai-suggestion-context", () => ({
-  useAISuggestion: vi.fn(() => ({
-    hasActiveSuggestion: false,
-    setHasActiveSuggestion: vi.fn(),
-  })),
-}));
 
 describe("ClientsPage", () => {
   beforeEach(() => {

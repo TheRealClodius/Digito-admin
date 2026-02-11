@@ -17,6 +17,14 @@ vi.mock("firebase/firestore", () => ({
 }));
 vi.mock("firebase/storage", () => ({ getStorage: vi.fn() }));
 
+vi.mock("@/hooks/use-client-stats", () => ({
+  useClientStats: () => ({
+    stats: { totalEvents: 0, activeEvents: 0, upcomingEvents: 0, pastEvents: 0 },
+    loading: false,
+    error: null,
+  }),
+}));
+
 import { ClientsTable } from "./clients-table";
 
 // ---------------------------------------------------------------------------
@@ -53,13 +61,17 @@ describe("ClientsTable", () => {
   // ----- Column headers -----
 
   describe("column headers", () => {
-    it("renders table column headers: Name, Description, Created, Actions", () => {
+    it("renders table column headers: Name, Description, Events, Active, Upcoming, Past, Created, Actions", () => {
       render(
         <ClientsTable clients={sampleClients} onEdit={vi.fn()} onDelete={vi.fn()} />
       );
 
       expect(screen.getByRole("columnheader", { name: /name/i })).toBeInTheDocument();
       expect(screen.getByRole("columnheader", { name: /description/i })).toBeInTheDocument();
+      expect(screen.getByRole("columnheader", { name: /events/i })).toBeInTheDocument();
+      expect(screen.getByRole("columnheader", { name: /active/i })).toBeInTheDocument();
+      expect(screen.getByRole("columnheader", { name: /upcoming/i })).toBeInTheDocument();
+      expect(screen.getByRole("columnheader", { name: /past/i })).toBeInTheDocument();
       expect(screen.getByRole("columnheader", { name: /created/i })).toBeInTheDocument();
       expect(screen.getByRole("columnheader", { name: /actions/i })).toBeInTheDocument();
     });
@@ -140,8 +152,8 @@ describe("ClientsTable", () => {
       const row = screen.getByText("Date Visible Test").closest("tr")!;
       const cells = within(row).getAllByRole("cell");
 
-      // The Created column is the 3rd column (index 2)
-      const createdCell = cells[2];
+      // The Created column is the 7th column (index 6)
+      const createdCell = cells[6];
 
       // The date text should be visible in the cell, not just in a title attribute
       expect(createdCell).toHaveTextContent(/Jan 10, 2025/);

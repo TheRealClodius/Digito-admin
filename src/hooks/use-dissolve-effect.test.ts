@@ -242,7 +242,7 @@ describe("useDissolveEffect", () => {
     });
   });
 
-  it("fades opacity starting at 50% progress", () => {
+  it("fades opacity starting at 30% progress", () => {
     const onComplete = vi.fn();
     const { image, asRefs } = createRefs();
 
@@ -254,13 +254,13 @@ describe("useDissolveEffect", () => {
       result.current.start();
     });
 
-    // At 30% progress (390ms), opacity should still be 1
+    // At 20% progress (260ms), opacity should still be 1
     act(() => {
-      tickFrame(390);
+      tickFrame(260);
     });
     expect(Number(image.style.opacity)).toBe(1);
 
-    // At 75% progress (975ms), opacity should be < 1
+    // At 65% progress (845ms), opacity should be < 1
     act(() => {
       tickFrame(585);
     });
@@ -345,7 +345,7 @@ describe("useDissolveEffect", () => {
     expect(window.requestAnimationFrame).not.toHaveBeenCalled();
   });
 
-  it("resets inline styles on animation completion", () => {
+  it("retains final animation styles on completion (cleanup is handled by React keys)", () => {
     const onComplete = vi.fn();
     const { image, container, asRefs } = createRefs();
 
@@ -362,10 +362,12 @@ describe("useDissolveEffect", () => {
     });
 
     expect(onComplete).toHaveBeenCalledTimes(1);
-    // Inline styles should be cleared (empty string removes override)
-    expect(container.style.opacity).toBe("");
-    expect(image.style.opacity).toBe("");
-    expect(image.style.transform).toBe("");
+    // Styles remain at final animation values — the DOM node is
+    // unmounted by React (via key props) so no reset is needed here.
+    // Resetting before onComplete would cause a visible flash.
+    expect(container.style.opacity).toBe("0");
+    expect(image.style.opacity).toBe("0");
+    expect(image.style.transform).toMatch(/^scale\(/);
   });
 
   it("supports custom duration", () => {

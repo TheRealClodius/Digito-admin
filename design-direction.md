@@ -65,6 +65,24 @@ Use `.scroll-fade-bottom` on any scrollable container to hint that content conti
 
 Applied to: Sheet content area, create-event dialog. Avoid on Radix `ScrollArea` (e.g. sidebar) — the internal viewport prevents the mask from working correctly.
 
+## Image Dissolve Effect
+
+When deleting an image from `ImageUpload`, the image dissolves into particles via an SVG displacement filter (`feDisplacementMap` + `feTurbulence`). The animation runs for 1300ms with ease-out cubic easing, then the file is deleted and the dropzone reappears.
+
+**Key files:**
+- `src/hooks/use-dissolve-effect.ts` — imperative rAF animation loop
+- `src/components/image-upload.tsx` — SVG filter definition, `data-dissolving` attribute
+- `src/app/globals.css` — CSS `:has()` overrides to let particles escape Sheet overflow
+
+**How overflow clipping is handled:** The Sheet has `overflow-hidden` and the scroll wrapper has `overflow-y-auto`. During dissolve, a `data-dissolving` attribute is set on the image container, and CSS `:has()` rules temporarily lift the overflow constraints:
+
+```css
+[data-slot="sheet-content"]:has([data-dissolving]) { overflow: visible !important; }
+.scroll-fade-bottom:has([data-dissolving]) { overflow: visible !important; mask-image: none !important; }
+```
+
+**DOM cleanup:** Preview and dropzone use separate React `key` props (`key="preview"` / `key="dropzone"`) so React fully unmounts the old node — no stale inline styles to clean up.
+
 ## Anti-Patterns (things to avoid)
 
 - No heavy shadows or elevation (no `shadow-lg` on cards)

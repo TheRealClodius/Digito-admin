@@ -67,8 +67,8 @@ export function useDissolveEffect(
       // Subtle scale-up during dissolve
       const transform = `scale(${1 + 0.1 * eased})`;
 
-      // Opacity fades from 1 to 0, starting at 50% progress
-      const opacity = progress < 0.5 ? 1 : 1 - (progress - 0.5) / 0.5;
+      // Opacity fades from 1 to 0, starting at 30% progress
+      const opacity = progress < 0.3 ? 1 : 1 - (progress - 0.3) / 0.7;
 
       displacementRef.current?.setAttribute("scale", String(scale));
       if (imageRef.current) {
@@ -83,14 +83,6 @@ export function useDissolveEffect(
         rafRef.current = requestAnimationFrame(animate);
       } else {
         isRunningRef.current = false;
-        // Reset imperative inline styles so the DOM node is not left invisible
-        if (containerRef.current) {
-          containerRef.current.style.opacity = "";
-        }
-        if (imageRef.current) {
-          imageRef.current.style.opacity = "";
-          imageRef.current.style.transform = "";
-        }
         optionsRef.current.onComplete();
       }
     };

@@ -775,7 +775,7 @@ digito-admin/
 │   │   │   └── users-table.tsx
 │   │   ├── ai-copy-tools.tsx        # AI writing assistant UI component
 │   │   ├── ai-copy-tools.test.tsx   # AI component tests (18 tests)
-│   │   ├── image-upload.tsx         # Reusable drag-drop image uploader
+│   │   ├── image-upload.tsx         # Reusable drag-drop image uploader (with particle dissolve on delete)
 │   │   ├── video-upload.tsx         # Video upload with preview
 │   │   ├── error-boundary.tsx       # Error boundary component
 │   │   ├── crud-page.tsx            # Generic CRUD page component

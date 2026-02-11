@@ -312,6 +312,29 @@ describe("ImageUpload", () => {
       expect(filter?.id).toMatch(/^dissolve-/);
     });
 
+    it("sets data-dissolving attribute on preview container during animation", async () => {
+      const user = userEvent.setup();
+      const { container } = render(
+        <ImageUpload
+          value="https://storage.example.com/image.png"
+          onChange={vi.fn()}
+        />
+      );
+
+      const previewContainer = container.querySelector("[data-dissolving]");
+      expect(previewContainer).toBeNull();
+
+      const removeButton = screen.getByRole("button");
+      await user.click(removeButton);
+
+      const dissolvingContainer = container.querySelector("[data-dissolving]");
+      expect(dissolvingContainer).not.toBeNull();
+
+      act(() => {
+        completeDissolve();
+      });
+    });
+
     it("updates aria-label to deleting during animation", async () => {
       const user = userEvent.setup();
       render(

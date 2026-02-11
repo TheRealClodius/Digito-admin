@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useDropzone } from "react-dropzone";
 import { Loader2, Trash2, Upload } from "lucide-react";
 import Image from "next/image";
@@ -43,6 +43,9 @@ export function ImageUpload({
   const imageRef = useRef<HTMLImageElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  const scrollParentRef = useRef<HTMLElement | null>(null);
+  const savedScrollRef = useRef<number | null>(null);
+
   const handleDissolveComplete = useCallback(() => {
     if (value && deleteFileFn) {
       deleteFileFn(value).catch(() => {});
@@ -73,6 +76,18 @@ export function ImageUpload({
       dissolveEffect.cancel();
     };
   }, [dissolveEffect]);
+
+  // Restore scroll position when dissolve ends (overflow reverts to auto)
+  useLayoutEffect(() => {
+    if (!dissolving && savedScrollRef.current !== null) {
+      const scrollEl = scrollParentRef.current;
+      if (scrollEl) {
+        scrollEl.scrollTop = savedScrollRef.current;
+        scrollEl.style.removeProperty('--scroll-offset');
+      }
+      savedScrollRef.current = null;
+    }
+  }, [dissolving]);
 
   const onDrop = useCallback(
     async (acceptedFiles: File[]) => {
@@ -121,6 +136,13 @@ export function ImageUpload({
 
   const handleRemove = useCallback(() => {
     if (dissolving) return;
+    // Save scroll position and set CSS offset before overflow:visible kicks in
+    const scrollEl = containerRef.current?.closest('.scroll-fade-bottom') as HTMLElement | null;
+    if (scrollEl) {
+      scrollParentRef.current = scrollEl;
+      savedScrollRef.current = scrollEl.scrollTop;
+      scrollEl.style.setProperty('--scroll-offset', `${-scrollEl.scrollTop}px`);
+    }
     setDissolving(true);
     dissolveEffect.start();
   }, [dissolving, dissolveEffect]);
@@ -135,6 +157,7 @@ export function ImageUpload({
             dissolving && "z-20 overflow-visible"
           )}
           ref={containerRef}
+          data-dissolving={dissolving || undefined}
         >
           <svg width="0" height="0" className="absolute" aria-hidden="true">
             <defs>
@@ -229,7 +252,7 @@ export function ImageUpload({
           key="dropzone"
           {...getRootProps()}
           className={cn(
-            "flex h-[200px] w-[200px] cursor-pointer flex-col items-center justify-center rounded-md border-2 border-dashed bg-muted/20 transition-colors hover:bg-muted/40",
+            "flex h-[200px] w-[200px] cursor-pointer flex-col items-center justify-center rounded-md border-2 border-dashed bg-muted/20 transition-colors hover:bg-muted/40 animate-in fade-in-0 duration-300",
             isDragActive && "bg-muted/50",
             (disabled || uploading) && "cursor-not-allowed opacity-50"
           )}

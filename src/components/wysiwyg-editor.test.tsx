@@ -84,25 +84,7 @@ vi.mock("@/contexts/ai-suggestion-context", () => ({
   })),
 }));
 
-// Mock the translation hook
-vi.mock("@/hooks/use-translation", () => ({
-  useTranslation: vi.fn(() => ({
-    t: (key: string) => {
-      const translations: Record<string, string> = {
-        "ai.improve": "Improve clarity",
-        "ai.shorten": "Shorten",
-        "ai.expand": "Expand",
-        "ai.longform": "Long form",
-        "ai.grammar": "Fix grammar",
-        "ai.improving": "Improving...",
-        "ai.assistantName": "Digito Writing Assistant",
-        "common.accept": "Accept",
-        "common.reject": "Reject",
-      };
-      return translations[key] || key;
-    },
-  })),
-}));
+// useTranslation is mocked globally in setup.ts (resolves real en.json keys)
 
 // Mock the server action
 vi.mock("@/actions/ai", () => ({

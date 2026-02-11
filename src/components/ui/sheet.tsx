@@ -105,7 +105,7 @@ function SheetContent({
         </SheetPrimitive.Close>
         <div
           ref={scrollRef}
-          className="scroll-fade-bottom min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-1 pb-6"
+          className="scroll-fade-bottom min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-1 pb-16"
         >
           <SheetScrollContext.Provider value={hasScrolled}>
             {children}
