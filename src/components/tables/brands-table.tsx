@@ -12,8 +12,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { ImageOff, Trash2 } from "lucide-react";
+import Image from "next/image";
 import type { Brand } from "@/types/brand";
-import { memo, useCallback, useState } from "react";
+import { memo, useState } from "react";
+import { isAllowedImageHost } from "@/lib/validation";
 import { useTranslation } from "@/hooks/use-translation";
 
 interface BrandsTableProps {
@@ -25,9 +27,8 @@ interface BrandsTableProps {
 
 function BrandLogo({ url, alt }: { url: string; alt: string }) {
   const [broken, setBroken] = useState(false);
-  const handleError = useCallback(() => setBroken(true), []);
 
-  if (broken) {
+  if (!isAllowedImageHost(url) || broken) {
     return (
       <div className="flex size-10 items-center justify-center rounded bg-muted">
         <ImageOff className="size-4 text-muted-foreground" />
@@ -36,11 +37,13 @@ function BrandLogo({ url, alt }: { url: string; alt: string }) {
   }
 
   return (
-    <img
+    <Image
       src={url}
       alt={alt}
+      width={40}
+      height={40}
       className="size-10 rounded object-cover"
-      onError={handleError}
+      onError={() => setBroken(true)}
     />
   );
 }

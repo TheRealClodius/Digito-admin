@@ -178,7 +178,7 @@ export function ImageUpload({
               </filter>
             </defs>
           </svg>
-          {isAllowedImageHost(displayUrl) ? (
+          {!displayUrl.startsWith("blob:") && isAllowedImageHost(displayUrl) ? (
             <Image
               ref={imageRef}
               src={displayUrl}
@@ -227,10 +227,11 @@ export function ImageUpload({
         <div
           {...getRootProps()}
           className={cn(
-            "flex h-[200px] w-[200px] cursor-pointer flex-col items-center justify-center rounded-md border border-dashed border-muted-foreground/40 bg-muted/20 transition-colors hover:border-primary/50 hover:bg-muted/40",
-            isDragActive && "border-primary bg-muted/50",
+            "flex h-[200px] w-[200px] cursor-pointer flex-col items-center justify-center rounded-md border-2 border-dashed bg-muted/20 transition-colors hover:bg-muted/40",
+            isDragActive && "bg-muted/50",
             (disabled || uploading) && "cursor-not-allowed opacity-50"
           )}
+          style={{ borderColor: isDragActive ? 'var(--primary)' : 'var(--muted-foreground)' }}
         >
           <input {...getInputProps()} />
           <Upload className="mb-2 size-8 text-muted-foreground" />

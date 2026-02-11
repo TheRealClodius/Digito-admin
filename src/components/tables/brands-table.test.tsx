@@ -17,6 +17,19 @@ vi.mock("firebase/firestore", () => ({
 }));
 vi.mock("firebase/storage", () => ({ getStorage: vi.fn() }));
 
+// Mock next/image to avoid jsdom issues
+vi.mock("next/image", () => ({
+  default: (props: Record<string, unknown>) => {
+    // eslint-disable-next-line @next/next/no-img-element, jsx-a11y/alt-text
+    return <img {...props} />;
+  },
+}));
+
+// Mock isAllowedImageHost so all non-empty URLs pass the host check
+vi.mock("@/lib/validation", () => ({
+  isAllowedImageHost: (url: string) => !!url,
+}));
+
 import { BrandsTable } from "./brands-table";
 
 // ResizeObserver mock required by Radix Switch in jsdom
