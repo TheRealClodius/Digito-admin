@@ -19,7 +19,8 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Invalid token" }, { status: 401 });
   }
 
-  const { uid, email } = decoded;
+  const uid = decoded.uid;
+  const email = decoded.email?.toLowerCase();
   console.log(`[check-permissions] uid=${uid} email=${email} claims=`, {
     superadmin: decoded.superadmin,
     admin: decoded.admin,

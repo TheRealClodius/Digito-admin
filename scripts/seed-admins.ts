@@ -56,8 +56,8 @@ const auth = getAuth();
 const db = getFirestore();
 
 async function seedSuperAdmin(email: string) {
-  // SECURITY CHECK: Only allow emails in the approved list
-  if (!ALLOWED_SUPERADMINS.includes(email)) {
+  // SECURITY CHECK: Only allow emails in the approved list (case-insensitive)
+  if (!ALLOWED_SUPERADMINS.includes(email.toLowerCase())) {
     console.error(`❌ SECURITY: ${email} is NOT in the allowed superadmin list. Skipping.`);
     console.error(`   Allowed superadmins: ${ALLOWED_SUPERADMINS.join(', ')}`);
     return;
@@ -70,10 +70,10 @@ async function seedSuperAdmin(email: string) {
       superadmin: true,
     });
 
-    // Create userPermissions document
+    // Create userPermissions document (store email in lowercase for consistent matching)
     await db.collection("userPermissions").doc(user.uid).set({
       userId: user.uid,
-      email: user.email,
+      email: user.email?.toLowerCase(),
       role: 'superadmin',
       clientIds: null,  // null = full access
       eventIds: null,   // null = full access

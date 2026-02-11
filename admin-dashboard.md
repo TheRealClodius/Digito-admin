@@ -248,6 +248,10 @@ if (!adminDoc.exists()) → redirect to /unauthorized
 // proceed to dashboard
 ```
 
+### Email Case Normalization
+
+All email comparisons in the permission system are case-insensitive. The `check-permissions` API route normalizes the email from Firebase Auth tokens to lowercase before querying Firestore (`email?.toLowerCase()`). This is critical because Google OAuth may return emails with original casing (e.g., `Andrei.Clodius@goodgest.com`) while Firestore stores them in lowercase. The seed and migration scripts also normalize emails to lowercase before storing and comparing.
+
 ### Seeding the First Admin
 
 The first super-admin is created manually via Firebase Console:
