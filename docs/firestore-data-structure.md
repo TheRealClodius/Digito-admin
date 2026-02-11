@@ -35,7 +35,7 @@ Firestore Root
 
 **Path:** `clients/{clientId}`
 
-**Access:** Superadmin only (read + write)
+**Access:** SuperAdmin (read + write). ClientAdmin/EventAdmin with `clientIds` match (read only).
 
 | Field        | Type     | Required | Description                    |
 |-------------|----------|----------|--------------------------------|
@@ -52,7 +52,7 @@ Firestore Root
 
 **Path:** `clients/{clientId}/events/{eventId}`
 
-**Access:** Any authenticated user (read). Superadmin only (write).
+**Access:** Admins with event access (read). SuperAdmin + ClientAdmin with client access (write).
 
 | Field         | Type      | Required | Description                    |
 |---------------|-----------|----------|--------------------------------|
@@ -79,7 +79,7 @@ Firestore Root
 
 **Path:** `clients/{clientId}/events/{eventId}/whitelist/{whitelistId}`
 
-**Access:** Any authenticated user (read). Superadmin only (write).
+**Access:** Any authenticated user (read). Admins with `canWriteEventContent` (write).
 
 | Field         | Type     | Required | Description                                  |
 |---------------|----------|----------|----------------------------------------------|
@@ -139,21 +139,40 @@ Used for global user profile data.
 
 **Path:** `userPermissions/{userId}`
 
-**Access:** User can read own; superadmin can read/write.
+**Access:** User can read own; superadmin can read/write all.
 
 | Field       | Type      | Required | Description                                |
 |-------------|-----------|----------|--------------------------------------------|
 | `userId`    | string    | yes      | Firebase Auth UID                          |
 | `email`     | string    | yes      | For display/debugging                      |
-| `role`      | enum     | yes      | `"superadmin"` \| `"client-admin"` \| `"event-admin"` |
+| `role`      | enum     | yes      | `"superadmin"` \| `"clientAdmin"` \| `"eventAdmin"` |
 | `clientIds` | string[] \| null | no | `null` = all; `[]` = none; `["id1","id2"]` = scoped |
 | `eventIds`  | string[] \| null | no | Same semantics as `clientIds`              |
 | `createdAt` | Timestamp | yes      | When created                               |
 | `updatedAt` | Timestamp | yes      | When last updated                          |
-| `createdBy` | string    | yes      | UID of creator                             |
-| `updatedBy` | string    | yes      | UID of last updater                        |
+| `createdBy` | string    | yes      | UID of creator (audit trail)               |
+| `updatedBy` | string    | yes      | UID of last updater (audit trail)          |
 
-**Note:** Firestore rules currently use `isSuperAdmin()` (custom claim). `hasClientAccess` / `hasEventAccess` use `userPermissions` for future scoped admin roles.
+### Role Hierarchy & Permissions
+
+| Role | Custom Claim | Scope | Can Assign Roles | Access Level |
+|------|-------------|-------|------------------|--------------|
+| **superadmin** | `superadmin: true` | All clients & events | clientAdmin, eventAdmin | Full read/write on all collections |
+| **clientAdmin** | `role: "clientAdmin"` | Assigned `clientIds` | eventAdmin (own clients only) | Read/write on assigned clients, their events, and event content |
+| **eventAdmin** | `role: "eventAdmin"` | Assigned `clientIds` + `eventIds` | None | Read/write on event content (whitelist, brands, sessions, etc.) |
+
+### Firestore Rules Enforcement
+
+Permissions are enforced at two levels:
+
+1. **Custom claims** (no Firestore read) — `isSuperAdmin()`, `hasRoleClaim('clientAdmin')`, `isAnyAdmin()`
+2. **Scoped access** (1 Firestore read, cached) — `hasClientAccess(clientId)`, `hasEventAccess(clientId, eventId)`, `canWriteEventContent(clientId, eventId)`
+
+Key access patterns:
+- **Clients** — SuperAdmin: read/write. ClientAdmin/EventAdmin with `clientIds` match: read only.
+- **Events** — SuperAdmin + ClientAdmin (with client access): read/write. EventAdmin (with event access): read only.
+- **Event content** (whitelist, brands, sessions, etc.) — Any admin with `canWriteEventContent`: read/write.
+- **Event creation/deletion** — SuperAdmin and ClientAdmin only (EventAdmin cannot create/delete events).
 
 ---
 
@@ -182,7 +201,7 @@ Kept for backward compatibility; `seed-admins.ts` still writes here.
 │  ───────────────────────     ─────────────────     ─────────────               │
 │  • Admin access control       • Legacy superadmin    • Root user profile           │
 │  • clientIds, eventIds       • email only           • Auth UID = doc id            │
-│  • role: superadmin|client|event                                                    │
+│  • role: superadmin|clientAdmin|eventAdmin                                            │
 │                                                                                   │
 │  clients/{clientId}                                                                │
 │  ──────────────────                                                                 │
@@ -243,7 +262,7 @@ Kept for backward compatibility; `seed-admins.ts` still writes here.
 | **Whitelist** | ✅ Correct. Per-event; defines who can attend. |
 | **Whitelist ↔ Users sync** | ✅ Correct. Locked fields synced by email. |
 | **Root users vs event users** | ⚠️ Two different concepts: global profile vs per-event attendee. |
-| **userPermissions** | ⚠️ Rules use `isSuperAdmin()` claim; scope rules (`hasClientAccess`, `hasEventAccess`) exist but are not yet enforced. |
+| **userPermissions** | ✅ Correct. Three-tier role system (superadmin, clientAdmin, eventAdmin) enforced via custom claims + Firestore scoping rules (`hasClientAccess`, `hasEventAccess`, `canWriteEventContent`). |
 
 **Potential issues:**
 1. **Event users doc id:** Event users use Firebase Auth UID as doc id. Whitelist matches by email. If the same person uses different auth methods, email match may fail — acceptable if auth is unified (e.g. Google only).

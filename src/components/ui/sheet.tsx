@@ -43,7 +43,7 @@ function SheetOverlay({
 }
 
 const sheetVariants = cva(
-  "fixed z-50 gap-4 bg-background px-6 pb-6 pt-0 shadow-lg transition ease-in-out data-[state=closed]:duration-300 data-[state=open]:duration-500 data-[state=open]:animate-in data-[state=closed]:animate-out",
+  "fixed z-50 gap-4 bg-background px-6 pt-0 shadow-lg transition ease-in-out data-[state=closed]:duration-300 data-[state=open]:duration-500 data-[state=open]:animate-in data-[state=closed]:animate-out",
   {
     variants: {
       side: {
@@ -103,7 +103,7 @@ function SheetContent({
         </SheetPrimitive.Close>
         <div
           ref={scrollRef}
-          className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-1"
+          className="scroll-fade-bottom min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-1 pb-6"
         >
           <SheetScrollContext.Provider value={hasScrolled}>
             {children}

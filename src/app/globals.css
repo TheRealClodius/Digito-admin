@@ -168,6 +168,23 @@
   animation: shimmer-border 2.5s ease-in-out infinite;
 }
 
+/* WYSIWYG Editor (Tiptap/ProseMirror) */
+.ProseMirror {
+  @apply px-3 py-2 text-sm min-h-[120px] outline-none;
+  @apply prose prose-sm dark:prose-invert max-w-none;
+}
+
+.ProseMirror p.is-editor-empty:first-child::before {
+  @apply text-muted-foreground pointer-events-none float-left h-0;
+  content: attr(data-placeholder);
+}
+
+/* Bottom fade hint for scrollable containers */
+.scroll-fade-bottom {
+  mask-image: linear-gradient(to bottom, black calc(100% - 2rem), transparent);
+  -webkit-mask-image: linear-gradient(to bottom, black calc(100% - 2rem), transparent);
+}
+
 @keyframes scroll-mask {
   0% {
     /* At scroll start: no fade at top, fade at bottom */

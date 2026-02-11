@@ -13,6 +13,7 @@ vi.mock("firebase/storage", () => ({ getStorage: vi.fn() }));
 
 const mockVerifyIdToken = vi.fn();
 const mockGetUserByEmail = vi.fn();
+const mockCreateUser = vi.fn();
 const mockSetCustomUserClaims = vi.fn();
 
 // Track Firestore operations
@@ -25,6 +26,7 @@ vi.mock("@/lib/firebase-admin", () => ({
   getAdminAuth: () => ({
     verifyIdToken: (...args: unknown[]) => mockVerifyIdToken(...args),
     getUserByEmail: (...args: unknown[]) => mockGetUserByEmail(...args),
+    createUser: (...args: unknown[]) => mockCreateUser(...args),
     setCustomUserClaims: (...args: unknown[]) =>
       mockSetCustomUserClaims(...args),
   }),
@@ -203,16 +205,31 @@ describe("POST /api/set-user-role", () => {
     expect(res.status).toBe(403);
   });
 
-  it("returns 404 when target user not found in Firebase Auth", async () => {
+  it("pre-creates user when not found in Firebase Auth", async () => {
     setupSuperadminCaller();
     mockGetUserByEmail.mockRejectedValue({ code: "auth/user-not-found" });
+    mockCreateUser.mockResolvedValue({
+      uid: "created-uid",
+      email: "nonexistent@test.com",
+    });
     const req = createRequest({
       email: "nonexistent@test.com",
       role: "clientAdmin",
       clientIds: ["c1"],
     });
     const res = await POST(req);
-    expect(res.status).toBe(404);
+    expect(res.status).toBe(200);
+
+    const body = await res.json();
+    expect(body.userId).toBe("created-uid");
+
+    // Should have created the user
+    expect(mockCreateUser).toHaveBeenCalledWith({ email: "nonexistent@test.com" });
+
+    // Should have set claims on the created user
+    expect(mockSetCustomUserClaims).toHaveBeenCalledWith("created-uid", {
+      role: "clientAdmin",
+    });
   });
 
   it("superadmin can create clientAdmin", async () => {

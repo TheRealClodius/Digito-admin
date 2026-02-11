@@ -1,0 +1,240 @@
+import { describe, it, expect, vi, beforeEach } from "vitest";
+
+// Mock Firebase client modules
+vi.mock("firebase/app", () => ({
+  initializeApp: vi.fn(),
+  getApps: vi.fn(() => []),
+}));
+vi.mock("firebase/auth", () => ({ getAuth: vi.fn() }));
+vi.mock("firebase/firestore", () => ({ getFirestore: vi.fn() }));
+vi.mock("firebase/storage", () => ({ getStorage: vi.fn() }));
+
+// === Firebase admin mock ===
+
+const mockVerifyIdToken = vi.fn();
+const mockSetCustomUserClaims = vi.fn();
+
+const mockFirestoreState = {
+  docs: {} as Record<string, Record<string, unknown>>,
+  queryResults: [] as Array<{ id: string; data: Record<string, unknown> }>,
+  sets: [] as Array<{ path: string; data: unknown }>,
+  deletes: [] as string[],
+};
+
+vi.mock("@/lib/firebase-admin", () => ({
+  getAdminAuth: () => ({
+    verifyIdToken: (...args: unknown[]) => mockVerifyIdToken(...args),
+    setCustomUserClaims: (...args: unknown[]) =>
+      mockSetCustomUserClaims(...args),
+  }),
+  getAdminDb: () => ({
+    collection: (collectionName: string) => ({
+      doc: (docId: string) => {
+        const path = `${collectionName}/${docId}`;
+        return {
+          get: () => {
+            const data = mockFirestoreState.docs[path];
+            return Promise.resolve({
+              exists: data !== undefined,
+              data: () => data,
+            });
+          },
+          set: (data: unknown) => {
+            mockFirestoreState.sets.push({ path, data });
+            return Promise.resolve();
+          },
+          delete: () => {
+            mockFirestoreState.deletes.push(path);
+            return Promise.resolve();
+          },
+        };
+      },
+      where: () => ({
+        limit: () => ({
+          get: () =>
+            Promise.resolve({
+              empty: mockFirestoreState.queryResults.length === 0,
+              docs: mockFirestoreState.queryResults.map((doc) => ({
+                id: doc.id,
+                data: () => doc.data,
+                ref: {
+                  delete: () => {
+                    mockFirestoreState.deletes.push(
+                      `${collectionName}/${doc.id}`
+                    );
+                    return Promise.resolve();
+                  },
+                },
+              })),
+            }),
+        }),
+      }),
+    }),
+  }),
+}));
+
+import { GET } from "./route";
+
+function createRequest(token: string | null = "valid-token") {
+  const headers: Record<string, string> = {};
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+  return new Request("http://localhost/api/check-permissions", {
+    method: "GET",
+    headers,
+  });
+}
+
+describe("GET /api/check-permissions", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockFirestoreState.docs = {};
+    mockFirestoreState.queryResults = [];
+    mockFirestoreState.sets = [];
+    mockFirestoreState.deletes = [];
+    mockSetCustomUserClaims.mockResolvedValue(undefined);
+  });
+
+  it("returns 401 without authorization header", async () => {
+    const res = await GET(createRequest(null));
+    expect(res.status).toBe(401);
+  });
+
+  it("returns 401 with invalid token", async () => {
+    mockVerifyIdToken.mockRejectedValue(new Error("Invalid token"));
+    const res = await GET(createRequest());
+    expect(res.status).toBe(401);
+  });
+
+  it("returns superadmin role from custom claims", async () => {
+    mockVerifyIdToken.mockResolvedValue({
+      uid: "super-uid",
+      email: "super@test.com",
+      superadmin: true,
+    });
+    const res = await GET(createRequest());
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.role).toBe("superadmin");
+  });
+
+  it("returns superadmin role from legacy admin claim", async () => {
+    mockVerifyIdToken.mockResolvedValue({
+      uid: "super-uid",
+      email: "super@test.com",
+      admin: true,
+    });
+    const res = await GET(createRequest());
+    const body = await res.json();
+    expect(body.role).toBe("superadmin");
+  });
+
+  it("returns clientAdmin role from custom claims with permissions", async () => {
+    mockVerifyIdToken.mockResolvedValue({
+      uid: "client-uid",
+      email: "client@test.com",
+      role: "clientAdmin",
+    });
+    mockFirestoreState.docs["userPermissions/client-uid"] = {
+      userId: "client-uid",
+      email: "client@test.com",
+      role: "clientAdmin",
+      clientIds: ["c1"],
+      eventIds: null,
+    };
+    const res = await GET(createRequest());
+    const body = await res.json();
+    expect(body.role).toBe("clientAdmin");
+    expect(body.permissions.clientIds).toEqual(["c1"]);
+  });
+
+  it("falls back to Firestore by UID when no claims, auto-heals claims", async () => {
+    mockVerifyIdToken.mockResolvedValue({
+      uid: "user-uid",
+      email: "user@test.com",
+    });
+    mockFirestoreState.docs["userPermissions/user-uid"] = {
+      userId: "user-uid",
+      email: "user@test.com",
+      role: "clientAdmin",
+      clientIds: ["c1"],
+      eventIds: null,
+    };
+    const res = await GET(createRequest());
+    const body = await res.json();
+    expect(body.role).toBe("clientAdmin");
+
+    // Should auto-heal claims
+    expect(mockSetCustomUserClaims).toHaveBeenCalledWith("user-uid", {
+      role: "clientAdmin",
+    });
+  });
+
+  it("falls back to email search when UID doc missing, fixes UID and auto-heals", async () => {
+    mockVerifyIdToken.mockResolvedValue({
+      uid: "new-uid",
+      email: "user@test.com",
+    });
+    // No doc at userPermissions/new-uid
+    // But email query finds a doc under a different UID
+    mockFirestoreState.queryResults = [
+      {
+        id: "old-uid",
+        data: {
+          userId: "old-uid",
+          email: "user@test.com",
+          role: "clientAdmin",
+          clientIds: ["c1"],
+          eventIds: null,
+        },
+      },
+    ];
+
+    const res = await GET(createRequest());
+    const body = await res.json();
+    expect(body.role).toBe("clientAdmin");
+
+    // Should create new doc with correct UID
+    const newSet = mockFirestoreState.sets.find(
+      (s) => s.path === "userPermissions/new-uid"
+    );
+    expect(newSet).toBeDefined();
+    const newData = newSet!.data as Record<string, unknown>;
+    expect(newData.userId).toBe("new-uid");
+
+    // Should delete old doc
+    expect(mockFirestoreState.deletes).toContain("userPermissions/old-uid");
+
+    // Should auto-heal claims
+    expect(mockSetCustomUserClaims).toHaveBeenCalledWith("new-uid", {
+      role: "clientAdmin",
+    });
+  });
+
+  it("returns null role when no permissions found anywhere", async () => {
+    mockVerifyIdToken.mockResolvedValue({
+      uid: "unknown-uid",
+      email: "unknown@test.com",
+    });
+    const res = await GET(createRequest());
+    const body = await res.json();
+    expect(body.role).toBeNull();
+  });
+
+  it("does not auto-heal when claims already match", async () => {
+    mockVerifyIdToken.mockResolvedValue({
+      uid: "user-uid",
+      email: "user@test.com",
+      role: "clientAdmin",
+    });
+    mockFirestoreState.docs["userPermissions/user-uid"] = {
+      userId: "user-uid",
+      email: "user@test.com",
+      role: "clientAdmin",
+      clientIds: ["c1"],
+    };
+    await GET(createRequest());
+    expect(mockSetCustomUserClaims).not.toHaveBeenCalled();
+  });
+});

@@ -1,12 +1,12 @@
 "use client";
 
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { MarkdownTextarea } from "@/components/markdown-textarea";
+import { WysiwygEditor } from "@/components/wysiwyg-editor";
 import { ImageUpload } from "@/components/image-upload";
 import { useUpload } from "@/hooks/use-upload";
 import { participantSchema, type ParticipantFormValues } from "@/lib/schemas";
@@ -68,6 +68,7 @@ export function ParticipantForm({
     handleSubmit,
     watch,
     setValue,
+    control,
     formState: { errors },
   } = useForm<ParticipantFormValues>({
     resolver: zodResolver(participantSchema),
@@ -175,15 +176,21 @@ export function ParticipantForm({
         />
       </div>
 
-      <MarkdownTextarea
-        className="col-span-2"
-        label={t("participants.bio")}
-        fieldName="bio"
-        id="bio"
-        ariaLabel="Bio"
-        getCurrentValue={() => watch("bio") ?? ""}
-        onAccept={(text) => setValue("bio", text, { shouldDirty: true })}
-        textareaProps={register("bio")}
+      <Controller
+        name="bio"
+        control={control}
+        render={({ field }) => (
+          <WysiwygEditor
+            className="col-span-2"
+            label={t("participants.bio")}
+            fieldName="bio"
+            id="bio"
+            value={field.value ?? ""}
+            onChange={field.onChange}
+            getCurrentValue={() => watch("bio") ?? ""}
+            onAccept={(text) => setValue("bio", text, { shouldDirty: true })}
+          />
+        )}
       />
 
       <div className="col-span-2 space-y-2">

@@ -13,9 +13,11 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Trash2 } from "lucide-react";
 import { toDate } from "@/lib/timestamps";
 import { useTranslation } from "@/hooks/use-translation";
+import { useClientStats } from "@/hooks/use-client-stats";
 import type { Client } from "@/types/client";
 
 interface ClientsTableProps {
@@ -36,6 +38,53 @@ function truncateDescription(
 function formatDate(client: Client): string {
   const d = toDate(client.createdAt);
   return d ? format(d, "MMM d, yyyy") : "\u2014";
+}
+
+interface ClientRowProps {
+  client: Client;
+  onEdit: (client: Client) => void;
+  onDelete: (id: string) => void;
+}
+
+function ClientRow({ client, onEdit, onDelete }: ClientRowProps) {
+  const { t } = useTranslation();
+  const { stats, loading } = useClientStats(client.id);
+
+  return (
+    <TableRow key={client.id}>
+      <TableCell>{client.name}</TableCell>
+      <TableCell>{truncateDescription(client.description)}</TableCell>
+      <TableCell>
+        {loading ? <Skeleton className="h-4 w-8" /> : stats.totalEvents}
+      </TableCell>
+      <TableCell>
+        {loading ? <Skeleton className="h-4 w-8" /> : stats.activeEvents}
+      </TableCell>
+      <TableCell>
+        {loading ? <Skeleton className="h-4 w-8" /> : stats.upcomingEvents}
+      </TableCell>
+      <TableCell>
+        {loading ? <Skeleton className="h-4 w-8" /> : stats.pastEvents}
+      </TableCell>
+      <TableCell>{formatDate(client)}</TableCell>
+      <TableCell>
+        <div className="flex items-center">
+          <Button variant="outline" size="sm" onClick={() => onEdit(client)}>
+            {t("common.edit")}
+          </Button>
+          <Button
+            variant="destructive"
+            size="icon"
+            className="ml-2 size-8"
+            aria-label={t("common.delete")}
+            onClick={() => onDelete(client.id)}
+          >
+            <Trash2 className="size-4" />
+          </Button>
+        </div>
+      </TableCell>
+    </TableRow>
+  );
 }
 
 export const ClientsTable = memo(function ClientsTable({ clients, onEdit, onDelete }: ClientsTableProps) {
@@ -63,6 +112,10 @@ export const ClientsTable = memo(function ClientsTable({ clients, onEdit, onDele
           <TableRow>
             <TableHead>{t("common.name")}</TableHead>
             <TableHead>{t("common.description")}</TableHead>
+            <TableHead>{t("clients.stats.totalEvents")}</TableHead>
+            <TableHead>{t("clients.stats.activeEvents")}</TableHead>
+            <TableHead>{t("clients.stats.upcomingEvents")}</TableHead>
+            <TableHead>{t("clients.stats.pastEvents")}</TableHead>
             <TableHead>{t("clients.created")}</TableHead>
             <TableHead className="w-40">{t("common.actions")}</TableHead>
           </TableRow>
@@ -70,39 +123,18 @@ export const ClientsTable = memo(function ClientsTable({ clients, onEdit, onDele
         <TableBody>
           {clients.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={4} className="text-center">
+              <TableCell colSpan={8} className="text-center">
                 {t("clients.noClientsFound")}
               </TableCell>
             </TableRow>
           ) : (
             clients.map((client) => (
-              <TableRow key={client.id}>
-                <TableCell>{client.name}</TableCell>
-                <TableCell>
-                  {truncateDescription(client.description)}
-                </TableCell>
-                <TableCell>{formatDate(client)}</TableCell>
-                <TableCell>
-                  <div className="flex items-center">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => onEdit(client)}
-                    >
-                      {t("common.edit")}
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      size="icon"
-                      className="ml-2 size-8"
-                      aria-label={t("common.delete")}
-                      onClick={() => onDelete(client.id)}
-                    >
-                      <Trash2 className="size-4" />
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
+              <ClientRow
+                key={client.id}
+                client={client}
+                onEdit={onEdit}
+                onDelete={onDelete}
+              />
             ))
           )}
         </TableBody>

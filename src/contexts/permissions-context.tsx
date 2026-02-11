@@ -8,7 +8,7 @@ import {
   type ReactNode,
 } from "react";
 import { useAuth } from "@/hooks/use-auth";
-import { checkUserRole, getUserPermissions } from "@/lib/auth";
+import { verifyPermissions } from "@/lib/auth";
 import type { UserPermissions, UserRole } from "@/types/permissions";
 
 interface PermissionsContextValue {
@@ -28,7 +28,12 @@ export function PermissionsProvider({ children }: { children: ReactNode }) {
   const { user, loading: authLoading } = useAuth();
   const [role, setRole] = useState<UserRole | null>(null);
   const [permissions, setPermissions] = useState<UserPermissions | null>(null);
-  const [loading, setLoading] = useState(true);
+  // Tracks which user UID we have resolved permissions for.
+  // Lets us derive `loading` synchronously — no stale-state race condition.
+  const [resolvedUid, setResolvedUid] = useState<string | null>(null);
+
+  const loading =
+    authLoading || (user != null && resolvedUid !== user.uid);
 
   useEffect(() => {
     if (authLoading) return;
@@ -36,7 +41,7 @@ export function PermissionsProvider({ children }: { children: ReactNode }) {
     if (!user) {
       setRole(null);
       setPermissions(null);
-      setLoading(false);
+      setResolvedUid(null);
       return;
     }
 
@@ -44,13 +49,12 @@ export function PermissionsProvider({ children }: { children: ReactNode }) {
 
     async function resolvePermissions() {
       try {
-        // Step 1: Check custom claims for role
-        const claimRole = await checkUserRole(user!);
+        const result = await verifyPermissions(user!);
 
         if (cancelled) return;
 
-        if (claimRole === "superadmin") {
-          // Superadmins don't need a Firestore read for scoping
+        if (result.role === "superadmin" && !result.permissions) {
+          // Superadmins don't have a Firestore doc — synthesize one
           const syntheticPerms: UserPermissions = {
             userId: user!.uid,
             email: user!.email ?? "",
@@ -64,42 +68,20 @@ export function PermissionsProvider({ children }: { children: ReactNode }) {
           };
           setRole("superadmin");
           setPermissions(syntheticPerms);
-          setLoading(false);
-          return;
-        }
-
-        if (claimRole) {
-          // ClientAdmin or EventAdmin — fetch scoping from Firestore
-          const perms = await getUserPermissions(user!.uid);
-          if (cancelled) return;
-          setRole(claimRole);
-          setPermissions(perms);
-          setLoading(false);
-          return;
-        }
-
-        // Step 2: No claims found — fallback to Firestore
-        const perms = await getUserPermissions(user!.uid);
-        if (cancelled) return;
-
-        if (perms) {
-          setRole(perms.role);
-          setPermissions(perms);
         } else {
-          setRole(null);
-          setPermissions(null);
+          setRole(result.role);
+          setPermissions(result.permissions);
         }
-        setLoading(false);
+        setResolvedUid(user!.uid);
       } catch {
         if (!cancelled) {
           setRole(null);
           setPermissions(null);
-          setLoading(false);
+          setResolvedUid(user!.uid);
         }
       }
     }
 
-    setLoading(true);
     resolvePermissions();
 
     return () => {

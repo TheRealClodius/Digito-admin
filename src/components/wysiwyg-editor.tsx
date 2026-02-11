@@ -1,6 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef } from "react";
+import { useEditor, EditorContent } from "@tiptap/react";
+import StarterKit from "@tiptap/starter-kit";
+import Placeholder from "@tiptap/extension-placeholder";
+import { Markdown } from "tiptap-markdown";
 import {
   Wand2,
   Minimize2,
@@ -8,7 +12,6 @@ import {
   FileText,
   SpellCheck,
   Loader2,
-  Eye,
 } from "lucide-react";
 import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
@@ -16,7 +19,6 @@ import remarkGfm from "remark-gfm";
 import rehypeSanitize from "rehype-sanitize";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -28,24 +30,28 @@ import {
   TooltipTrigger,
   TooltipContent,
 } from "@/components/ui/tooltip";
+import { WysiwygToolbar } from "@/components/wysiwyg-toolbar";
 import { useAIImprove } from "@/hooks/use-ai-improve";
 import { useAISuggestion } from "@/contexts/ai-suggestion-context";
-import { useDebounce } from "@/hooks/use-debounce";
-import { MarkdownPreview } from "@/components/markdown-preview";
 import { useTranslation } from "@/hooks/use-translation";
 import { type AIAction } from "@/lib/ai";
 import { cn } from "@/lib/utils";
 
-interface MarkdownTextareaProps {
+// tiptap-markdown extends editor.storage but doesn't ship TS declarations
+interface MarkdownStorage {
+  markdown: { getMarkdown: () => string };
+}
+
+interface WysiwygEditorProps {
   label: string;
   fieldName: string;
   id: string;
+  value: string;
+  onChange: (markdown: string) => void;
   getCurrentValue: () => string;
   onAccept: (text: string) => void;
-  textareaProps?: React.ComponentProps<"textarea">;
   className?: string;
-  ariaLabel?: string;
-  showPreview?: boolean; // Default: false for backward compatibility
+  placeholder?: string;
 }
 
 const ACTION_ICONS: Record<AIAction, typeof Wand2> = {
@@ -56,29 +62,64 @@ const ACTION_ICONS: Record<AIAction, typeof Wand2> = {
   grammar: SpellCheck,
 };
 
-const ACTION_ORDER: AIAction[] = ["improve", "shorten", "expand", "longform", "grammar"];
+const ACTION_ORDER: AIAction[] = [
+  "improve",
+  "shorten",
+  "expand",
+  "longform",
+  "grammar",
+];
 
-export function MarkdownTextarea({
+export function WysiwygEditor({
   label,
   fieldName,
   id,
+  value,
+  onChange,
   getCurrentValue,
   onAccept,
-  textareaProps = {},
   className,
-  ariaLabel,
-  showPreview = false,
-}: MarkdownTextareaProps) {
+  placeholder,
+}: WysiwygEditorProps) {
   const { t } = useTranslation();
-  const [isPreviewVisible, setIsPreviewVisible] = useState(showPreview);
   const { isLoading, error, result, improve, reset } = useAIImprove();
   const { setHasActiveSuggestion } = useAISuggestion();
+  const isUpdatingRef = useRef(false);
 
   const currentValue = getCurrentValue();
   const isEmpty = !currentValue || currentValue.trim().length === 0;
 
-  // Debounce preview updates for performance
-  const debouncedValue = useDebounce(currentValue, 300);
+  const editor = useEditor({
+    immediatelyRender: false,
+    extensions: [
+      StarterKit.configure({
+        link: { openOnClick: false },
+      }),
+      Placeholder.configure({ placeholder: placeholder ?? "" }),
+      Markdown.configure({
+        html: false,
+        transformPastedText: true,
+        transformCopiedText: true,
+      }),
+    ],
+    content: value,
+    onUpdate: ({ editor }) => {
+      if (isUpdatingRef.current) return;
+      const md = (editor.storage as unknown as MarkdownStorage).markdown.getMarkdown();
+      onChange(md);
+    },
+  });
+
+  // Sync external value changes (AI accept, form reset) into the editor
+  useEffect(() => {
+    if (!editor) return;
+    const currentMd = (editor.storage as unknown as MarkdownStorage).markdown.getMarkdown();
+    if (value !== currentMd) {
+      isUpdatingRef.current = true;
+      editor.commands.setContent(value);
+      isUpdatingRef.current = false;
+    }
+  }, [value, editor]);
 
   // Signal context about active suggestion
   useEffect(() => {
@@ -114,30 +155,10 @@ export function MarkdownTextarea({
 
   return (
     <div className={cn("space-y-2", className)}>
-      {/* Label row with preview toggle and AI button */}
+      {/* Label row with AI button */}
       <div className="flex items-center justify-between">
         <Label htmlFor={id}>{label}</Label>
         <div className="flex items-center gap-2">
-          {/* Preview toggle button */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="size-8"
-                onClick={() => setIsPreviewVisible(!isPreviewVisible)}
-                aria-label="Toggle markdown preview"
-              >
-                <Eye className={cn("size-4", isPreviewVisible && "text-primary")} />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              {isPreviewVisible ? t("common.hidePreview") : t("common.showPreview")}
-            </TooltipContent>
-          </Tooltip>
-
-          {/* AI button */}
           {isLoading ? (
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Loader2 className="size-4 animate-spin" />
@@ -181,27 +202,18 @@ export function MarkdownTextarea({
         </div>
       </div>
 
-      {/* Content area: either textarea or preview (toggle mode) + optional AI suggestion */}
+      {/* Editor + optional AI suggestion card */}
       <div className={cn("flex flex-col gap-3", result && "lg:flex-row")}>
-        {/* Textarea (shown in edit mode) */}
-        {!isPreviewVisible && (
-          <Textarea
-            id={id}
-            aria-label={ariaLabel}
-            className={cn(result && "flex-1 min-w-0")}
-            {...textareaProps}
-          />
-        )}
-
-        {/* Preview pane (shown in preview mode) */}
-        {isPreviewVisible && (
-          <div className={cn("rounded-md border bg-muted/10 p-3", result && "flex-1 min-w-0")}>
-            <div className="text-xs font-medium text-muted-foreground mb-2">
-              {t("common.markdownPreview")}
-            </div>
-            <MarkdownPreview content={debouncedValue} />
-          </div>
-        )}
+        {/* WYSIWYG Editor */}
+        <div
+          className={cn(
+            "wysiwyg-container rounded-md border border-input bg-transparent shadow-xs focus-within:ring-1 focus-within:ring-ring",
+            result && "flex-1 min-w-0"
+          )}
+        >
+          <WysiwygToolbar editor={editor} />
+          <EditorContent editor={editor} id={id} />
+        </div>
 
         {/* AI suggestion card (when active) */}
         {result && (

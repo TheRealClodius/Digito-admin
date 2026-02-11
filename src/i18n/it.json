@@ -61,10 +61,14 @@
   "contextSelector": {
     "selectClient": "Seleziona Cliente",
     "selectEvent": "Seleziona Evento",
+    "clientLabel": "Cliente",
+    "eventLabel": "Evento",
     "clients": "Clienti",
     "events": "Eventi",
     "noClientsFound": "Nessun cliente trovato",
-    "noEventsFound": "Nessun evento trovato"
+    "noEventsFound": "Nessun evento trovato",
+    "newEvent": "Crea nuovo evento",
+    "eventCreated": "Evento creato con successo"
   },
   "login": {
     "title": "Digito Admin",
@@ -83,7 +87,13 @@
     "welcome": "Benvenuto su Digito Admin",
     "selectPrompt": "Seleziona un cliente e un evento dalla barra laterale per iniziare.",
     "title": "Dashboard",
-    "navigatePrompt": "Naviga in una sezione dalla barra laterale per gestire i contenuti dell'evento."
+    "navigatePrompt": "Naviga in una sezione dalla barra laterale per gestire i contenuti dell'evento.",
+    "superAdminTitle": "Dashboard SuperAdmin",
+    "platformOverview": "Panoramica della piattaforma su tutti i clienti",
+    "totalClients": "Clienti Totali",
+    "totalEvents": "Eventi Totali",
+    "activeEvents": "Eventi Attivi",
+    "totalParticipants": "Partecipanti Totali"
   },
   "noClientSelected": {
     "title": "Nessun cliente selezionato",
@@ -115,7 +125,13 @@
     "deleteConfirm": "Sei sicuro di voler eliminare questo cliente? Questa azione non può essere annullata e rimuoverà anche tutti gli eventi associati.",
     "countLabel": "{{count}} cliente/i",
     "noClientsFound": "Nessun cliente trovato",
-    "created": "Creato"
+    "created": "Creato",
+    "stats": {
+      "totalEvents": "Eventi",
+      "activeEvents": "Attivi",
+      "upcomingEvents": "Prossimi",
+      "pastEvents": "Passati"
+    }
   },
   "events": {
     "title": "Eventi",

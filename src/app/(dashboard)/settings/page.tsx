@@ -229,7 +229,7 @@ export default function SettingsPage() {
           <SheetHeader>
             <SheetTitle>Add Admin</SheetTitle>
             <SheetDescription>
-              Assign a role to a user. They must have signed in at least once.
+              Assign a role to a user by email address.
             </SheetDescription>
           </SheetHeader>
           <div className="mt-6">

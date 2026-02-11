@@ -43,6 +43,28 @@ Notion's UI is defined by radical simplicity and content-first design. The inter
 
 - **Page CTA buttons:** Use `pl-3 pr-4` (tighter left padding). Never add `mr-*` on icons — rely on the Button's built-in `gap-2` for icon-to-text spacing.
 
+## Scroll Fade
+
+Use `.scroll-fade-bottom` on any scrollable container to hint that content continues below. This is raw CSS using `mask-image` — no JS needed, works in all modern browsers.
+
+```css
+/* globals.css */
+.scroll-fade-bottom {
+  mask-image: linear-gradient(to bottom, black calc(100% - 2rem), transparent);
+  -webkit-mask-image: linear-gradient(to bottom, black calc(100% - 2rem), transparent);
+}
+```
+
+**Usage** — add the class to any element with `overflow-y-auto`:
+
+```tsx
+<div className="scroll-fade-bottom overflow-y-auto h-[400px]">
+  {/* Scrollable list content */}
+</div>
+```
+
+Applied to: Sheet content area, create-event dialog. Avoid on Radix `ScrollArea` (e.g. sidebar) — the internal viewport prevents the mask from working correctly.
+
 ## Anti-Patterns (things to avoid)
 
 - No heavy shadows or elevation (no `shadow-lg` on cards)

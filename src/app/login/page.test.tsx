@@ -19,14 +19,12 @@ vi.mock("next/navigation", () => ({
 
 // Mock auth module
 const mockSignInWithGoogle = vi.fn();
-const mockCheckUserRole = vi.fn();
-const mockGetUserPermissions = vi.fn();
+const mockVerifyPermissions = vi.fn();
 const mockSignOut = vi.fn();
 
 vi.mock("@/lib/auth", () => ({
   signInWithGoogle: (...args: unknown[]) => mockSignInWithGoogle(...args),
-  checkUserRole: (...args: unknown[]) => mockCheckUserRole(...args),
-  getUserPermissions: (...args: unknown[]) => mockGetUserPermissions(...args),
+  verifyPermissions: (...args: unknown[]) => mockVerifyPermissions(...args),
   signOut: (...args: unknown[]) => mockSignOut(...args),
 }));
 
@@ -76,11 +74,10 @@ describe("LoginPage", () => {
     expect(magicLinkButton).toBeInTheDocument();
   });
 
-  it("redirects to /unauthorized when user has no role and no Firestore permissions", async () => {
+  it("redirects to /unauthorized when server returns no role", async () => {
     const user = userEvent.setup();
     mockSignInWithGoogle.mockResolvedValue(fakeUser);
-    mockCheckUserRole.mockResolvedValue(null);
-    mockGetUserPermissions.mockResolvedValue(null);
+    mockVerifyPermissions.mockResolvedValue({ role: null, permissions: null });
     mockSignOut.mockResolvedValue(undefined);
 
     render(<LoginPage />);
@@ -97,7 +94,7 @@ describe("LoginPage", () => {
   it("redirects to / when user is superadmin", async () => {
     const user = userEvent.setup();
     mockSignInWithGoogle.mockResolvedValue(fakeUser);
-    mockCheckUserRole.mockResolvedValue("superadmin");
+    mockVerifyPermissions.mockResolvedValue({ role: "superadmin", permissions: null });
 
     render(<LoginPage />);
 
@@ -113,7 +110,10 @@ describe("LoginPage", () => {
   it("redirects to / when user is clientAdmin", async () => {
     const user = userEvent.setup();
     mockSignInWithGoogle.mockResolvedValue(fakeUser);
-    mockCheckUserRole.mockResolvedValue("clientAdmin");
+    mockVerifyPermissions.mockResolvedValue({
+      role: "clientAdmin",
+      permissions: { role: "clientAdmin", clientIds: ["c1"] },
+    });
 
     render(<LoginPage />);
 
@@ -126,13 +126,13 @@ describe("LoginPage", () => {
     expect(mockSignOut).not.toHaveBeenCalled();
   });
 
-  it("falls back to Firestore permissions when no claims found", async () => {
+  it("redirects to / when server auto-heals permissions from Firestore", async () => {
     const user = userEvent.setup();
     mockSignInWithGoogle.mockResolvedValue(fakeUser);
-    mockCheckUserRole.mockResolvedValue(null);
-    mockGetUserPermissions.mockResolvedValue({
+    // Server found permissions in Firestore even though claims were missing
+    mockVerifyPermissions.mockResolvedValue({
       role: "clientAdmin",
-      clientIds: ["client-1"],
+      permissions: { role: "clientAdmin", clientIds: ["c1"] },
     });
 
     render(<LoginPage />);

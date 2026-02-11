@@ -1,12 +1,12 @@
 "use client";
 
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { MarkdownTextarea } from "@/components/markdown-textarea";
+import { WysiwygEditor } from "@/components/wysiwyg-editor";
 import { ImageUpload } from "@/components/image-upload";
 import { useUpload } from "@/hooks/use-upload";
 import { postSchema, type PostFormValues } from "@/lib/schemas";
@@ -44,6 +44,7 @@ export function PostForm({
     handleSubmit,
     watch,
     setValue,
+    control,
     formState: { errors },
   } = useForm<PostFormValues>({
     resolver: zodResolver(postSchema),
@@ -83,14 +84,21 @@ export function PostForm({
         )}
       </div>
 
-      <MarkdownTextarea
-        className="col-span-2"
-        label={t("common.description")}
-        fieldName="description"
-        id="description"
-        getCurrentValue={() => watch("description") ?? ""}
-        onAccept={(text) => setValue("description", text, { shouldDirty: true })}
-        textareaProps={register("description")}
+      <Controller
+        name="description"
+        control={control}
+        render={({ field }) => (
+          <WysiwygEditor
+            className="col-span-2"
+            label={t("common.description")}
+            fieldName="description"
+            id="description"
+            value={field.value ?? ""}
+            onChange={field.onChange}
+            getCurrentValue={() => watch("description") ?? ""}
+            onAccept={(text) => setValue("description", text, { shouldDirty: true })}
+          />
+        )}
       />
 
       <div className="col-span-2 space-y-2">

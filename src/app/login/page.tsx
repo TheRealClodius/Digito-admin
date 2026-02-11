@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { signInWithGoogle, checkUserRole, getUserPermissions, signOut } from "@/lib/auth";
+import { signInWithGoogle, verifyPermissions, signOut } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "@/hooks/use-translation";
 
@@ -33,16 +33,12 @@ export default function LoginPage() {
 
     try {
       const user = await signInWithGoogle();
-      const role = await checkUserRole(user);
+      const { role } = await verifyPermissions(user);
 
       if (!role) {
-        // Fallback: check Firestore for permissions (claim propagation delay)
-        const perms = await getUserPermissions(user.uid);
-        if (!perms) {
-          await signOut();
-          router.push("/unauthorized");
-          return;
-        }
+        await signOut();
+        router.push("/unauthorized");
+        return;
       }
 
       router.push("/");

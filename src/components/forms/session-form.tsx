@@ -1,11 +1,11 @@
 "use client";
 
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { MarkdownTextarea } from "@/components/markdown-textarea";
+import { WysiwygEditor } from "@/components/wysiwyg-editor";
 import type { SessionType } from "@/types/session";
 import { useTranslation } from "@/hooks/use-translation";
 
@@ -75,6 +75,7 @@ export function SessionForm({
     handleSubmit,
     watch,
     setValue,
+    control,
     formState: { errors },
   } = useForm<FormValues>({
     defaultValues: {
@@ -130,15 +131,21 @@ export function SessionForm({
         </select>
       </div>
 
-      <MarkdownTextarea
-        className="col-span-2"
-        label={t("common.description")}
-        fieldName="description"
-        id="description"
-        ariaLabel="Description"
-        getCurrentValue={() => watch("description") ?? ""}
-        onAccept={(text) => setValue("description", text, { shouldDirty: true })}
-        textareaProps={register("description")}
+      <Controller
+        name="description"
+        control={control}
+        render={({ field }) => (
+          <WysiwygEditor
+            className="col-span-2"
+            label={t("common.description")}
+            fieldName="description"
+            id="description"
+            value={field.value ?? ""}
+            onChange={field.onChange}
+            getCurrentValue={() => watch("description") ?? ""}
+            onAccept={(text) => setValue("description", text, { shouldDirty: true })}
+          />
+        )}
       />
 
       <div className="space-y-2">
@@ -189,15 +196,21 @@ export function SessionForm({
         />
       </div>
 
-      <MarkdownTextarea
-        className="col-span-2"
-        label={t("sessions.speakerBio")}
-        fieldName="speakerBio"
-        id="speakerBio"
-        ariaLabel="Speaker Bio"
-        getCurrentValue={() => watch("speakerBio") ?? ""}
-        onAccept={(text) => setValue("speakerBio", text, { shouldDirty: true })}
-        textareaProps={register("speakerBio")}
+      <Controller
+        name="speakerBio"
+        control={control}
+        render={({ field }) => (
+          <WysiwygEditor
+            className="col-span-2"
+            label={t("sessions.speakerBio")}
+            fieldName="speakerBio"
+            id="speakerBio"
+            value={field.value ?? ""}
+            onChange={field.onChange}
+            getCurrentValue={() => watch("speakerBio") ?? ""}
+            onAccept={(text) => setValue("speakerBio", text, { shouldDirty: true })}
+          />
+        )}
       />
 
       <div className="flex items-center space-x-2">

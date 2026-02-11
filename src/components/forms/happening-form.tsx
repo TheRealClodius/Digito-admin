@@ -1,11 +1,11 @@
 "use client";
 
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { MarkdownTextarea } from "@/components/markdown-textarea";
+import { WysiwygEditor } from "@/components/wysiwyg-editor";
 import type { HappeningType } from "@/types/happening";
 import { useTranslation } from "@/hooks/use-translation";
 
@@ -74,6 +74,7 @@ export function HappeningForm({
     handleSubmit,
     watch,
     setValue,
+    control,
     formState: { errors },
   } = useForm<FormValues>({
     defaultValues: {
@@ -128,15 +129,21 @@ export function HappeningForm({
         </select>
       </div>
 
-      <MarkdownTextarea
-        className="col-span-2"
-        label={t("common.description")}
-        fieldName="description"
-        id="description"
-        ariaLabel="Description"
-        getCurrentValue={() => watch("description") ?? ""}
-        onAccept={(text) => setValue("description", text, { shouldDirty: true })}
-        textareaProps={register("description")}
+      <Controller
+        name="description"
+        control={control}
+        render={({ field }) => (
+          <WysiwygEditor
+            className="col-span-2"
+            label={t("common.description")}
+            fieldName="description"
+            id="description"
+            value={field.value ?? ""}
+            onChange={field.onChange}
+            getCurrentValue={() => watch("description") ?? ""}
+            onAccept={(text) => setValue("description", text, { shouldDirty: true })}
+          />
+        )}
       />
 
       <div className="space-y-2">

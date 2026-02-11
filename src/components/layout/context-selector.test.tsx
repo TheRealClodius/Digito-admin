@@ -1,4 +1,5 @@
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 vi.mock("@/hooks/use-event-context", () => ({
@@ -11,6 +12,15 @@ vi.mock("@/hooks/use-collection", () => ({
 
 vi.mock("@/hooks/use-permissions", () => ({
   usePermissions: vi.fn(),
+}));
+
+vi.mock("./create-event-dialog", () => ({
+  CreateEventDialog: ({ open, clientId }: { open: boolean; clientId: string }) =>
+    open ? (
+      <div data-testid="create-event-dialog" data-client-id={clientId} />
+    ) : (
+      <div data-testid="create-event-dialog-closed" />
+    ),
 }));
 
 import { ContextSelector } from "./context-selector";
@@ -109,6 +119,62 @@ describe("ContextSelector - Permission-based filtering", () => {
     render(<ContextSelector />);
 
     expect(screen.getByText("Select Client")).toBeInTheDocument();
+  });
+
+  it("superadmin queries clients without constraints", () => {
+    vi.mocked(permissionsHook.usePermissions).mockReturnValue({
+      role: "superadmin",
+      permissions: makeSuperAdminPerms(),
+      loading: false,
+      isSuperAdmin: true,
+      isClientAdmin: false,
+      isEventAdmin: false,
+    });
+    vi.mocked(collectionHook.useCollection).mockReturnValue({
+      data: allClients as any,
+      loading: false,
+      error: null,
+    });
+
+    render(<ContextSelector />);
+
+    // First useCollection call is for clients
+    const clientsCall = vi.mocked(collectionHook.useCollection).mock.calls[0][0];
+    expect(clientsCall.path).toBe("clients");
+    expect(clientsCall.constraints ?? []).toHaveLength(0);
+  });
+
+  it("clientAdmin queries clients with documentId constraint scoped to their clientIds", () => {
+    vi.mocked(eventContextHook.useEventContext).mockReturnValue({
+      selectedClientId: "client-1",
+      selectedEventId: null,
+      selectedClientName: "Client Alpha",
+      selectedEventName: null,
+      setSelectedClient: vi.fn(),
+      setSelectedEvent: vi.fn(),
+      clearSelection: vi.fn(),
+    });
+    vi.mocked(permissionsHook.usePermissions).mockReturnValue({
+      role: "clientAdmin",
+      permissions: makeClientAdminPerms(["client-1", "client-2"]),
+      loading: false,
+      isSuperAdmin: false,
+      isClientAdmin: true,
+      isEventAdmin: false,
+    });
+    vi.mocked(collectionHook.useCollection).mockReturnValue({
+      data: allClients as any,
+      loading: false,
+      error: null,
+    });
+
+    render(<ContextSelector />);
+
+    // First useCollection call is for clients — should have constraints
+    const clientsCall = vi.mocked(collectionHook.useCollection).mock.calls[0][0];
+    expect(clientsCall.path).toBe("clients");
+    expect(clientsCall.constraints).toHaveLength(1);
+    expect(clientsCall.constraintsKey).toBe("client-1,client-2");
   });
 
   it("superadmin sees both client and event dropdowns when client is selected", () => {
@@ -351,5 +417,420 @@ describe("ContextSelector - Role-based dropdown visibility", () => {
     render(<ContextSelector />);
 
     expect(setSelectedClient).not.toHaveBeenCalled();
+  });
+});
+
+describe("ContextSelector - Visual hierarchy", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("shows Client label above client dropdown for superadmin", () => {
+    vi.mocked(permissionsHook.usePermissions).mockReturnValue({
+      role: "superadmin",
+      permissions: makeSuperAdminPerms(),
+      loading: false,
+      isSuperAdmin: true,
+      isClientAdmin: false,
+      isEventAdmin: false,
+    });
+    vi.mocked(eventContextHook.useEventContext).mockReturnValue({
+      selectedClientId: null,
+      selectedEventId: null,
+      selectedClientName: null,
+      selectedEventName: null,
+      setSelectedClient: vi.fn(),
+      setSelectedEvent: vi.fn(),
+      clearSelection: vi.fn(),
+    });
+    vi.mocked(collectionHook.useCollection).mockReturnValue({
+      data: allClients as any,
+      loading: false,
+      error: null,
+    });
+
+    render(<ContextSelector />);
+
+    // Should show "Client" label (translated key: contextSelector.clientLabel)
+    expect(screen.getByText("Client")).toBeInTheDocument();
+  });
+
+  it("shows Event label above event dropdown", () => {
+    vi.mocked(permissionsHook.usePermissions).mockReturnValue({
+      role: "superadmin",
+      permissions: makeSuperAdminPerms(),
+      loading: false,
+      isSuperAdmin: true,
+      isClientAdmin: false,
+      isEventAdmin: false,
+    });
+    vi.mocked(eventContextHook.useEventContext).mockReturnValue({
+      selectedClientId: "client-1",
+      selectedEventId: null,
+      selectedClientName: "Client Alpha",
+      selectedEventName: null,
+      setSelectedClient: vi.fn(),
+      setSelectedEvent: vi.fn(),
+      clearSelection: vi.fn(),
+    });
+    vi.mocked(collectionHook.useCollection).mockReturnValue({
+      data: allEvents as any,
+      loading: false,
+      error: null,
+    });
+
+    render(<ContextSelector />);
+
+    // Should show "Event" label (translated key: contextSelector.eventLabel)
+    expect(screen.getByText("Event")).toBeInTheDocument();
+  });
+
+  it("aligns event wrapper with client dropdown for superadmin (no left inset)", () => {
+    vi.mocked(permissionsHook.usePermissions).mockReturnValue({
+      role: "superadmin",
+      permissions: makeSuperAdminPerms(),
+      loading: false,
+      isSuperAdmin: true,
+      isClientAdmin: false,
+      isEventAdmin: false,
+    });
+    vi.mocked(eventContextHook.useEventContext).mockReturnValue({
+      selectedClientId: "client-1",
+      selectedEventId: null,
+      selectedClientName: "Client Alpha",
+      selectedEventName: null,
+      setSelectedClient: vi.fn(),
+      setSelectedEvent: vi.fn(),
+      clearSelection: vi.fn(),
+    });
+    vi.mocked(collectionHook.useCollection).mockReturnValue({
+      data: allEvents as any,
+      loading: false,
+      error: null,
+    });
+
+    render(<ContextSelector />);
+
+    const eventLabel = screen.getByText("Event");
+    const eventContainer = eventLabel.closest("div");
+
+    // Event wrapper aligns with client dropdown (no left inset)
+    expect(eventContainer).not.toHaveClass("pl-4");
+  });
+
+  it("does not indent event dropdown for clientAdmin (no client dropdown above)", () => {
+    vi.mocked(permissionsHook.usePermissions).mockReturnValue({
+      role: "clientAdmin",
+      permissions: makeClientAdminPerms(["client-1"]),
+      loading: false,
+      isSuperAdmin: false,
+      isClientAdmin: true,
+      isEventAdmin: false,
+    });
+    vi.mocked(eventContextHook.useEventContext).mockReturnValue({
+      selectedClientId: "client-1",
+      selectedEventId: null,
+      selectedClientName: "Client Alpha",
+      selectedEventName: null,
+      setSelectedClient: vi.fn(),
+      setSelectedEvent: vi.fn(),
+      clearSelection: vi.fn(),
+    });
+    vi.mocked(collectionHook.useCollection).mockReturnValue({
+      data: allEvents as any,
+      loading: false,
+      error: null,
+    });
+
+    render(<ContextSelector />);
+
+    const eventLabel = screen.getByText("Event");
+    const eventContainer = eventLabel.closest("div");
+
+    // No pl-4; event wrapper aligns full width
+    expect(eventContainer).not.toHaveClass("pl-4");
+  });
+
+  it("shows Option icon to the left of event dropdown for superadmin only", () => {
+    vi.mocked(permissionsHook.usePermissions).mockReturnValue({
+      role: "superadmin",
+      permissions: makeSuperAdminPerms(),
+      loading: false,
+      isSuperAdmin: true,
+      isClientAdmin: false,
+      isEventAdmin: false,
+    });
+    vi.mocked(eventContextHook.useEventContext).mockReturnValue({
+      selectedClientId: "client-1",
+      selectedEventId: null,
+      selectedClientName: "Client Alpha",
+      selectedEventName: null,
+      setSelectedClient: vi.fn(),
+      setSelectedEvent: vi.fn(),
+      clearSelection: vi.fn(),
+    });
+    vi.mocked(collectionHook.useCollection).mockReturnValue({
+      data: allEvents as any,
+      loading: false,
+      error: null,
+    });
+
+    render(<ContextSelector />);
+
+    expect(screen.getByTestId("event-dropdown-option-icon")).toBeInTheDocument();
+  });
+
+  it("does not show Option icon for clientAdmin (only superadmin has hierarchical dropdowns)", () => {
+    vi.mocked(permissionsHook.usePermissions).mockReturnValue({
+      role: "clientAdmin",
+      permissions: makeClientAdminPerms(["client-1"]),
+      loading: false,
+      isSuperAdmin: false,
+      isClientAdmin: true,
+      isEventAdmin: false,
+    });
+    vi.mocked(eventContextHook.useEventContext).mockReturnValue({
+      selectedClientId: "client-1",
+      selectedEventId: null,
+      selectedClientName: "Client Alpha",
+      selectedEventName: null,
+      setSelectedClient: vi.fn(),
+      setSelectedEvent: vi.fn(),
+      clearSelection: vi.fn(),
+    });
+    vi.mocked(collectionHook.useCollection).mockReturnValue({
+      data: allEvents as any,
+      loading: false,
+      error: null,
+    });
+
+    render(<ContextSelector />);
+
+    expect(screen.queryByTestId("event-dropdown-option-icon")).not.toBeInTheDocument();
+  });
+
+  it("does not show client label for non-superadmin users", () => {
+    vi.mocked(permissionsHook.usePermissions).mockReturnValue({
+      role: "clientAdmin",
+      permissions: makeClientAdminPerms(["client-1"]),
+      loading: false,
+      isSuperAdmin: false,
+      isClientAdmin: true,
+      isEventAdmin: false,
+    });
+    vi.mocked(eventContextHook.useEventContext).mockReturnValue({
+      selectedClientId: "client-1",
+      selectedEventId: null,
+      selectedClientName: "Client Alpha",
+      selectedEventName: null,
+      setSelectedClient: vi.fn(),
+      setSelectedEvent: vi.fn(),
+      clearSelection: vi.fn(),
+    });
+    vi.mocked(collectionHook.useCollection).mockReturnValue({
+      data: allEvents as any,
+      loading: false,
+      error: null,
+    });
+
+    render(<ContextSelector />);
+
+    // Should NOT show "Client" label (no client dropdown for non-superadmins)
+    expect(screen.queryByText("Client")).not.toBeInTheDocument();
+    // Should still show "Event" label
+    expect(screen.getByText("Event")).toBeInTheDocument();
+  });
+});
+
+describe("ContextSelector - Create new event action", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("renders CreateEventDialog for superadmin with selected client", () => {
+    vi.mocked(permissionsHook.usePermissions).mockReturnValue({
+      role: "superadmin",
+      permissions: makeSuperAdminPerms(),
+      loading: false,
+      isSuperAdmin: true,
+      isClientAdmin: false,
+      isEventAdmin: false,
+    });
+    vi.mocked(eventContextHook.useEventContext).mockReturnValue({
+      selectedClientId: "client-1",
+      selectedEventId: null,
+      selectedClientName: "Client Alpha",
+      selectedEventName: null,
+      setSelectedClient: vi.fn(),
+      setSelectedEvent: vi.fn(),
+      clearSelection: vi.fn(),
+    });
+    vi.mocked(collectionHook.useCollection).mockReturnValue({
+      data: allEvents as any,
+      loading: false,
+      error: null,
+    });
+
+    render(<ContextSelector />);
+
+    // Dialog should be rendered (closed by default)
+    expect(screen.getByTestId("create-event-dialog-closed")).toBeInTheDocument();
+  });
+
+  it("renders CreateEventDialog for clientAdmin with selected client", () => {
+    vi.mocked(permissionsHook.usePermissions).mockReturnValue({
+      role: "clientAdmin",
+      permissions: makeClientAdminPerms(["client-1"]),
+      loading: false,
+      isSuperAdmin: false,
+      isClientAdmin: true,
+      isEventAdmin: false,
+    });
+    vi.mocked(eventContextHook.useEventContext).mockReturnValue({
+      selectedClientId: "client-1",
+      selectedEventId: null,
+      selectedClientName: "Client Alpha",
+      selectedEventName: null,
+      setSelectedClient: vi.fn(),
+      setSelectedEvent: vi.fn(),
+      clearSelection: vi.fn(),
+    });
+    vi.mocked(collectionHook.useCollection).mockReturnValue({
+      data: allEvents as any,
+      loading: false,
+      error: null,
+    });
+
+    render(<ContextSelector />);
+
+    expect(screen.getByTestId("create-event-dialog-closed")).toBeInTheDocument();
+  });
+
+  it("does NOT render CreateEventDialog for eventAdmin", () => {
+    vi.mocked(permissionsHook.usePermissions).mockReturnValue({
+      role: "eventAdmin",
+      permissions: makeEventAdminPerms(["client-1"], ["event-1"]),
+      loading: false,
+      isSuperAdmin: false,
+      isClientAdmin: false,
+      isEventAdmin: true,
+    });
+    vi.mocked(eventContextHook.useEventContext).mockReturnValue({
+      selectedClientId: "client-1",
+      selectedEventId: null,
+      selectedClientName: "Client Alpha",
+      selectedEventName: null,
+      setSelectedClient: vi.fn(),
+      setSelectedEvent: vi.fn(),
+      clearSelection: vi.fn(),
+    });
+    vi.mocked(collectionHook.useCollection).mockReturnValue({
+      data: allEvents as any,
+      loading: false,
+      error: null,
+    });
+
+    render(<ContextSelector />);
+
+    expect(screen.queryByTestId("create-event-dialog-closed")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("create-event-dialog")).not.toBeInTheDocument();
+  });
+
+  it("does NOT render CreateEventDialog when no client is selected", () => {
+    vi.mocked(permissionsHook.usePermissions).mockReturnValue({
+      role: "superadmin",
+      permissions: makeSuperAdminPerms(),
+      loading: false,
+      isSuperAdmin: true,
+      isClientAdmin: false,
+      isEventAdmin: false,
+    });
+    vi.mocked(eventContextHook.useEventContext).mockReturnValue({
+      selectedClientId: null,
+      selectedEventId: null,
+      selectedClientName: null,
+      selectedEventName: null,
+      setSelectedClient: vi.fn(),
+      setSelectedEvent: vi.fn(),
+      clearSelection: vi.fn(),
+    });
+    vi.mocked(collectionHook.useCollection).mockReturnValue({
+      data: allClients as any,
+      loading: false,
+      error: null,
+    });
+
+    render(<ContextSelector />);
+
+    // No client selected → no event section → no dialog
+    expect(screen.queryByTestId("create-event-dialog-closed")).not.toBeInTheDocument();
+  });
+
+  it("shows '+ New Event' menu item in event dropdown for superadmin", async () => {
+    const user = userEvent.setup();
+    vi.mocked(permissionsHook.usePermissions).mockReturnValue({
+      role: "superadmin",
+      permissions: makeSuperAdminPerms(),
+      loading: false,
+      isSuperAdmin: true,
+      isClientAdmin: false,
+      isEventAdmin: false,
+    });
+    vi.mocked(eventContextHook.useEventContext).mockReturnValue({
+      selectedClientId: "client-1",
+      selectedEventId: null,
+      selectedClientName: "Client Alpha",
+      selectedEventName: null,
+      setSelectedClient: vi.fn(),
+      setSelectedEvent: vi.fn(),
+      clearSelection: vi.fn(),
+    });
+    vi.mocked(collectionHook.useCollection).mockReturnValue({
+      data: allEvents as any,
+      loading: false,
+      error: null,
+    });
+
+    render(<ContextSelector />);
+
+    // Open the event dropdown
+    const eventTrigger = screen.getByText("Select Event");
+    await user.click(eventTrigger);
+
+    expect(screen.getByText("Create new event")).toBeInTheDocument();
+  });
+
+  it("does NOT show '+ New Event' menu item for eventAdmin", async () => {
+    const user = userEvent.setup();
+    vi.mocked(permissionsHook.usePermissions).mockReturnValue({
+      role: "eventAdmin",
+      permissions: makeEventAdminPerms(["client-1"], ["event-1"]),
+      loading: false,
+      isSuperAdmin: false,
+      isClientAdmin: false,
+      isEventAdmin: true,
+    });
+    vi.mocked(eventContextHook.useEventContext).mockReturnValue({
+      selectedClientId: "client-1",
+      selectedEventId: null,
+      selectedClientName: "Client Alpha",
+      selectedEventName: null,
+      setSelectedClient: vi.fn(),
+      setSelectedEvent: vi.fn(),
+      clearSelection: vi.fn(),
+    });
+    vi.mocked(collectionHook.useCollection).mockReturnValue({
+      data: allEvents as any,
+      loading: false,
+      error: null,
+    });
+
+    render(<ContextSelector />);
+
+    // Open the event dropdown
+    const eventTrigger = screen.getByText("Select Event");
+    await user.click(eventTrigger);
+
+    expect(screen.queryByText("Create new event")).not.toBeInTheDocument();
   });
 });

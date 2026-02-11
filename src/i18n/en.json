@@ -61,10 +61,14 @@
   "contextSelector": {
     "selectClient": "Select Client",
     "selectEvent": "Select Event",
+    "clientLabel": "Client",
+    "eventLabel": "Event",
     "clients": "Clients",
     "events": "Events",
     "noClientsFound": "No clients found",
-    "noEventsFound": "No events found"
+    "noEventsFound": "No events found",
+    "newEvent": "Create new event",
+    "eventCreated": "Event created successfully"
   },
   "login": {
     "title": "Digito Admin",
@@ -83,7 +87,13 @@
     "welcome": "Welcome to Digito Admin",
     "selectPrompt": "Select a client and event from the sidebar to get started.",
     "title": "Dashboard",
-    "navigatePrompt": "Navigate to a section from the sidebar to manage event content."
+    "navigatePrompt": "Navigate to a section from the sidebar to manage event content.",
+    "superAdminTitle": "SuperAdmin Dashboard",
+    "platformOverview": "Platform overview across all clients",
+    "totalClients": "Total Clients",
+    "totalEvents": "Total Events",
+    "activeEvents": "Active Events",
+    "totalParticipants": "Total Participants"
   },
   "noClientSelected": {
     "title": "No client selected",
@@ -115,7 +125,13 @@
     "deleteConfirm": "Are you sure you want to delete this client? This action cannot be undone and will also remove all events under this client.",
     "countLabel": "{{count}} client(s)",
     "noClientsFound": "No clients found",
-    "created": "Created"
+    "created": "Created",
+    "stats": {
+      "totalEvents": "Events",
+      "activeEvents": "Active",
+      "upcomingEvents": "Upcoming",
+      "pastEvents": "Past"
+    }
   },
   "events": {
     "title": "Events",

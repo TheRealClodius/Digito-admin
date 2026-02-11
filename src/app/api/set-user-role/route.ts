@@ -82,19 +82,19 @@ export async function POST(request: Request) {
     }
   }
 
-  // 4. Look up target user
+  // 4. Look up or create target user
   let targetUser;
   try {
     targetUser = await getAdminAuth().getUserByEmail(email);
   } catch (error: unknown) {
     const code = (error as { code?: string }).code;
     if (code === "auth/user-not-found") {
-      return NextResponse.json(
-        { error: `User ${email} not found. They must sign in at least once.` },
-        { status: 404 }
-      );
+      // Pre-create the user so claims and permissions are ready
+      // when they first sign in (Google will auto-link to this account)
+      targetUser = await getAdminAuth().createUser({ email });
+    } else {
+      throw error;
     }
-    throw error;
   }
 
   // 5. Set custom claims

@@ -130,11 +130,13 @@ digito-admin/
 │   │   ├── forms/           # Entity CRUD forms
 │   │   ├── tables/          # Data tables
 │   │   └── ai-copy-tools.tsx # AI writing assistant UI
-│   ├── contexts/            # React contexts (EventContext, ThemeContext)
+│   ├── contexts/            # React contexts (EventContext, ThemeContext, PermissionsContext)
 │   ├── hooks/               # Custom React hooks
 │   │   ├── use-ai-improve.ts
+│   │   ├── use-admin-management.ts
 │   │   ├── use-auth.ts
 │   │   ├── use-collection.ts
+│   │   ├── use-permissions.ts
 │   │   └── use-upload.ts
 │   ├── lib/
 │   │   ├── ai.ts            # AI actions & prompts configuration
@@ -171,9 +173,34 @@ digito-admin/
 
 ### User Roles
 
-- **SuperAdmin** - Full access to all clients and events
-- **ClientAdmin** - Access to specific client(s) and their events
-- **EventAdmin** - Access to specific event(s)
+The dashboard uses a three-tier role system with scoped permissions:
+
+| Role | Scope | Can Create | Description |
+|------|-------|------------|-------------|
+| **SuperAdmin** | All clients & events | ClientAdmin, EventAdmin | Full platform access. Can manage all clients, events, and assign any admin role. |
+| **ClientAdmin** | Assigned client(s) & their events | EventAdmin (within own clients) | Scoped to specific clients. Can manage all events under those clients and assign EventAdmin roles within them. |
+| **EventAdmin** | Assigned event(s) | — | Scoped to specific events. Can manage event content (whitelist, stands, sessions, etc.) but cannot assign roles. |
+
+### Permission Scoping
+
+Permissions are stored in `userPermissions/{userId}` documents with scope arrays:
+
+- `clientIds: null` — Full access to all clients (SuperAdmin only)
+- `clientIds: ["client-1", "client-2"]` — Access limited to listed clients
+- `eventIds: null` — Access to all events within allowed clients
+- `eventIds: ["event-1", "event-2"]` — Access limited to listed events
+
+### Role Assignment Rules
+
+- **SuperAdmin** can assign `clientAdmin` or `eventAdmin` to any user
+- **ClientAdmin** can assign `eventAdmin` only within their own assigned clients
+- **EventAdmin** cannot assign any roles
+- No role can assign `superadmin` — SuperAdmins are created via the seed script only
+- Users who don't yet have a Firebase Auth account are auto-created when assigned a role
+
+### Managing Admins
+
+SuperAdmins can add and remove admins from **Settings > Admin Management** in the dashboard. The admin form allows selecting a role, assigning client scope, and (for EventAdmins) assigning event scope.
 
 ### First-Time Setup: Creating a SuperAdmin
 
@@ -230,11 +257,14 @@ The AI writing assistant is available in all form description fields. It provide
 
 ## Security
 
-- **Firestore Rules** - Role-based access control with admin scoping
+- **Firestore Rules** - Role-based access control with three-tier admin scoping (SuperAdmin > ClientAdmin > EventAdmin)
+- **Custom Claims + Firestore** - Fast role checks via JWT custom claims, authoritative source in `userPermissions` collection
+- **Auto-healing** - Missing custom claims are reconstructed from Firestore on permission check
 - **Storage Rules** - Admins can write, authenticated users can read
 - **Environment Variables** - Sensitive keys (Gemini API) are server-side only
 - **Service Account** - Never committed to git (in `.gitignore`)
-- **Auth Guards** - Dashboard layout enforces authentication and admin check
+- **Auth Guards** - Dashboard layout enforces authentication and role verification
+- **Role Escalation Prevention** - API validates callers cannot assign roles above their own level
 
 ## Data Flow
 

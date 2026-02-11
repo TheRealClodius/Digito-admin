@@ -70,9 +70,12 @@ service cloud.firestore {
     // ========================================
 
     match /userPermissions/{userId} {
-      // Admins can read their own permissions; SuperAdmins can read any
+      // Any authenticated user can read their own permissions doc;
+      // SuperAdmins can read any user's permissions doc.
+      // (Self-read must not require role claims — it is the fallback
+      //  when custom-claim propagation is delayed.)
       allow get: if isSuperAdmin()
-        || (request.auth != null && request.auth.uid == userId && isAnyAdmin());
+        || (request.auth != null && request.auth.uid == userId);
 
       // Only SuperAdmins can list all permissions
       allow list: if isSuperAdmin();

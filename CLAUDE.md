@@ -22,3 +22,14 @@ The workflow is:
 1. Write a failing test that describes the expected behavior
 2. Implement the minimum code to make the test pass
 3. Refactor if needed, keeping tests green
+
+## Documentation
+
+After implementing important code changes, take your time to document them for other coding agents to use as pick-and-go context in admin-dashboard.md. 
+Extract learnings for design-direction.md when there are stylistic changes that we can reuse and repeat in the future. 
+Update firestore-data-structure.md when you make changes to Firestore data structure.
+Keep your edits brief and with a clear but short explanation.
+
+## Language support
+
+When planning any feature, plan i18n integration also. 

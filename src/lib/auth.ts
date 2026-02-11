@@ -88,6 +88,50 @@ export async function getUserPermissions(userId: string): Promise<UserPermission
   }
 }
 
+/**
+ * Server-side permission check via Admin SDK.
+ * Bypasses client-side Firestore rules and auto-heals missing claims.
+ * Returns { role, permissions } or { role: null } if no permissions found.
+ */
+export async function verifyPermissions(
+  user: User
+): Promise<{ role: UserRole | null; permissions: UserPermissions | null }> {
+  console.log(`[verifyPermissions] checking for uid=${user.uid} email=${user.email}`);
+  const token = await user.getIdToken(true);
+  const res = await fetch("/api/check-permissions", {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    console.error(`[verifyPermissions] API returned ${res.status}: ${text}`);
+    return { role: null, permissions: null };
+  }
+
+  const data = await res.json();
+  console.log(`[verifyPermissions] result:`, { role: data.role, hasPermissions: !!data.permissions });
+  return {
+    role: data.role ?? null,
+    permissions: data.permissions
+      ? {
+          userId: data.permissions.userId,
+          email: data.permissions.email,
+          role: data.permissions.role,
+          clientIds: data.permissions.clientIds || null,
+          eventIds: data.permissions.eventIds || null,
+          createdAt: data.permissions.createdAt
+            ? new Date(data.permissions.createdAt)
+            : new Date(),
+          updatedAt: data.permissions.updatedAt
+            ? new Date(data.permissions.updatedAt)
+            : new Date(),
+          createdBy: data.permissions.createdBy,
+          updatedBy: data.permissions.updatedBy,
+        }
+      : null,
+  };
+}
+
 export function onAuthChange(callback: (user: User | null) => void) {
   return onAuthStateChanged(getAuthInstance(), callback);
 }

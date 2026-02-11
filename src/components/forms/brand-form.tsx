@@ -1,13 +1,13 @@
 "use client";
 
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { MarkdownTextarea } from "@/components/markdown-textarea";
+import { WysiwygEditor } from "@/components/wysiwyg-editor";
 import { ImageUpload } from "@/components/image-upload";
 import { useUpload } from "@/hooks/use-upload";
 import { brandSchema, type BrandFormValues } from "@/lib/schemas";
@@ -38,6 +38,7 @@ export function BrandForm({
     handleSubmit,
     watch,
     setValue,
+    control,
     formState: { errors },
   } = useForm({
     resolver: zodResolver(brandSchema),
@@ -80,14 +81,21 @@ export function BrandForm({
         <Input id="stallNumber" {...register("stallNumber")} />
       </div>
 
-      <MarkdownTextarea
-        className="col-span-2"
-        label={t("common.description")}
-        fieldName="description"
-        id="description"
-        getCurrentValue={() => watch("description") ?? ""}
-        onAccept={(text) => setValue("description", text, { shouldDirty: true })}
-        textareaProps={register("description")}
+      <Controller
+        name="description"
+        control={control}
+        render={({ field }) => (
+          <WysiwygEditor
+            className="col-span-2"
+            label={t("common.description")}
+            fieldName="description"
+            id="description"
+            value={field.value ?? ""}
+            onChange={field.onChange}
+            getCurrentValue={() => watch("description") ?? ""}
+            onAccept={(text) => setValue("description", text, { shouldDirty: true })}
+          />
+        )}
       />
 
       <div className="space-y-2">

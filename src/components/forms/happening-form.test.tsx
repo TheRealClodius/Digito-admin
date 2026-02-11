@@ -23,6 +23,16 @@ vi.mock("firebase/firestore", () => ({
 }));
 vi.mock("firebase/storage", () => ({ getStorage: vi.fn() }));
 
+// Mock WysiwygEditor to render a simple textarea in form tests
+vi.mock("@/components/wysiwyg-editor", () => ({
+  WysiwygEditor: ({ label, id, value, onChange }: { label: string; id: string; value: string; onChange: (v: string) => void }) => (
+    <div className="space-y-2">
+      <label htmlFor={id}>{label}</label>
+      <textarea id={id} value={value} onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => onChange(e.target.value)} />
+    </div>
+  ),
+}));
+
 vi.mock("@/hooks/use-ai-improve", () => ({
   useAIImprove: vi.fn(() => ({
     isLoading: false,
@@ -80,7 +90,6 @@ describe("HappeningForm", () => {
 
     const description = screen.getByRole("textbox", { name: /description/i });
     expect(description).toBeInTheDocument();
-    expect(description.tagName).toBe("TEXTAREA");
   });
 
   it("renders Start Time and End Time fields", () => {

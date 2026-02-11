@@ -13,11 +13,9 @@ vi.mock("firebase/firestore", () => ({ getFirestore: vi.fn() }));
 vi.mock("firebase/storage", () => ({ getStorage: vi.fn() }));
 
 // Mock auth functions
-const mockCheckUserRole = vi.fn();
-const mockGetUserPermissions = vi.fn();
+const mockVerifyPermissions = vi.fn();
 vi.mock("@/lib/auth", () => ({
-  checkUserRole: (...args: unknown[]) => mockCheckUserRole(...args),
-  getUserPermissions: (...args: unknown[]) => mockGetUserPermissions(...args),
+  verifyPermissions: (...args: unknown[]) => mockVerifyPermissions(...args),
 }));
 
 // Mock useAuth hook
@@ -60,7 +58,7 @@ describe("PermissionsProvider", () => {
 
   it("shows loading state while resolving", () => {
     mockUseAuth.mockReturnValue({ user: createMockUser(), loading: false });
-    mockCheckUserRole.mockReturnValue(new Promise(() => {})); // never resolves
+    mockVerifyPermissions.mockReturnValue(new Promise(() => {})); // never resolves
 
     render(
       <PermissionsProvider>
@@ -83,9 +81,12 @@ describe("PermissionsProvider", () => {
     expect(screen.getByTestId("loading")).toHaveTextContent("loading");
   });
 
-  it("resolves superadmin from claims (no Firestore read needed)", async () => {
+  it("resolves superadmin (no permissions doc needed)", async () => {
     mockUseAuth.mockReturnValue({ user: createMockUser(), loading: false });
-    mockCheckUserRole.mockResolvedValue("superadmin");
+    mockVerifyPermissions.mockResolvedValue({
+      role: "superadmin",
+      permissions: null,
+    });
 
     render(
       <PermissionsProvider>
@@ -103,11 +104,9 @@ describe("PermissionsProvider", () => {
     expect(screen.getByTestId("is-event-admin")).toHaveTextContent("false");
     expect(screen.getByTestId("client-ids")).toHaveTextContent("null");
     expect(screen.getByTestId("event-ids")).toHaveTextContent("null");
-    // Superadmin should NOT trigger a Firestore read
-    expect(mockGetUserPermissions).not.toHaveBeenCalled();
   });
 
-  it("resolves clientAdmin from claims and fetches permissions from Firestore", async () => {
+  it("resolves clientAdmin with permissions", async () => {
     const mockPerms: UserPermissions = {
       userId: "test-uid",
       email: "admin@test.com",
@@ -121,8 +120,10 @@ describe("PermissionsProvider", () => {
     };
 
     mockUseAuth.mockReturnValue({ user: createMockUser(), loading: false });
-    mockCheckUserRole.mockResolvedValue("clientAdmin");
-    mockGetUserPermissions.mockResolvedValue(mockPerms);
+    mockVerifyPermissions.mockResolvedValue({
+      role: "clientAdmin",
+      permissions: mockPerms,
+    });
 
     render(
       <PermissionsProvider>
@@ -138,10 +139,9 @@ describe("PermissionsProvider", () => {
     expect(screen.getByTestId("is-superadmin")).toHaveTextContent("false");
     expect(screen.getByTestId("is-client-admin")).toHaveTextContent("true");
     expect(screen.getByTestId("client-ids")).toHaveTextContent("client-1,client-2");
-    expect(mockGetUserPermissions).toHaveBeenCalledWith("test-uid");
   });
 
-  it("resolves eventAdmin from claims and fetches permissions from Firestore", async () => {
+  it("resolves eventAdmin with permissions", async () => {
     const mockPerms: UserPermissions = {
       userId: "test-uid",
       email: "event@test.com",
@@ -155,8 +155,10 @@ describe("PermissionsProvider", () => {
     };
 
     mockUseAuth.mockReturnValue({ user: createMockUser(), loading: false });
-    mockCheckUserRole.mockResolvedValue("eventAdmin");
-    mockGetUserPermissions.mockResolvedValue(mockPerms);
+    mockVerifyPermissions.mockResolvedValue({
+      role: "eventAdmin",
+      permissions: mockPerms,
+    });
 
     render(
       <PermissionsProvider>
@@ -174,10 +176,12 @@ describe("PermissionsProvider", () => {
     expect(screen.getByTestId("event-ids")).toHaveTextContent("event-1,event-2");
   });
 
-  it("sets role to null when user has no claims and no Firestore permissions", async () => {
+  it("sets role to null when no permissions found", async () => {
     mockUseAuth.mockReturnValue({ user: createMockUser(), loading: false });
-    mockCheckUserRole.mockResolvedValue(null);
-    mockGetUserPermissions.mockResolvedValue(null);
+    mockVerifyPermissions.mockResolvedValue({
+      role: null,
+      permissions: null,
+    });
 
     render(
       <PermissionsProvider>
@@ -193,37 +197,6 @@ describe("PermissionsProvider", () => {
     expect(screen.getByTestId("is-superadmin")).toHaveTextContent("false");
     expect(screen.getByTestId("is-client-admin")).toHaveTextContent("false");
     expect(screen.getByTestId("is-event-admin")).toHaveTextContent("false");
-  });
-
-  it("falls back to Firestore permissions when no claims found", async () => {
-    const mockPerms: UserPermissions = {
-      userId: "test-uid",
-      email: "test@test.com",
-      role: "clientAdmin",
-      clientIds: ["client-1"],
-      eventIds: null,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      createdBy: "creator",
-      updatedBy: "creator",
-    };
-
-    mockUseAuth.mockReturnValue({ user: createMockUser(), loading: false });
-    mockCheckUserRole.mockResolvedValue(null); // No claims
-    mockGetUserPermissions.mockResolvedValue(mockPerms); // But Firestore doc exists
-
-    render(
-      <PermissionsProvider>
-        <TestComponent />
-      </PermissionsProvider>
-    );
-
-    await waitFor(() => {
-      expect(screen.getByTestId("loading")).toHaveTextContent("loaded");
-    });
-
-    expect(screen.getByTestId("role")).toHaveTextContent("clientAdmin");
-    expect(screen.getByTestId("is-client-admin")).toHaveTextContent("true");
   });
 
   it("resets to null when user signs out", async () => {

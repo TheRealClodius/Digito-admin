@@ -172,3 +172,133 @@ describe("AppSidebar - Role-based navigation", () => {
     expect(screen.getByText("Sign Out")).toBeInTheDocument();
   });
 });
+
+describe("AppSidebar - Navigation order", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("shows main nav (Dashboard, Clients) before context selector for superadmin", () => {
+    vi.mocked(permissionsHook.usePermissions).mockReturnValue({
+      role: "superadmin",
+      permissions: null,
+      loading: false,
+      isSuperAdmin: true,
+      isClientAdmin: false,
+      isEventAdmin: false,
+    });
+    vi.mocked(eventContextHook.useEventContext).mockReturnValue({
+      selectedClientId: null,
+      selectedEventId: null,
+      selectedClientName: null,
+      selectedEventName: null,
+      setSelectedClient: vi.fn(),
+      setSelectedEvent: vi.fn(),
+      clearSelection: vi.fn(),
+    });
+
+    const { container } = render(<AppSidebar />);
+
+    // Get positions of elements in DOM
+    const dashboardLink = screen.getByText("Dashboard").closest("a");
+    const clientsLink = screen.getByText("Clients").closest("a");
+    const contextSelector = screen.getByTestId("context-selector");
+
+    // Dashboard and Clients should appear before ContextSelector in DOM
+    const allElements = Array.from(container.querySelectorAll("a, [data-testid]"));
+    const dashboardIndex = allElements.indexOf(dashboardLink!);
+    const clientsIndex = allElements.indexOf(clientsLink!);
+    const contextSelectorIndex = allElements.indexOf(contextSelector);
+
+    expect(dashboardIndex).toBeGreaterThan(-1);
+    expect(clientsIndex).toBeGreaterThan(-1);
+    expect(contextSelectorIndex).toBeGreaterThan(-1);
+    expect(dashboardIndex).toBeLessThan(contextSelectorIndex);
+    expect(clientsIndex).toBeLessThan(contextSelectorIndex);
+  });
+
+  it("shows context selector before event nav when event is selected", () => {
+    vi.mocked(permissionsHook.usePermissions).mockReturnValue({
+      role: "superadmin",
+      permissions: null,
+      loading: false,
+      isSuperAdmin: true,
+      isClientAdmin: false,
+      isEventAdmin: false,
+    });
+    vi.mocked(eventContextHook.useEventContext).mockReturnValue({
+      selectedClientId: "client-1",
+      selectedEventId: "event-1",
+      selectedClientName: "Client 1",
+      selectedEventName: "Event 1",
+      setSelectedClient: vi.fn(),
+      setSelectedEvent: vi.fn(),
+      clearSelection: vi.fn(),
+    });
+
+    const { container } = render(<AppSidebar />);
+
+    const contextSelector = screen.getByTestId("context-selector");
+    const overviewLink = screen.getByText("Overview").closest("a");
+
+    const allElements = Array.from(container.querySelectorAll("a, [data-testid]"));
+    const contextSelectorIndex = allElements.indexOf(contextSelector);
+    const overviewIndex = allElements.indexOf(overviewLink!);
+
+    expect(contextSelectorIndex).toBeGreaterThan(-1);
+    expect(overviewIndex).toBeGreaterThan(-1);
+    expect(contextSelectorIndex).toBeLessThan(overviewIndex);
+  });
+
+  it("displays selected event name as section title instead of generic EVENT", () => {
+    vi.mocked(permissionsHook.usePermissions).mockReturnValue({
+      role: "superadmin",
+      permissions: null,
+      loading: false,
+      isSuperAdmin: true,
+      isClientAdmin: false,
+      isEventAdmin: false,
+    });
+    vi.mocked(eventContextHook.useEventContext).mockReturnValue({
+      selectedClientId: "client-1",
+      selectedEventId: "event-1",
+      selectedClientName: "Client 1",
+      selectedEventName: "Summer Conference 2025",
+      setSelectedClient: vi.fn(),
+      setSelectedEvent: vi.fn(),
+      clearSelection: vi.fn(),
+    });
+
+    render(<AppSidebar />);
+
+    // Should show the actual event name
+    expect(screen.getByText("Summer Conference 2025")).toBeInTheDocument();
+    // Should NOT show the generic "EVENT" label
+    expect(screen.queryByText("EVENT")).not.toBeInTheDocument();
+  });
+
+  it("falls back to EVENT label when event name is not available", () => {
+    vi.mocked(permissionsHook.usePermissions).mockReturnValue({
+      role: "superadmin",
+      permissions: null,
+      loading: false,
+      isSuperAdmin: true,
+      isClientAdmin: false,
+      isEventAdmin: false,
+    });
+    vi.mocked(eventContextHook.useEventContext).mockReturnValue({
+      selectedClientId: "client-1",
+      selectedEventId: "event-1",
+      selectedClientName: "Client 1",
+      selectedEventName: null,
+      setSelectedClient: vi.fn(),
+      setSelectedEvent: vi.fn(),
+      clearSelection: vi.fn(),
+    });
+
+    render(<AppSidebar />);
+
+    // Should show the generic "Event" label as fallback (from i18n nav.event key)
+    expect(screen.getByText("Event")).toBeInTheDocument();
+  });
+});
