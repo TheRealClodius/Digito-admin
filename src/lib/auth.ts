@@ -105,10 +105,18 @@ export async function verifyPermissions(
   if (!res.ok) {
     const text = await res.text();
     console.error(`[verifyPermissions] API returned ${res.status}: ${text}`);
-    if (res.status >= 500) {
-      throw new Error(`Permission check failed (server error ${res.status})`);
+    // Surface server errors so the user sees what went wrong
+    // instead of a silent "Access Denied"
+    let detail = "";
+    try {
+      const parsed = JSON.parse(text);
+      detail = parsed.error || text;
+    } catch {
+      detail = text;
     }
-    return { role: null, permissions: null };
+    throw new Error(
+      `Permission check failed: ${detail} (HTTP ${res.status})`
+    );
   }
 
   const data = await res.json();

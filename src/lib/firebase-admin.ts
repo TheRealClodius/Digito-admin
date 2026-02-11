@@ -30,6 +30,19 @@ function ensureInitialized() {
     process.cwd(),
     "service-account-key.json"
   );
+
+  if (!fs.existsSync(serviceAccountPath)) {
+    const missing = [
+      !projectId && "FIREBASE_ADMIN_PROJECT_ID",
+      !clientEmail && "FIREBASE_ADMIN_CLIENT_EMAIL",
+      !privateKey && "FIREBASE_ADMIN_PRIVATE_KEY",
+    ].filter(Boolean);
+    throw new Error(
+      `Firebase Admin SDK not configured. Missing env vars: ${missing.join(", ")}. ` +
+      `Set these in your deployment environment or place service-account-key.json in the project root for local development.`
+    );
+  }
+
   const serviceAccount = JSON.parse(
     fs.readFileSync(serviceAccountPath, "utf-8")
   );

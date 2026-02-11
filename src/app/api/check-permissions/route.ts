@@ -15,6 +15,12 @@ export async function GET(request: Request) {
       authHeader.replace("Bearer ", "")
     );
   } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    // Distinguish SDK configuration errors from token validation errors
+    if (message.includes("not configured") || message.includes("Missing env")) {
+      console.error("[check-permissions] Firebase Admin SDK not configured:", message);
+      return NextResponse.json({ error: message }, { status: 500 });
+    }
     console.error("[check-permissions] Token verification failed:", err);
     return NextResponse.json({ error: "Invalid token" }, { status: 401 });
   }
