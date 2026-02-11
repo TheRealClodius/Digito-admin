@@ -81,7 +81,7 @@ export function WhitelistForm({
 
   return (
     <form onSubmit={handleSubmit(onFormSubmit)} className="grid grid-cols-2 gap-x-4 gap-y-6">
-      <div className="space-y-2">
+      <div className="space-y-3">
         <Label htmlFor="email">{t("common.email")}</Label>
         <Input
           id="email"
@@ -95,7 +95,7 @@ export function WhitelistForm({
         )}
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-3">
         <Label htmlFor="accessTier">{t("whitelist.accessTier")}</Label>
         <select
           id="accessTier"
@@ -112,7 +112,7 @@ export function WhitelistForm({
         )}
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-3">
         <Label htmlFor="company">{t("common.company")}</Label>
         <Input
           id="company"
@@ -120,7 +120,7 @@ export function WhitelistForm({
         />
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-3">
         <Label htmlFor="lockedFields">{t("whitelist.lockedFields")}</Label>
         <Input
           id="lockedFields"

@@ -92,7 +92,7 @@ export function EventForm({
       logoUrl: defaultValues?.logoUrl ?? "",
       bannerUrl: defaultValues?.bannerUrl ?? "",
     },
-    mode: "onBlur",
+    mode: "onSubmit",
   });
 
   const [nameValue, isActiveValue, logoUrlValue, bannerUrlValue] = watch(["name", "isActive", "logoUrl", "bannerUrl"]);
@@ -100,6 +100,12 @@ export function EventForm({
   const isSubmitDisabled = !nameValue?.trim() || isSubmitting;
 
   const onFormSubmit = (data: FormValues) => {
+    if (defaultValues?.logoUrl && defaultValues.logoUrl !== data.logoUrl) {
+      deleteFile(defaultValues.logoUrl);
+    }
+    if (defaultValues?.bannerUrl && defaultValues.bannerUrl !== data.bannerUrl) {
+      deleteFile(defaultValues.bannerUrl);
+    }
     onSubmit({
       clientId,
       ...data,
@@ -108,11 +114,11 @@ export function EventForm({
 
   return (
     <form onSubmit={handleSubmit(onFormSubmit)} className="grid grid-cols-2 gap-x-4 gap-y-6">
-      <div className="space-y-2">
+      <div className="space-y-3">
         <Label htmlFor="name">{t("common.name")}</Label>
         <Input
           id="name"
-          aria-label="Name"
+          aria-label={t("common.name")}
           {...register("name", { required: t("validation.nameRequired") })}
         />
         {errors.name && (
@@ -120,11 +126,11 @@ export function EventForm({
         )}
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-3">
         <Label htmlFor="venue">{t("events.venue")}</Label>
         <Input
           id="venue"
-          aria-label="Venue"
+          aria-label={t("events.venue")}
           {...register("venue")}
         />
       </div>
@@ -146,12 +152,12 @@ export function EventForm({
         )}
       />
 
-      <div className="space-y-2">
+      <div className="space-y-3">
         <Label htmlFor="startDate">{t("events.startDate")}</Label>
         <input
           type="datetime-local"
           id="startDate"
-          aria-label="Start Date"
+          aria-label={t("events.startDate")}
           className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
           {...register("startDate", { required: t("validation.startDateRequired") })}
         />
@@ -160,12 +166,12 @@ export function EventForm({
         )}
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-3">
         <Label htmlFor="endDate">{t("events.endDate")}</Label>
         <input
           type="datetime-local"
           id="endDate"
-          aria-label="End Date"
+          aria-label={t("events.endDate")}
           className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
           {...register("endDate", { required: t("validation.endDateRequired") })}
         />
@@ -174,65 +180,67 @@ export function EventForm({
         )}
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-3">
         <Label htmlFor="websiteUrl">{t("common.websiteUrl")}</Label>
         <Input
           id="websiteUrl"
-          aria-label="Website URL"
+          aria-label={t("common.websiteUrl")}
           {...register("websiteUrl")}
         />
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-3">
         <Label htmlFor="instagramUrl">{t("common.instagramUrl")}</Label>
         <Input
           id="instagramUrl"
-          aria-label="Instagram URL"
+          aria-label={t("common.instagramUrl")}
           {...register("instagramUrl")}
         />
       </div>
 
-      <div className="col-span-2 space-y-2">
+      <div className="col-span-2 space-y-3">
         <Label htmlFor="chatPrompt">{t("events.chatPrompt")}</Label>
         <Input
           id="chatPrompt"
-          aria-label="Chat Prompt"
-          placeholder={t("events.chatPromptPlaceholder")}
+          aria-label={t("events.chatPrompt")}
+          placeholder={t("events.chatPromptPlaceholder", {
+            eventName: nameValue?.trim() || t("events.yourEvent"),
+          })}
           {...register("chatPrompt")}
         />
       </div>
 
-      <div className="col-span-2 flex items-center space-x-2">
-        <input
-          type="checkbox"
-          role="switch"
-          id="isActive"
-          aria-label="Active"
-          checked={isActiveValue}
-          onChange={(e) => setValue("isActive", e.target.checked)}
-          className="h-4 w-4"
-        />
-        <Label htmlFor="isActive">{t("common.active")}</Label>
-      </div>
+      {defaultValues && (
+        <div className="col-span-2 flex items-center space-x-2">
+          <input
+            type="checkbox"
+            role="switch"
+            id="isActive"
+            aria-label={t("common.active")}
+            checked={isActiveValue}
+            onChange={(e) => setValue("isActive", e.target.checked)}
+            className="h-4 w-4"
+          />
+          <Label htmlFor="isActive">{t("common.active")}</Label>
+        </div>
+      )}
 
-      <div className="space-y-2">
+      <div className="space-y-3">
         <Label>{t("common.logo")}</Label>
         <ImageUpload
           value={logoUrlValue || null}
           onChange={(url) => setValue("logoUrl", url ?? "")}
           uploadFn={storagePath ? (file) => upload(file, `logo_${Date.now()}_${file.name}`) : undefined}
-          deleteFileFn={deleteFile}
           disabled={isSubmitting}
         />
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-3">
         <Label>{t("events.banner")}</Label>
         <ImageUpload
           value={bannerUrlValue || null}
           onChange={(url) => setValue("bannerUrl", url ?? "")}
           uploadFn={storagePath ? (file) => upload(file, `banner_${Date.now()}_${file.name}`) : undefined}
-          deleteFileFn={deleteFile}
           disabled={isSubmitting}
         />
       </div>

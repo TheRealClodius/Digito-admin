@@ -103,11 +103,11 @@ export function SessionForm({
 
   return (
     <form onSubmit={handleSubmit(onFormSubmit)} className="grid grid-cols-2 gap-x-4 gap-y-6">
-      <div className="space-y-2">
+      <div className="space-y-3">
         <Label htmlFor="title">{t("common.title")}</Label>
         <Input
           id="title"
-          aria-label="Title"
+          aria-label={t("common.title")}
           {...register("title", { required: t("validation.titleRequired") })}
         />
         {errors.title && (
@@ -115,11 +115,11 @@ export function SessionForm({
         )}
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-3">
         <Label htmlFor="type">{t("common.type")}</Label>
         <select
           id="type"
-          aria-label="Type"
+          aria-label={t("common.type")}
           className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
           {...register("type")}
         >
@@ -148,12 +148,12 @@ export function SessionForm({
         )}
       />
 
-      <div className="space-y-2">
+      <div className="space-y-3">
         <Label htmlFor="startTime">{t("sessions.startTime")}</Label>
         <input
           type="datetime-local"
           id="startTime"
-          aria-label="Start Time"
+          aria-label={t("sessions.startTime")}
           className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
           {...register("startTime", { required: t("validation.startTimeRequired") })}
         />
@@ -164,12 +164,12 @@ export function SessionForm({
         )}
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-3">
         <Label htmlFor="endTime">{t("sessions.endTime")}</Label>
         <input
           type="datetime-local"
           id="endTime"
-          aria-label="End Time"
+          aria-label={t("sessions.endTime")}
           className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
           {...register("endTime", { required: t("validation.endTimeRequired") })}
         />
@@ -178,20 +178,20 @@ export function SessionForm({
         )}
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-3">
         <Label htmlFor="location">{t("common.location")}</Label>
         <Input
           id="location"
-          aria-label="Location"
+          aria-label={t("common.location")}
           {...register("location")}
         />
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-3">
         <Label htmlFor="speakerName">{t("sessions.speakerName")}</Label>
         <Input
           id="speakerName"
-          aria-label="Speaker Name"
+          aria-label={t("sessions.speakerName")}
           {...register("speakerName")}
         />
       </div>
@@ -217,7 +217,7 @@ export function SessionForm({
         <input
           type="checkbox"
           id="requiresRegistration"
-          aria-label="Requires Registration"
+          aria-label={t("common.requiresRegistration")}
           {...register("requiresRegistration")}
           className="h-4 w-4"
         />
@@ -228,7 +228,7 @@ export function SessionForm({
         <input
           type="checkbox"
           id="requiresVIPAccess"
-          aria-label="Requires VIP Access"
+          aria-label={t("common.requiresVIPAccess")}
           {...register("requiresVIPAccess")}
           className="h-4 w-4"
         />

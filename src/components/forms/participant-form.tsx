@@ -97,13 +97,20 @@ export function ParticipantForm({
   const isFirstNameEmpty = !firstNameValue || firstNameValue.trim() === "";
   const isLastNameEmpty = !lastNameValue || lastNameValue.trim() === "";
 
+  const handleFormSubmit = (data: ParticipantFormValues) => {
+    if (defaultValues?.avatarUrl && defaultValues.avatarUrl !== data.avatarUrl) {
+      deleteFile(defaultValues.avatarUrl);
+    }
+    onSubmit(data);
+  };
+
   return (
-    <form onSubmit={handleSubmit((data) => onSubmit(data))} className="grid grid-cols-2 gap-x-4 gap-y-6">
-      <div className="space-y-2">
+    <form onSubmit={handleSubmit(handleFormSubmit)} className="grid grid-cols-2 gap-x-4 gap-y-6">
+      <div className="space-y-3">
         <Label htmlFor="firstName">{t("participants.firstName")}</Label>
         <Input
           id="firstName"
-          aria-label="First Name"
+          aria-label={t("participants.firstName")}
           {...register("firstName")}
           aria-required="true"
           required
@@ -113,11 +120,11 @@ export function ParticipantForm({
         )}
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-3">
         <Label htmlFor="lastName">{t("participants.lastName")}</Label>
         <Input
           id="lastName"
-          aria-label="Last Name"
+          aria-label={t("participants.lastName")}
           {...register("lastName")}
           aria-required="true"
           required
@@ -127,11 +134,11 @@ export function ParticipantForm({
         )}
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-3">
         <Label htmlFor="email">{t("common.email")}</Label>
         <Input
           id="email"
-          aria-label="Email"
+          aria-label={t("common.email")}
           type="email"
           {...register("email")}
           aria-required="true"
@@ -142,11 +149,11 @@ export function ParticipantForm({
         )}
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-3">
         <Label htmlFor="role">{t("participants.role")}</Label>
         <select
           id="role"
-          aria-label="Role"
+          aria-label={t("participants.role")}
           className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
           {...register("role")}
         >
@@ -158,20 +165,20 @@ export function ParticipantForm({
         </select>
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-3">
         <Label htmlFor="company">{t("common.company")}</Label>
         <Input
           id="company"
-          aria-label="Company"
+          aria-label={t("common.company")}
           {...register("company")}
         />
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-3">
         <Label htmlFor="title">{t("participants.jobTitle")}</Label>
         <Input
           id="title"
-          aria-label="Title"
+          aria-label={t("participants.jobTitle")}
           {...register("title")}
         />
       </div>
@@ -193,40 +200,39 @@ export function ParticipantForm({
         )}
       />
 
-      <div className="col-span-2 space-y-2">
+      <div className="col-span-2 space-y-3">
         <Label>{t("participants.avatar")}</Label>
         <ImageUpload
           value={avatarUrlValue || null}
           onChange={(url) => setValue("avatarUrl", url)}
           uploadFn={storagePath ? (file) => upload(file, `avatar_${Date.now()}_${file.name}`) : undefined}
-          deleteFileFn={deleteFile}
           disabled={isSubmitting}
         />
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-3">
         <Label htmlFor="websiteUrl">{t("common.websiteUrl")}</Label>
         <Input
           id="websiteUrl"
-          aria-label="Website URL"
+          aria-label={t("common.websiteUrl")}
           {...register("websiteUrl")}
         />
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-3">
         <Label htmlFor="linkedinUrl">{t("participants.linkedinUrl")}</Label>
         <Input
           id="linkedinUrl"
-          aria-label="LinkedIn URL"
+          aria-label={t("participants.linkedinUrl")}
           {...register("linkedinUrl")}
         />
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-3">
         <Label htmlFor="accessTier">{t("participants.accessTier")}</Label>
         <select
           id="accessTier"
-          aria-label="Access Tier"
+          aria-label={t("participants.accessTier")}
           className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
           {...register("accessTier")}
         >
@@ -238,11 +244,11 @@ export function ParticipantForm({
         </select>
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-3">
         <Label htmlFor="lockedFields">{t("participants.lockedFields")}</Label>
         <Input
           id="lockedFields"
-          aria-label="Locked Fields"
+          aria-label={t("participants.lockedFields")}
           {...register("lockedFields")}
         />
       </div>
@@ -252,7 +258,7 @@ export function ParticipantForm({
           type="checkbox"
           role="switch"
           id="isHighlighted"
-          aria-label="Highlighted"
+          aria-label={t("common.highlighted")}
           checked={isHighlightedValue}
           onChange={(e) => setValue("isHighlighted", e.target.checked)}
           className="h-4 w-4"

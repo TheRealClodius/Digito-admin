@@ -170,14 +170,14 @@ export default function SettingsPage() {
               </div>
               <Button size="sm" onClick={() => setSheetOpen(true)}>
                 <Plus className="size-4" />
-                Add Admin
+                {t("settings.addAdmin")}
               </Button>
             </CardHeader>
             <CardContent>
               {adminsLoading ? (
-                <p className="text-sm text-muted-foreground">Loading admins...</p>
+                <p className="text-sm text-muted-foreground">{t("settings.loadingAdmins")}</p>
               ) : admins.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No admins configured</p>
+                <p className="text-sm text-muted-foreground">{t("settings.noAdminsConfigured")}</p>
               ) : (
                 <div className="space-y-3">
                   {admins.map((admin) => (
@@ -212,7 +212,7 @@ export default function SettingsPage() {
                           onClick={() => setRemovingId(admin.id)}
                         >
                           <Trash2 className="mr-1 size-3.5" />
-                          Remove
+                          {t("settings.remove")}
                         </Button>
                       )}
                     </div>
@@ -225,11 +225,11 @@ export default function SettingsPage() {
       )}
 
       <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-        <SheetContent className="overflow-y-auto">
+        <SheetContent>
           <SheetHeader>
-            <SheetTitle>Add Admin</SheetTitle>
+            <SheetTitle>{t("settings.addAdminTitle")}</SheetTitle>
             <SheetDescription>
-              Assign a role to a user by email address.
+              {t("settings.addAdminDescription")}
             </SheetDescription>
           </SheetHeader>
           <div className="mt-6">
@@ -249,16 +249,15 @@ export default function SettingsPage() {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Remove Admin</AlertDialogTitle>
+            <AlertDialogTitle>{t("settings.removeAdmin")}</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to remove this admin&apos;s role? They will lose
-              access to the dashboard.
+              {t("settings.removeAdminConfirm")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleRemoveAdmin}>
-              Remove
+              {t("settings.remove")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

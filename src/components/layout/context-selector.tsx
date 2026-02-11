@@ -154,8 +154,8 @@ export function ContextSelector() {
               {canCreateEvent && (
                 <>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => setCreateDialogOpen(true)}>
-                    <Plus className="mr-2 size-3.5" />
+                  <DropdownMenuItem onClick={() => setCreateDialogOpen(true)} className="gap-2">
+                    <Plus className="size-3.5 text-accent-alternate" />
                     {t("contextSelector.newEvent")}
                   </DropdownMenuItem>
                 </>

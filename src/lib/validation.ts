@@ -107,15 +107,15 @@ export function sanitizeFilename(filename: string): string {
   // Replace multiple spaces with a single hyphen
   sanitized = sanitized.replace(/\s+/g, "-");
 
-  // Keep only alphanumeric, dots, and hyphens
+  // Keep only alphanumeric, dots, hyphens, and underscores
   // This removes unicode and special characters
-  sanitized = sanitized.replace(/[^a-z0-9.-]/g, "");
+  sanitized = sanitized.replace(/[^a-z0-9._-]/g, "");
 
   // Check if we have an extension (starts with a dot after sanitization)
   const startsWithDot = sanitized.startsWith(".");
 
-  // Remove leading/trailing dots and hyphens
-  sanitized = sanitized.replace(/^[.-]+|[.-]+$/g, "");
+  // Remove leading/trailing dots, hyphens, and underscores
+  sanitized = sanitized.replace(/^[._-]+|[._-]+$/g, "");
 
   // If the result is empty or was just an extension, use a fallback
   if (!sanitized || startsWithDot) {

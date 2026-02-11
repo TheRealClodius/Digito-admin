@@ -56,9 +56,16 @@ export function ClientForm({
   const [nameValue, logoUrlValue] = watch(["name", "logoUrl"]);
   const isNameEmpty = !nameValue || nameValue.trim() === "";
 
+  const handleFormSubmit = (data: ClientFormValues) => {
+    if (defaultValues?.logoUrl && defaultValues.logoUrl !== data.logoUrl) {
+      deleteFile(defaultValues.logoUrl);
+    }
+    onSubmit(data);
+  };
+
   return (
-    <form onSubmit={handleSubmit((data) => onSubmit(data))} className="grid grid-cols-2 gap-x-4 gap-y-6">
-      <div className="col-span-2 space-y-2">
+    <form onSubmit={handleSubmit(handleFormSubmit)} className="grid grid-cols-2 gap-x-4 gap-y-6">
+      <div className="col-span-2 space-y-3">
         <Label htmlFor="name">{t("common.name")}</Label>
         <Input
           id="name"
@@ -88,13 +95,12 @@ export function ClientForm({
         )}
       />
 
-      <div className="col-span-2 space-y-2">
+      <div className="col-span-2 space-y-3">
         <Label>{t("common.logo")}</Label>
         <ImageUpload
           value={logoUrlValue || null}
           onChange={(url) => setValue("logoUrl", url)}
           uploadFn={storagePath ? (file) => upload(file, `logo_${Date.now()}_${file.name}`) : undefined}
-          deleteFileFn={deleteFile}
           disabled={isSubmitting}
         />
       </div>

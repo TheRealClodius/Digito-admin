@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Check } from "lucide-react";
+import { useTranslation } from "@/hooks/use-translation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -28,6 +29,7 @@ export function AdminForm({
   submitStatus = "idle",
   restrictToEventAdmin = false,
 }: AdminFormProps) {
+  const { t } = useTranslation();
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<"clientAdmin" | "eventAdmin">(
     restrictToEventAdmin ? "eventAdmin" : "clientAdmin"
@@ -57,20 +59,20 @@ export function AdminForm({
 
   return (
     <form onSubmit={handleFormSubmit} className="space-y-4">
-      <div className="space-y-2">
-        <Label htmlFor="admin-email">Email</Label>
+      <div className="space-y-3">
+        <Label htmlFor="admin-email">{t("common.email")}</Label>
         <Input
           id="admin-email"
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          placeholder="admin@example.com"
+          placeholder={t("settings.adminEmailPlaceholder")}
           disabled={isSubmitting}
         />
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="admin-role">Role</Label>
+      <div className="space-y-3">
+        <Label htmlFor="admin-role">{t("participants.role")}</Label>
         <select
           id="admin-role"
           value={role}
@@ -79,14 +81,14 @@ export function AdminForm({
           className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
         >
           {!restrictToEventAdmin && (
-            <option value="clientAdmin">Client Admin</option>
+            <option value="clientAdmin">{t("settings.clientAdmin")}</option>
           )}
-          <option value="eventAdmin">Event Admin</option>
+          <option value="eventAdmin">{t("settings.eventAdmin")}</option>
         </select>
       </div>
 
-      <div className="space-y-2">
-        <Label>Clients</Label>
+      <div className="space-y-3">
+        <Label>{t("clients.title")}</Label>
         <div className="space-y-2 rounded-md border p-3">
           {clients.map((client) => (
             <div key={client.id} className="flex items-center gap-2">
@@ -115,7 +117,7 @@ export function AdminForm({
           type="submit"
           disabled={!isValid || isSubmitting}
         >
-          {isSubmitting ? "Saving..." : "Add Admin"}
+          {isSubmitting ? t("common.saving") : t("settings.addAdmin")}
         </Button>
         <Button
           type="button"

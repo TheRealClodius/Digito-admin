@@ -128,7 +128,7 @@ export function CrudPage<T extends { id: string }>({
 
       <AISuggestionProvider>
         <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-          <SheetContent className="overflow-y-auto">
+          <SheetContent>
             <SheetHeader>
               <SheetTitle>
                 {editingEntity ? t("crud.editEntity", { entity: capitalizedName }) : t("crud.newEntity", { entity: capitalizedName })}

@@ -1,6 +1,7 @@
 "use client";
 
 import type { Editor } from "@tiptap/react";
+import { useTranslation } from "@/hooks/use-translation";
 import {
   Bold,
   Italic,
@@ -24,13 +25,14 @@ interface WysiwygToolbarProps {
 }
 
 export function WysiwygToolbar({ editor }: WysiwygToolbarProps) {
+  const { t } = useTranslation();
   if (!editor) return null;
 
   const currentHeadingLabel = editor.isActive("heading", { level: 1 })
-    ? "Title"
+    ? t("common.title")
     : editor.isActive("heading", { level: 2 })
-      ? "Subtitle"
-      : "Paragraph";
+      ? t("wysiwyg.subtitle")
+      : t("wysiwyg.paragraph");
 
   return (
     <div className="flex items-center gap-1 border-b px-2 py-1">
@@ -39,7 +41,7 @@ export function WysiwygToolbar({ editor }: WysiwygToolbarProps) {
         variant="ghost"
         size="icon"
         className="size-7"
-        aria-label="Bold"
+        aria-label={t("wysiwyg.bold")}
         data-active={editor.isActive("bold")}
         onClick={() => editor.chain().focus().toggleBold().run()}
       >
@@ -51,7 +53,7 @@ export function WysiwygToolbar({ editor }: WysiwygToolbarProps) {
         variant="ghost"
         size="icon"
         className="size-7"
-        aria-label="Italic"
+        aria-label={t("wysiwyg.italic")}
         data-active={editor.isActive("italic")}
         onClick={() => editor.chain().focus().toggleItalic().run()}
       >
@@ -63,7 +65,7 @@ export function WysiwygToolbar({ editor }: WysiwygToolbarProps) {
         variant="ghost"
         size="icon"
         className="size-7"
-        aria-label="Underline"
+        aria-label={t("wysiwyg.underline")}
         data-active={editor.isActive("underline")}
         onClick={() => editor.chain().focus().toggleUnderline().run()}
       >
@@ -79,7 +81,7 @@ export function WysiwygToolbar({ editor }: WysiwygToolbarProps) {
             variant="ghost"
             size="sm"
             className="h-7 gap-1 px-2 text-xs"
-            aria-label="Heading style"
+            aria-label={t("wysiwyg.headingStyle")}
           >
             {currentHeadingLabel}
             <ChevronDown className="size-3" />
@@ -92,7 +94,7 @@ export function WysiwygToolbar({ editor }: WysiwygToolbarProps) {
             }
           >
             <Heading1 className="size-4" />
-            Title
+            {t("common.title")}
           </DropdownMenuItem>
           <DropdownMenuItem
             onClick={() =>
@@ -100,13 +102,13 @@ export function WysiwygToolbar({ editor }: WysiwygToolbarProps) {
             }
           >
             <Heading2 className="size-4" />
-            Subtitle
+            {t("wysiwyg.subtitle")}
           </DropdownMenuItem>
           <DropdownMenuItem
             onClick={() => editor.chain().focus().setParagraph().run()}
           >
             <Pilcrow className="size-4" />
-            Paragraph
+            {t("wysiwyg.paragraph")}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

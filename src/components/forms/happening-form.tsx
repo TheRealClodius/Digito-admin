@@ -101,11 +101,11 @@ export function HappeningForm({
 
   return (
     <form onSubmit={handleSubmit(onFormSubmit)} className="grid grid-cols-2 gap-x-4 gap-y-6">
-      <div className="space-y-2">
+      <div className="space-y-3">
         <Label htmlFor="title">{t("common.title")}</Label>
         <Input
           id="title"
-          aria-label="Title"
+          aria-label={t("common.title")}
           {...register("title", { required: t("validation.titleRequired") })}
         />
         {errors.title && (
@@ -113,11 +113,11 @@ export function HappeningForm({
         )}
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-3">
         <Label htmlFor="type">{t("common.type")}</Label>
         <select
           id="type"
-          aria-label="Type"
+          aria-label={t("common.type")}
           className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
           {...register("type")}
         >
@@ -146,42 +146,42 @@ export function HappeningForm({
         )}
       />
 
-      <div className="space-y-2">
+      <div className="space-y-3">
         <Label htmlFor="startTime">{t("happenings.startTime")}</Label>
         <input
           type="datetime-local"
           id="startTime"
-          aria-label="Start Time"
+          aria-label={t("happenings.startTime")}
           className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
           {...register("startTime")}
         />
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-3">
         <Label htmlFor="endTime">{t("happenings.endTime")}</Label>
         <input
           type="datetime-local"
           id="endTime"
-          aria-label="End Time"
+          aria-label={t("happenings.endTime")}
           className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
           {...register("endTime")}
         />
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-3">
         <Label htmlFor="location">{t("common.location")}</Label>
         <Input
           id="location"
-          aria-label="Location"
+          aria-label={t("common.location")}
           {...register("location")}
         />
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-3">
         <Label htmlFor="hostName">{t("happenings.hostName")}</Label>
         <Input
           id="hostName"
-          aria-label="Host Name"
+          aria-label={t("happenings.hostName")}
           {...register("hostName")}
         />
       </div>
@@ -191,7 +191,7 @@ export function HappeningForm({
           type="checkbox"
           role="switch"
           id="isHighlighted"
-          aria-label="Highlighted"
+          aria-label={t("common.highlighted")}
           checked={isHighlightedValue}
           onChange={(e) => setValue("isHighlighted", e.target.checked)}
           className="h-4 w-4"
@@ -204,7 +204,7 @@ export function HappeningForm({
           type="checkbox"
           role="switch"
           id="requiresAccess"
-          aria-label="Requires Access"
+          aria-label={t("common.requiresAccess")}
           checked={requiresAccessValue}
           onChange={(e) => setValue("requiresAccess", e.target.checked)}
           className="h-4 w-4"

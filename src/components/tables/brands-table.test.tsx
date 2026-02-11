@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, within, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { vi } from "vitest";
 
@@ -163,6 +163,29 @@ describe("BrandsTable", () => {
       const img = screen.getByRole("img", { name: /logo brand/i });
       expect(img).toBeInTheDocument();
       expect(img).toHaveAttribute("src", "https://example.com/logo.png");
+    });
+
+    it("shows fallback icon when image fails to load", () => {
+      const brand = makeBrand({
+        id: "b-broken",
+        name: "Broken Logo",
+        logoUrl: "https://example.com/deleted.png",
+      });
+
+      render(
+        <BrandsTable
+          brands={[brand]}
+          onEdit={vi.fn()}
+          onDelete={vi.fn()}
+          onToggleHighlighted={vi.fn()}
+        />,
+      );
+
+      const img = screen.getByRole("img", { name: /broken logo/i });
+      fireEvent.error(img);
+
+      expect(screen.queryByRole("img")).not.toBeInTheDocument();
+      expect(screen.getByText("Broken Logo")).toBeInTheDocument();
     });
 
     it("does not render an image when logoUrl is null", () => {

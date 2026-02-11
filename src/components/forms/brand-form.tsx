@@ -58,12 +58,23 @@ export function BrandForm({
   const [nameValue, logoUrlValue, imageUrlValue, isHighlightedValue] = watch(["name", "logoUrl", "imageUrl", "isHighlighted"]);
   const isNameEmpty = !nameValue || nameValue.trim() === "";
 
+  const handleFormSubmit = (data: BrandFormValues) => {
+    // Clean up orphaned Storage files on save
+    if (defaultValues?.logoUrl && defaultValues.logoUrl !== data.logoUrl) {
+      deleteFile(defaultValues.logoUrl);
+    }
+    if (defaultValues?.imageUrl && defaultValues.imageUrl !== data.imageUrl) {
+      deleteFile(defaultValues.imageUrl);
+    }
+    onSubmit(data);
+  };
+
   return (
     <form
-      onSubmit={handleSubmit((data) => onSubmit(data))}
+      onSubmit={handleSubmit(handleFormSubmit)}
       className="grid grid-cols-2 gap-x-4 gap-y-6"
     >
-      <div className="space-y-2">
+      <div className="space-y-3">
         <Label htmlFor="name">{t("common.name")}</Label>
         <Input
           id="name"
@@ -76,7 +87,7 @@ export function BrandForm({
         )}
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-3">
         <Label htmlFor="stallNumber">{t("brands.stallNumber")}</Label>
         <Input id="stallNumber" {...register("stallNumber")} />
       </div>
@@ -98,7 +109,7 @@ export function BrandForm({
         )}
       />
 
-      <div className="space-y-2">
+      <div className="space-y-3">
         <Label htmlFor="websiteUrl">{t("common.websiteUrl")}</Label>
         <Input id="websiteUrl" {...register("websiteUrl")} type="url" />
         {errors.websiteUrl && (
@@ -106,7 +117,7 @@ export function BrandForm({
         )}
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-3">
         <Label htmlFor="instagramUrl">{t("common.instagramUrl")}</Label>
         <Input id="instagramUrl" {...register("instagramUrl")} type="url" />
         {errors.instagramUrl && (
@@ -114,24 +125,22 @@ export function BrandForm({
         )}
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-3">
         <Label>{t("common.logo")}</Label>
         <ImageUpload
           value={logoUrlValue || null}
           onChange={(url) => setValue("logoUrl", url)}
           uploadFn={storagePath ? (file) => upload(file, `logo_${Date.now()}_${file.name}`) : undefined}
-          deleteFileFn={deleteFile}
           disabled={isSubmitting}
         />
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-3">
         <Label>{t("common.image")}</Label>
         <ImageUpload
           value={imageUrlValue || null}
           onChange={(url) => setValue("imageUrl", url)}
           uploadFn={storagePath ? (file) => upload(file, `image_${Date.now()}_${file.name}`) : undefined}
-          deleteFileFn={deleteFile}
           disabled={isSubmitting}
         />
       </div>

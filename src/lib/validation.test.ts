@@ -78,9 +78,14 @@ describe("sanitizeFilename", () => {
     expect(sanitizeFilename("multiple   spaces.png")).toBe("multiple-spaces.png");
   });
 
-  it("removes special characters except dots and hyphens", () => {
+  it("removes special characters except dots, hyphens, and underscores", () => {
     expect(sanitizeFilename("file@name#test$.jpg")).toBe("filenametest.jpg");
     expect(sanitizeFilename("hello&world!.png")).toBe("helloworld.png");
+  });
+
+  it("preserves underscores in filenames", () => {
+    expect(sanitizeFilename("logo_1234_file.png")).toBe("logo_1234_file.png");
+    expect(sanitizeFilename("image_2026_01_27.jpg")).toBe("image_2026_01_27.jpg");
   });
 
   it("preserves file extensions", () => {

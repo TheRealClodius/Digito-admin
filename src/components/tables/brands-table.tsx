@@ -11,9 +11,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { Trash2 } from "lucide-react";
+import { ImageOff, Trash2 } from "lucide-react";
 import type { Brand } from "@/types/brand";
-import { memo } from "react";
+import { memo, useCallback, useState } from "react";
 import { useTranslation } from "@/hooks/use-translation";
 
 interface BrandsTableProps {
@@ -21,6 +21,28 @@ interface BrandsTableProps {
   onEdit: (brand: Brand) => void;
   onDelete: (id: string) => void;
   onToggleHighlighted: (id: string, highlighted: boolean) => void;
+}
+
+function BrandLogo({ url, alt }: { url: string; alt: string }) {
+  const [broken, setBroken] = useState(false);
+  const handleError = useCallback(() => setBroken(true), []);
+
+  if (broken) {
+    return (
+      <div className="flex size-10 items-center justify-center rounded bg-muted">
+        <ImageOff className="size-4 text-muted-foreground" />
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={url}
+      alt={alt}
+      className="size-10 rounded object-cover"
+      onError={handleError}
+    />
+  );
 }
 
 export const BrandsTable = memo(function BrandsTable({
@@ -62,11 +84,7 @@ export const BrandsTable = memo(function BrandsTable({
               <TableRow key={brand.id}>
                 <TableCell>
                   {brand.logoUrl ? (
-                    <img
-                      src={brand.logoUrl}
-                      alt={brand.name}
-                      className="size-10 rounded object-cover"
-                    />
+                    <BrandLogo url={brand.logoUrl} alt={brand.name} />
                   ) : null}
                 </TableCell>
                 <TableCell>{brand.name}</TableCell>

@@ -5,6 +5,7 @@
     "saved": "Saved",
     "cancel": "Cancel",
     "delete": "Delete",
+    "deleting": "Deleting...",
     "edit": "Edit",
     "actions": "Actions",
     "name": "Name",
@@ -36,7 +37,8 @@
     "dragAndDrop": "Drag & drop or click to upload",
     "dropHere": "Drop the file here",
     "maxSize": "Max size: {{size}}MB",
-    "uploadPreview": "Upload preview"
+    "uploadPreview": "Upload preview",
+    "close": "Close"
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -116,7 +118,18 @@
     "italian": "Italian",
     "superAdmins": "Super Admins",
     "superAdminsDescription": "Manage who has access to this dashboard",
-    "superAdminPlaceholder": "Super admin management will be implemented here."
+    "superAdminPlaceholder": "Super admin management will be implemented here.",
+    "addAdmin": "Add Admin",
+    "addAdminTitle": "Add Admin",
+    "addAdminDescription": "Assign a role to a user by email address.",
+    "loadingAdmins": "Loading admins...",
+    "noAdminsConfigured": "No admins configured",
+    "removeAdmin": "Remove Admin",
+    "removeAdminConfirm": "Are you sure you want to remove this admin's role? They will lose access to the dashboard.",
+    "remove": "Remove",
+    "clientAdmin": "Client Admin",
+    "eventAdmin": "Event Admin",
+    "adminEmailPlaceholder": "admin@example.com"
   },
   "clients": {
     "title": "Clients",
@@ -150,8 +163,9 @@
     "failedToUpdateStatus": "Failed to update event status",
     "deleted": "Event deleted",
     "failedToDelete": "Failed to delete event",
-    "chatPrompt": "Chat Prompt",
-    "chatPromptPlaceholder": "Ask me anything about your event",
+    "chatPrompt": "Digito Chat welcome screen",
+    "chatPromptPlaceholder": "Ask me anything about {{eventName}}",
+    "yourEvent": "your event",
     "noEventsFound": "No events found",
     "banner": "Banner",
     "editTitle": "Edit Event",
@@ -289,5 +303,13 @@
     "grammar": "Fix grammar",
     "improving": "Improving...",
     "assistantName": "Digito Writing Assistant"
+  },
+  "wysiwyg": {
+    "bold": "Bold",
+    "italic": "Italic",
+    "underline": "Underline",
+    "headingStyle": "Heading style",
+    "paragraph": "Paragraph",
+    "subtitle": "Subtitle"
   }
 }

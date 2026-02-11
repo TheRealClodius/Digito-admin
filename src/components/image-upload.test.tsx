@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor, act } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { vi } from "vitest";
 
@@ -27,9 +27,50 @@ beforeAll(() => {
   global.URL.revokeObjectURL = vi.fn();
 });
 
+// rAF mock infrastructure for dissolve animation
+let rafCallbacks: Array<{ id: number; cb: (time: number) => void }> = [];
+let nextRafId = 1;
+let mockTime = 0;
+
+function tickFrame(advanceMs: number) {
+  mockTime += advanceMs;
+  const cbs = [...rafCallbacks];
+  rafCallbacks = [];
+  cbs.forEach(({ cb }) => cb(mockTime));
+}
+
+function completeDissolve() {
+  // Tick enough frames to complete the 1300ms default animation
+  let elapsed = 0;
+  while (elapsed < 1400) {
+    tickFrame(50);
+    elapsed += 50;
+  }
+}
+
+beforeEach(() => {
+  rafCallbacks = [];
+  nextRafId = 1;
+  mockTime = 0;
+
+  vi.spyOn(window, "requestAnimationFrame").mockImplementation((cb) => {
+    const id = nextRafId++;
+    rafCallbacks.push({ id, cb });
+    return id;
+  });
+  vi.spyOn(window, "cancelAnimationFrame").mockImplementation((id) => {
+    rafCallbacks = rafCallbacks.filter((entry) => entry.id !== id);
+  });
+  vi.spyOn(performance, "now").mockImplementation(() => mockTime);
+});
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
+
 describe("ImageUpload", () => {
   describe("deleteFileFn on image removal", () => {
-    it("calls deleteFileFn with current URL when remove button is clicked", async () => {
+    it("calls deleteFileFn with current URL after dissolve animation", async () => {
       const user = userEvent.setup();
       const deleteFileFn = vi.fn().mockResolvedValue(undefined);
       const onChange = vi.fn();
@@ -44,6 +85,13 @@ describe("ImageUpload", () => {
 
       const removeButton = screen.getByRole("button");
       await user.click(removeButton);
+
+      // Delete is deferred until animation completes
+      expect(deleteFileFn).not.toHaveBeenCalled();
+
+      act(() => {
+        completeDissolve();
+      });
 
       expect(deleteFileFn).toHaveBeenCalledWith(
         "https://storage.example.com/old-image.png"
@@ -64,6 +112,10 @@ describe("ImageUpload", () => {
 
       const removeButton = screen.getByRole("button");
       await user.click(removeButton);
+
+      act(() => {
+        completeDissolve();
+      });
 
       // Should still call onChange(null) without errors
       expect(onChange).toHaveBeenCalledWith(null);
@@ -86,6 +138,10 @@ describe("ImageUpload", () => {
 
       const removeButton = screen.getByRole("button");
       await user.click(removeButton);
+
+      act(() => {
+        completeDissolve();
+      });
 
       expect(deleteFileFn).toHaveBeenCalled();
       expect(onChange).toHaveBeenCalledWith(null);
@@ -142,9 +198,14 @@ describe("ImageUpload", () => {
         />
       );
 
-      // Step 1: Remove existing image — should call deleteFileFn
+      // Step 1: Remove existing image — dissolve animation starts
       const removeButton = screen.getByRole("button");
       await user.click(removeButton);
+
+      // Complete the dissolve animation
+      act(() => {
+        completeDissolve();
+      });
 
       expect(deleteFileFn).toHaveBeenCalledWith(
         "https://storage.example.com/old-image.png"
@@ -186,6 +247,130 @@ describe("ImageUpload", () => {
       expect(onChange).toHaveBeenCalledWith(
         "https://storage.example.com/new-image.png"
       );
+    });
+  });
+
+  describe("dissolve animation on delete", () => {
+    it("disables delete button during dissolve animation", async () => {
+      const user = userEvent.setup();
+      render(
+        <ImageUpload
+          value="https://storage.example.com/image.png"
+          onChange={vi.fn()}
+        />
+      );
+
+      const removeButton = screen.getByRole("button");
+      await user.click(removeButton);
+
+      expect(removeButton).toBeDisabled();
+
+      act(() => {
+        completeDissolve();
+      });
+    });
+
+    it("always applies SVG filter to image (scale=0 means invisible until animated)", () => {
+      render(
+        <ImageUpload
+          value="https://storage.example.com/image.png"
+          onChange={vi.fn()}
+        />
+      );
+
+      const img = screen.getByAltText("Upload preview");
+      expect(img.style.filter).toMatch(/url\(#dissolve-/);
+    });
+
+    it("delays deleteFileFn and onChange until animation completes", async () => {
+      const user = userEvent.setup();
+      const deleteFileFn = vi.fn().mockResolvedValue(undefined);
+      const onChange = vi.fn();
+
+      render(
+        <ImageUpload
+          value="https://storage.example.com/image.png"
+          onChange={onChange}
+          deleteFileFn={deleteFileFn}
+        />
+      );
+
+      const removeButton = screen.getByRole("button");
+      await user.click(removeButton);
+
+      // Mid-animation: neither should have been called
+      act(() => {
+        tickFrame(200);
+      });
+      expect(deleteFileFn).not.toHaveBeenCalled();
+      expect(onChange).not.toHaveBeenCalled();
+
+      // Complete animation
+      act(() => {
+        completeDissolve();
+      });
+
+      expect(deleteFileFn).toHaveBeenCalledWith(
+        "https://storage.example.com/image.png"
+      );
+      expect(onChange).toHaveBeenCalledWith(null);
+    });
+
+    it("renders inline SVG filter element when image is displayed", () => {
+      render(
+        <ImageUpload
+          value="https://storage.example.com/image.png"
+          onChange={vi.fn()}
+        />
+      );
+
+      const filter = document.querySelector("filter");
+      expect(filter).not.toBeNull();
+      expect(filter?.id).toMatch(/^dissolve-/);
+    });
+
+    it("updates aria-label to deleting during animation", async () => {
+      const user = userEvent.setup();
+      render(
+        <ImageUpload
+          value="https://storage.example.com/image.png"
+          onChange={vi.fn()}
+        />
+      );
+
+      const removeButton = screen.getByRole("button");
+      expect(removeButton).toHaveAttribute("aria-label", "Delete");
+
+      await user.click(removeButton);
+
+      expect(removeButton).toHaveAttribute("aria-label", "Deleting...");
+
+      act(() => {
+        completeDissolve();
+      });
+    });
+
+    it("cleans up animation on unmount during dissolve", async () => {
+      const user = userEvent.setup();
+      const deleteFileFn = vi.fn().mockResolvedValue(undefined);
+
+      const { unmount } = render(
+        <ImageUpload
+          value="https://storage.example.com/image.png"
+          onChange={vi.fn()}
+          deleteFileFn={deleteFileFn}
+        />
+      );
+
+      const removeButton = screen.getByRole("button");
+      await user.click(removeButton);
+
+      // Unmount mid-animation
+      unmount();
+
+      expect(window.cancelAnimationFrame).toHaveBeenCalled();
+      // deleteFileFn should NOT be called since animation was cancelled
+      expect(deleteFileFn).not.toHaveBeenCalled();
     });
   });
 

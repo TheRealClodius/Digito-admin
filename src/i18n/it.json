@@ -5,6 +5,7 @@
     "saved": "Salvato",
     "cancel": "Annulla",
     "delete": "Elimina",
+    "deleting": "Eliminazione...",
     "edit": "Modifica",
     "actions": "Azioni",
     "name": "Nome",
@@ -36,7 +37,8 @@
     "dragAndDrop": "Trascina o clicca per caricare",
     "dropHere": "Rilascia il file qui",
     "maxSize": "Dimensione massima: {{size}}MB",
-    "uploadPreview": "Anteprima caricamento"
+    "uploadPreview": "Anteprima caricamento",
+    "close": "Chiudi"
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -116,7 +118,18 @@
     "italian": "Italiano",
     "superAdmins": "Super Admin",
     "superAdminsDescription": "Gestisci chi ha accesso a questa dashboard",
-    "superAdminPlaceholder": "La gestione dei super admin sarà implementata qui."
+    "superAdminPlaceholder": "La gestione dei super admin sarà implementata qui.",
+    "addAdmin": "Aggiungi Admin",
+    "addAdminTitle": "Aggiungi Admin",
+    "addAdminDescription": "Assegna un ruolo a un utente tramite indirizzo email.",
+    "loadingAdmins": "Caricamento admin...",
+    "noAdminsConfigured": "Nessun admin configurato",
+    "removeAdmin": "Rimuovi Admin",
+    "removeAdminConfirm": "Sei sicuro di voler rimuovere il ruolo di questo admin? Perderà l'accesso alla dashboard.",
+    "remove": "Rimuovi",
+    "clientAdmin": "Client Admin",
+    "eventAdmin": "Event Admin",
+    "adminEmailPlaceholder": "admin@example.com"
   },
   "clients": {
     "title": "Clienti",
@@ -150,8 +163,9 @@
     "failedToUpdateStatus": "Impossibile aggiornare lo stato dell'evento",
     "deleted": "Evento eliminato",
     "failedToDelete": "Impossibile eliminare l'evento",
-    "chatPrompt": "Prompt Chat",
-    "chatPromptPlaceholder": "Chiedimi qualsiasi cosa sul tuo evento",
+    "chatPrompt": "Digito Chat schermata di benvenuto",
+    "chatPromptPlaceholder": "Chiedimi qualsiasi cosa su {{eventName}}",
+    "yourEvent": "il tuo evento",
     "noEventsFound": "Nessun evento trovato",
     "banner": "Banner",
     "editTitle": "Modifica Evento",
@@ -289,5 +303,13 @@
     "grammar": "Correggi grammatica",
     "improving": "Elaborazione...",
     "assistantName": "Digito Writing Assistant"
+  },
+  "wysiwyg": {
+    "bold": "Grassetto",
+    "italic": "Corsivo",
+    "underline": "Sottolineato",
+    "headingStyle": "Stile intestazione",
+    "paragraph": "Paragrafo",
+    "subtitle": "Sottotitolo"
   }
 }

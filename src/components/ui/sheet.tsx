@@ -5,6 +5,7 @@ import * as SheetPrimitive from "@radix-ui/react-dialog";
 import { cva, type VariantProps } from "class-variance-authority";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "@/hooks/use-translation";
 import { Button } from "@/components/ui/button";
 import { useAISuggestion } from "@/contexts/ai-suggestion-context";
 
@@ -68,6 +69,7 @@ function SheetContent({
   VariantProps<typeof sheetVariants>) {
   const scrollRef = React.useRef<HTMLDivElement>(null);
   const [hasScrolled, setHasScrolled] = React.useState(false);
+  const { t } = useTranslation();
   const { hasActiveSuggestion } = useAISuggestion();
 
   React.useEffect(() => {
@@ -96,7 +98,7 @@ function SheetContent({
             variant="ghost"
             size="icon"
             className="absolute right-4 top-4 z-20 size-7 shrink-0 text-muted-foreground hover:text-foreground"
-            aria-label="Close"
+            aria-label={t("common.close")}
           >
             <X className="size-4" />
           </Button>

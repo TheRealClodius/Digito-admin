@@ -7,6 +7,7 @@ import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { isAllowedImageHost } from "@/lib/validation";
 import { useTranslation } from "@/hooks/use-translation";
+import { useDissolveEffect } from "@/hooks/use-dissolve-effect";
 import { Button } from "@/components/ui/button";
 
 interface ImageUploadProps {
@@ -33,7 +34,29 @@ export function ImageUpload({
   const { t } = useTranslation();
   const [preview, setPreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [dissolving, setDissolving] = useState(false);
+  const [removed, setRemoved] = useState(false);
   const prevObjectUrl = useRef<string | null>(null);
+  const filterId = useRef(`dissolve-${Math.random().toString(36).slice(2, 9)}`);
+  const bigNoiseRef = useRef<SVGFETurbulenceElement>(null);
+  const displacementRef = useRef<SVGFEDisplacementMapElement>(null);
+  const imageRef = useRef<HTMLImageElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const handleDissolveComplete = useCallback(() => {
+    if (value && deleteFileFn) {
+      deleteFileFn(value).catch(() => {});
+    }
+    setPreview(null);
+    setDissolving(false);
+    setRemoved(true);
+    onChange(null);
+  }, [value, deleteFileFn, onChange]);
+
+  const dissolveEffect = useDissolveEffect(
+    { bigNoiseRef, displacementRef, imageRef, containerRef },
+    { onComplete: handleDissolveComplete }
+  );
 
   // Revoke old blob URLs to prevent memory leaks
   useEffect(() => {
@@ -43,6 +66,13 @@ export function ImageUpload({
       }
     };
   }, []);
+
+  // Cancel dissolve animation on unmount
+  useEffect(() => {
+    return () => {
+      dissolveEffect.cancel();
+    };
+  }, [dissolveEffect]);
 
   const onDrop = useCallback(
     async (acceptedFiles: File[]) => {
@@ -56,6 +86,7 @@ export function ImageUpload({
 
       const objectUrl = URL.createObjectURL(file);
       prevObjectUrl.current = objectUrl;
+      setRemoved(false);
       setPreview(objectUrl);
 
       if (uploadFn) {
@@ -86,36 +117,93 @@ export function ImageUpload({
     disabled: disabled || uploading,
   });
 
-  const displayUrl = preview || value;
+  const displayUrl = removed ? null : (preview || value);
 
-  const handleRemove = () => {
-    if (value && deleteFileFn) {
-      deleteFileFn(value).catch(() => {});
-    }
-    setPreview(null);
-    onChange(null);
-  };
+  const handleRemove = useCallback(() => {
+    if (dissolving) return;
+    setDissolving(true);
+    dissolveEffect.start();
+  }, [dissolving, dissolveEffect]);
 
   return (
     <div className={cn("space-y-2", className)}>
       {displayUrl ? (
-        <div className="group relative inline-block">
+        <div
+          className={cn(
+            "group relative inline-block",
+            dissolving && "z-20 overflow-visible"
+          )}
+          ref={containerRef}
+        >
+          <svg width="0" height="0" className="absolute" aria-hidden="true">
+            <defs>
+              <filter
+                id={filterId.current}
+                x="-200%"
+                y="-200%"
+                width="700%"
+                height="700%"
+                colorInterpolationFilters="sRGB"
+              >
+                <feTurbulence
+                  ref={bigNoiseRef}
+                  type="fractalNoise"
+                  baseFrequency="0.004"
+                  numOctaves={1}
+                  seed="0"
+                  result="bigNoise"
+                />
+                <feComponentTransfer in="bigNoise" result="bigNoiseAdjusted">
+                  <feFuncR type="linear" slope="5" intercept="-2" />
+                  <feFuncG type="linear" slope="5" intercept="-2" />
+                </feComponentTransfer>
+                <feTurbulence
+                  type="fractalNoise"
+                  baseFrequency="1"
+                  numOctaves={1}
+                  result="fineNoise"
+                />
+                <feMerge result="mergedNoise">
+                  <feMergeNode in="bigNoiseAdjusted" />
+                  <feMergeNode in="fineNoise" />
+                </feMerge>
+                <feDisplacementMap
+                  ref={displacementRef}
+                  in="SourceGraphic"
+                  in2="mergedNoise"
+                  scale="0"
+                  xChannelSelector="R"
+                  yChannelSelector="G"
+                />
+              </filter>
+            </defs>
+          </svg>
           {isAllowedImageHost(displayUrl) ? (
             <Image
+              ref={imageRef}
               src={displayUrl}
               alt={t("common.uploadPreview")}
               width={200}
               height={200}
               className="rounded-md border object-cover"
+              style={{
+                filter: `url(#${filterId.current})`,
+                willChange: dissolving ? "transform, opacity" : "auto",
+              }}
             />
           ) : (
             /* eslint-disable-next-line @next/next/no-img-element */
             <img
+              ref={imageRef as React.RefObject<HTMLImageElement>}
               src={displayUrl}
               alt={t("common.uploadPreview")}
               width={200}
               height={200}
               className="rounded-md border object-cover"
+              style={{
+                filter: `url(#${filterId.current})`,
+                willChange: dissolving ? "transform, opacity" : "auto",
+              }}
             />
           )}
           {uploading && (
@@ -129,8 +217,8 @@ export function ImageUpload({
             size="icon"
             className="absolute right-1 top-1 size-6 bg-white text-foreground shadow-sm opacity-0 transition-opacity group-hover:opacity-100 focus:opacity-100 hover:bg-white/90 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
             onClick={handleRemove}
-            disabled={disabled || uploading}
-            aria-label={t("common.delete")}
+            disabled={disabled || uploading || dissolving}
+            aria-label={dissolving ? t("common.deleting") : t("common.delete")}
           >
             <Trash2 className="size-3" />
           </Button>
@@ -139,14 +227,14 @@ export function ImageUpload({
         <div
           {...getRootProps()}
           className={cn(
-            "flex cursor-pointer flex-col items-center justify-center rounded-md border border-dashed p-6 transition-colors hover:border-primary/50 hover:bg-muted/50",
+            "flex h-[200px] w-[200px] cursor-pointer flex-col items-center justify-center rounded-md border border-dashed border-muted-foreground/40 bg-muted/20 transition-colors hover:border-primary/50 hover:bg-muted/40",
             isDragActive && "border-primary bg-muted/50",
             (disabled || uploading) && "cursor-not-allowed opacity-50"
           )}
         >
           <input {...getInputProps()} />
           <Upload className="mb-2 size-8 text-muted-foreground" />
-          <p className="text-sm text-muted-foreground">
+          <p className="text-center text-sm text-muted-foreground">
             {isDragActive
               ? t("common.dropHere")
               : t("common.dragAndDrop")}

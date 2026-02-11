@@ -156,7 +156,7 @@ export default function EventOverviewPage({
       )}
 
       <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-        <SheetContent className="overflow-y-auto">
+        <SheetContent>
           <SheetHeader>
             <SheetTitle>{t("events.editTitle")}</SheetTitle>
             <SheetDescription>{t("events.editDescription")}</SheetDescription>

@@ -61,6 +61,9 @@ export function PostForm({
   const isImageEmpty = !imageUrlValue || imageUrlValue.trim() === "";
 
   const handleFormSubmit = (data: PostFormValues) => {
+    if (defaultValues?.imageUrl && defaultValues.imageUrl !== data.imageUrl) {
+      deleteFile(defaultValues.imageUrl);
+    }
     // Automatically use event logo as author avatar
     onSubmit({
       ...data,
@@ -70,13 +73,12 @@ export function PostForm({
 
   return (
     <form onSubmit={handleSubmit(handleFormSubmit)} className="grid grid-cols-2 gap-x-4 gap-y-6">
-      <div className="col-span-2 space-y-2">
+      <div className="col-span-2 space-y-3">
         <Label>{t("common.image")}</Label>
         <ImageUpload
           value={imageUrlValue || null}
           onChange={(url) => setValue("imageUrl", url ?? "", { shouldValidate: true })}
           uploadFn={storagePath ? (file) => upload(file, `image_${Date.now()}_${file.name}`) : undefined}
-          deleteFileFn={deleteFile}
           disabled={isSubmitting}
         />
         {(errors.imageUrl || isImageEmpty) && (
@@ -101,7 +103,7 @@ export function PostForm({
         )}
       />
 
-      <div className="col-span-2 space-y-2">
+      <div className="col-span-2 space-y-3">
         <Label htmlFor="authorName">{t("posts.authorName")}</Label>
         <Input
           id="authorName"

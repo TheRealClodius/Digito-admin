@@ -1,4 +1,9 @@
-import { render as rtlRender, screen, waitFor } from "@testing-library/react";
+import {
+  render as rtlRender,
+  screen,
+  waitFor,
+  fireEvent,
+} from "@testing-library/react";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
 // Wrap render to include TooltipProvider
@@ -129,10 +134,10 @@ describe("EventForm", () => {
     expect(screen.getByLabelText(/instagram url/i)).toBeInTheDocument();
   });
 
-  it("renders the Chat Prompt field with a helpful placeholder", () => {
+  it("renders the Digito Chat welcome screen field with a helpful placeholder", () => {
     render(<EventForm {...defaultProps} />);
 
-    const chatPromptField = screen.getByLabelText(/chat prompt/i);
+    const chatPromptField = screen.getByLabelText(/digito chat welcome screen/i);
     expect(chatPromptField).toBeInTheDocument();
     expect(chatPromptField).toHaveAttribute(
       "placeholder",
@@ -140,8 +145,16 @@ describe("EventForm", () => {
     );
   });
 
-  it("renders an Is Active toggle", () => {
+  it("does NOT render an Is Active toggle when creating (new event)", () => {
     render(<EventForm {...defaultProps} />);
+
+    expect(screen.queryByLabelText(/active/i)).not.toBeInTheDocument();
+  });
+
+  it("renders an Is Active toggle when editing (defaultValues provided)", () => {
+    render(
+      <EventForm {...defaultProps} defaultValues={{ name: "Edit Me", isActive: true }} />,
+    );
 
     expect(screen.getByLabelText(/active/i)).toBeInTheDocument();
   });
@@ -183,12 +196,9 @@ describe("EventForm", () => {
     const user = userEvent.setup();
     render(<EventForm {...defaultProps} />);
 
-    // Try to submit the form (the button might become enabled briefly in some
-    // implementations, or there could be a form-level submit). We focus the
-    // name field and blur to trigger validation.
-    const nameField = screen.getByLabelText(/name/i);
-    await user.click(nameField);
-    await user.tab(); // blur
+    // Validation runs on submit. Programmatically submit the form to trigger validation.
+    const form = screen.getByLabelText(/name/i).closest("form");
+    if (form) fireEvent.submit(form);
 
     await waitFor(() => {
       expect(screen.getByText(/name is required/i)).toBeInTheDocument();
@@ -292,7 +302,7 @@ describe("EventForm", () => {
     expect(screen.getByLabelText(/instagram url/i)).toHaveValue(
       "https://instagram.com/event",
     );
-    expect(screen.getByLabelText(/chat prompt/i)).toHaveValue(
+    expect(screen.getByLabelText(/digito chat welcome screen/i)).toHaveValue(
       "Ask me anything about the event",
     );
   });
@@ -311,18 +321,30 @@ describe("EventForm", () => {
     expect(onCancel).toHaveBeenCalledTimes(1);
   });
 
-  // ---- isActive defaults to true for new events ----
+  // ---- isActive: true for new events, toggle only when editing ----
 
-  it("defaults isActive to true for a new event (no defaultValues)", () => {
-    render(<EventForm {...defaultProps} />);
+  it("submits isActive: true when creating (no defaultValues)", async () => {
+    const onSubmit = vi.fn();
+    const user = userEvent.setup();
 
-    const activeToggle = screen.getByLabelText(/active/i);
-    expect(activeToggle).toBeChecked();
+    render(<EventForm {...defaultProps} onSubmit={onSubmit} />);
+
+    await user.type(screen.getByLabelText(/name/i), "New Event");
+    await user.type(screen.getByLabelText(/start date/i), "2026-06-15T09:00");
+    await user.type(screen.getByLabelText(/end date/i), "2026-06-17T18:00");
+
+    await user.click(screen.getByRole("button", { name: /save/i }));
+
+    await waitFor(() => {
+      expect(onSubmit).toHaveBeenCalledWith(
+        expect.objectContaining({ isActive: true }),
+      );
+    });
   });
 
-  it("respects isActive: false from defaultValues", () => {
+  it("respects isActive: false from defaultValues when editing", () => {
     render(
-      <EventForm {...defaultProps} defaultValues={{ isActive: false }} />,
+      <EventForm {...defaultProps} defaultValues={{ name: "Edit", isActive: false }} />,
     );
 
     const activeToggle = screen.getByLabelText(/active/i);
