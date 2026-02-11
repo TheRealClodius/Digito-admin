@@ -20,6 +20,7 @@ const mockFirestoreState = {
   sets: [] as Array<{ path: string; data: unknown }>,
   deletes: [] as string[],
   whereArgs: [] as Array<{ field: string; op: string; value: unknown }>,
+  shouldThrow: false,
 };
 
 vi.mock("@/lib/firebase-admin", () => ({
@@ -34,6 +35,9 @@ vi.mock("@/lib/firebase-admin", () => ({
         const path = `${collectionName}/${docId}`;
         return {
           get: () => {
+            if (mockFirestoreState.shouldThrow) {
+              return Promise.reject(new Error("Firestore unavailable"));
+            }
             const data = mockFirestoreState.docs[path];
             return Promise.resolve({
               exists: data !== undefined,
@@ -98,6 +102,7 @@ describe("GET /api/check-permissions", () => {
     mockFirestoreState.sets = [];
     mockFirestoreState.deletes = [];
     mockFirestoreState.whereArgs = [];
+    mockFirestoreState.shouldThrow = false;
     mockSetCustomUserClaims.mockResolvedValue(undefined);
   });
 
@@ -256,6 +261,19 @@ describe("GET /api/check-permissions", () => {
     );
     expect(emailWhere).toBeDefined();
     expect(emailWhere!.value).toBe("andrei.clodius@goodgest.com");
+  });
+
+  it("returns 500 when Firestore is unavailable instead of crashing", async () => {
+    mockVerifyIdToken.mockResolvedValue({
+      uid: "user-uid",
+      email: "user@test.com",
+    });
+    mockFirestoreState.shouldThrow = true;
+
+    const res = await GET(createRequest());
+    expect(res.status).toBe(500);
+    const body = await res.json();
+    expect(body.error).toBe("Firestore operation failed");
   });
 
   it("does not auto-heal when claims already match", async () => {
