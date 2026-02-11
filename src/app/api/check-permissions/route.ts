@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { getAdminAuth, getAdminDb } from "@/lib/firebase-admin";
 import { FieldValue } from "firebase-admin/firestore";
 
+export const runtime = "nodejs";
+
 export async function GET(request: Request) {
   const authHeader = request.headers.get("Authorization");
   if (!authHeader?.startsWith("Bearer ")) {
@@ -9,9 +11,22 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Missing authorization" }, { status: 401 });
   }
 
+  // Separate Admin SDK init from token verification so init failures
+  // return 503 (not 401) — the client uses this to trigger fallback.
+  let adminAuth;
+  try {
+    adminAuth = getAdminAuth();
+  } catch (err) {
+    console.error("[check-permissions] Firebase Admin SDK init failed:", err);
+    return NextResponse.json(
+      { error: "Firebase Admin SDK not configured" },
+      { status: 503 }
+    );
+  }
+
   let decoded;
   try {
-    decoded = await getAdminAuth().verifyIdToken(
+    decoded = await adminAuth.verifyIdToken(
       authHeader.replace("Bearer ", "")
     );
   } catch (err) {

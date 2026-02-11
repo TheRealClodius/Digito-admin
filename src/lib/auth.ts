@@ -88,51 +88,98 @@ export async function getUserPermissions(userId: string): Promise<UserPermission
   }
 }
 
+function parsePermissionsPayload(
+  data: Record<string, unknown>
+): UserPermissions {
+  const p = data.permissions as Record<string, unknown> | undefined;
+  if (!p) throw new Error("missing permissions payload");
+  return {
+    userId: p.userId as string,
+    email: p.email as string,
+    role: p.role as UserRole,
+    clientIds: (p.clientIds as string[] | null) || null,
+    eventIds: (p.eventIds as string[] | null) || null,
+    createdAt: p.createdAt ? new Date(p.createdAt as string) : new Date(),
+    updatedAt: p.updatedAt ? new Date(p.updatedAt as string) : new Date(),
+    createdBy: p.createdBy as string,
+    updatedBy: p.updatedBy as string,
+  };
+}
+
 /**
- * Server-side permission check via Admin SDK.
- * Bypasses client-side Firestore rules and auto-heals missing claims.
- * Returns { role, permissions } or { role: null } if no permissions found.
+ * Client-side fallback: check claims then Firestore directly.
+ * Used when the server-side Admin SDK is unavailable.
+ */
+async function verifyPermissionsClientSide(
+  user: User
+): Promise<{ role: UserRole | null; permissions: UserPermissions | null }> {
+  const role = await checkUserRole(user);
+  if (role === "superadmin") {
+    return { role, permissions: null };
+  }
+  if (role) {
+    const permissions = await getUserPermissions(user.uid);
+    return { role, permissions };
+  }
+  // No claims — check Firestore directly (handles claim propagation delay)
+  const permissions = await getUserPermissions(user.uid);
+  if (permissions) {
+    return { role: permissions.role, permissions };
+  }
+  return { role: null, permissions: null };
+}
+
+/**
+ * Permission check via server-side Admin SDK, with client-side fallback.
+ *
+ * Primary path: calls /api/check-permissions (Admin SDK — can auto-heal
+ * claims and migrate UID-mismatched docs).
+ *
+ * Fallback path: if the API is unreachable or the Admin SDK is not
+ * configured (503), falls back to client-side claims + Firestore check
+ * so that login still works.
  */
 export async function verifyPermissions(
   user: User
 ): Promise<{ role: UserRole | null; permissions: UserPermissions | null }> {
   console.log(`[verifyPermissions] checking for uid=${user.uid} email=${user.email}`);
-  const token = await user.getIdToken(true);
-  const res = await fetch("/api/check-permissions", {
-    headers: { Authorization: `Bearer ${token}` },
-  });
 
-  if (!res.ok) {
-    const text = await res.text();
-    console.error(`[verifyPermissions] API returned ${res.status}: ${text}`);
-    if (res.status >= 500) {
-      throw new Error(`Permission check failed (server error ${res.status})`);
+  try {
+    const token = await user.getIdToken(true);
+    const res = await fetch("/api/check-permissions", {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      console.log("[verifyPermissions] server result:", {
+        role: data.role,
+        hasPermissions: !!data.permissions,
+      });
+      return {
+        role: data.role ?? null,
+        permissions: data.permissions ? parsePermissionsPayload(data) : null,
+      };
     }
-    return { role: null, permissions: null };
+
+    // 401 = genuinely invalid token — no point falling back
+    if (res.status === 401) {
+      console.error("[verifyPermissions] Token rejected by server (401)");
+      return { role: null, permissions: null };
+    }
+
+    // 503 / 500 = server-side issue — fall back to client
+    const text = await res.text();
+    console.warn(
+      `[verifyPermissions] Server API error ${res.status}: ${text}. Using client-side fallback.`
+    );
+  } catch (err) {
+    console.warn(
+      `[verifyPermissions] Server API unreachable: ${err}. Using client-side fallback.`
+    );
   }
 
-  const data = await res.json();
-  console.log(`[verifyPermissions] result:`, { role: data.role, hasPermissions: !!data.permissions });
-  return {
-    role: data.role ?? null,
-    permissions: data.permissions
-      ? {
-          userId: data.permissions.userId,
-          email: data.permissions.email,
-          role: data.permissions.role,
-          clientIds: data.permissions.clientIds || null,
-          eventIds: data.permissions.eventIds || null,
-          createdAt: data.permissions.createdAt
-            ? new Date(data.permissions.createdAt)
-            : new Date(),
-          updatedAt: data.permissions.updatedAt
-            ? new Date(data.permissions.updatedAt)
-            : new Date(),
-          createdBy: data.permissions.createdBy,
-          updatedBy: data.permissions.updatedBy,
-        }
-      : null,
-  };
+  return verifyPermissionsClientSide(user);
 }
 
 export function onAuthChange(callback: (user: User | null) => void) {

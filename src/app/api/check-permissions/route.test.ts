@@ -13,6 +13,7 @@ vi.mock("firebase/storage", () => ({ getStorage: vi.fn() }));
 
 const mockVerifyIdToken = vi.fn();
 const mockSetCustomUserClaims = vi.fn();
+let mockAdminAuthShouldThrow = false;
 
 const mockFirestoreState = {
   docs: {} as Record<string, Record<string, unknown>>,
@@ -24,11 +25,16 @@ const mockFirestoreState = {
 };
 
 vi.mock("@/lib/firebase-admin", () => ({
-  getAdminAuth: () => ({
-    verifyIdToken: (...args: unknown[]) => mockVerifyIdToken(...args),
-    setCustomUserClaims: (...args: unknown[]) =>
-      mockSetCustomUserClaims(...args),
-  }),
+  getAdminAuth: () => {
+    if (mockAdminAuthShouldThrow) {
+      throw new Error("Firebase Admin SDK not initialized");
+    }
+    return {
+      verifyIdToken: (...args: unknown[]) => mockVerifyIdToken(...args),
+      setCustomUserClaims: (...args: unknown[]) =>
+        mockSetCustomUserClaims(...args),
+    };
+  },
   getAdminDb: () => ({
     collection: (collectionName: string) => ({
       doc: (docId: string) => {
@@ -97,6 +103,7 @@ function createRequest(token: string | null = "valid-token") {
 describe("GET /api/check-permissions", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockAdminAuthShouldThrow = false;
     mockFirestoreState.docs = {};
     mockFirestoreState.queryResults = [];
     mockFirestoreState.sets = [];
@@ -115,6 +122,14 @@ describe("GET /api/check-permissions", () => {
     mockVerifyIdToken.mockRejectedValue(new Error("Invalid token"));
     const res = await GET(createRequest());
     expect(res.status).toBe(401);
+  });
+
+  it("returns 503 when Firebase Admin SDK fails to initialize", async () => {
+    mockAdminAuthShouldThrow = true;
+    const res = await GET(createRequest());
+    expect(res.status).toBe(503);
+    const body = await res.json();
+    expect(body.error).toBe("Firebase Admin SDK not configured");
   });
 
   it("returns superadmin role from custom claims", async () => {

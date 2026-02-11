@@ -22,18 +22,26 @@ function ensureInitialized() {
   }
 
   // Fall back to service account file (local development)
-  /* eslint-disable @typescript-eslint/no-require-imports */
-  const fs = require("fs");
-  const path = require("path");
-  /* eslint-enable @typescript-eslint/no-require-imports */
-  const serviceAccountPath = path.resolve(
-    process.cwd(),
-    "service-account-key.json"
-  );
-  const serviceAccount = JSON.parse(
-    fs.readFileSync(serviceAccountPath, "utf-8")
-  );
-  initializeApp({ credential: cert(serviceAccount) });
+  try {
+    /* eslint-disable @typescript-eslint/no-require-imports */
+    const fs = require("fs");
+    const path = require("path");
+    /* eslint-enable @typescript-eslint/no-require-imports */
+    const serviceAccountPath = path.resolve(
+      process.cwd(),
+      "service-account-key.json"
+    );
+    const serviceAccount = JSON.parse(
+      fs.readFileSync(serviceAccountPath, "utf-8")
+    );
+    initializeApp({ credential: cert(serviceAccount) });
+  } catch {
+    throw new Error(
+      "Firebase Admin SDK not initialized. Set FIREBASE_ADMIN_PROJECT_ID, " +
+        "FIREBASE_ADMIN_CLIENT_EMAIL, and FIREBASE_ADMIN_PRIVATE_KEY env vars " +
+        "for production, or provide service-account-key.json for local development."
+    );
+  }
 }
 
 export function getAdminAuth() {
