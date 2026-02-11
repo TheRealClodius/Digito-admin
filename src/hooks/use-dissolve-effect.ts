@@ -83,6 +83,14 @@ export function useDissolveEffect(
         rafRef.current = requestAnimationFrame(animate);
       } else {
         isRunningRef.current = false;
+        // Reset imperative inline styles so the DOM node is not left invisible
+        if (containerRef.current) {
+          containerRef.current.style.opacity = "";
+        }
+        if (imageRef.current) {
+          imageRef.current.style.opacity = "";
+          imageRef.current.style.transform = "";
+        }
         optionsRef.current.onComplete();
       }
     };

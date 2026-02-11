@@ -19,6 +19,21 @@ vi.mock("next/image", () => ({
   },
 }));
 
+// Mock useDissolveEffect — jsdom SVG elements don't support refs properly
+let dissolveOnComplete: (() => void) | null = null;
+const mockDissolveStart = vi.fn();
+const mockDissolveCancel = vi.fn();
+
+vi.mock("@/hooks/use-dissolve-effect", () => ({
+  useDissolveEffect: (
+    _refs: unknown,
+    options: { onComplete: () => void }
+  ) => {
+    dissolveOnComplete = options.onComplete;
+    return { start: mockDissolveStart, cancel: mockDissolveCancel };
+  },
+}));
+
 import { ImageUpload } from "./image-upload";
 
 // URL.createObjectURL / revokeObjectURL are not available in jsdom
@@ -27,45 +42,15 @@ beforeAll(() => {
   global.URL.revokeObjectURL = vi.fn();
 });
 
-// rAF mock infrastructure for dissolve animation
-let rafCallbacks: Array<{ id: number; cb: (time: number) => void }> = [];
-let nextRafId = 1;
-let mockTime = 0;
-
-function tickFrame(advanceMs: number) {
-  mockTime += advanceMs;
-  const cbs = [...rafCallbacks];
-  rafCallbacks = [];
-  cbs.forEach(({ cb }) => cb(mockTime));
-}
-
+// Trigger the dissolve animation's onComplete callback
 function completeDissolve() {
-  // Tick enough frames to complete the 1300ms default animation
-  let elapsed = 0;
-  while (elapsed < 1400) {
-    tickFrame(50);
-    elapsed += 50;
-  }
+  dissolveOnComplete?.();
 }
 
 beforeEach(() => {
-  rafCallbacks = [];
-  nextRafId = 1;
-  mockTime = 0;
-
-  vi.spyOn(window, "requestAnimationFrame").mockImplementation((cb) => {
-    const id = nextRafId++;
-    rafCallbacks.push({ id, cb });
-    return id;
-  });
-  vi.spyOn(window, "cancelAnimationFrame").mockImplementation((id) => {
-    rafCallbacks = rafCallbacks.filter((entry) => entry.id !== id);
-  });
-  vi.spyOn(performance, "now").mockImplementation(() => mockTime);
-});
-
-afterEach(() => {
-  vi.restoreAllMocks();
+  mockDissolveStart.mockClear();
+  mockDissolveCancel.mockClear();
+  dissolveOnComplete = null;
 });
 
 describe("ImageUpload", () => {
@@ -298,10 +283,8 @@ describe("ImageUpload", () => {
       const removeButton = screen.getByRole("button");
       await user.click(removeButton);
 
-      // Mid-animation: neither should have been called
-      act(() => {
-        tickFrame(200);
-      });
+      // Mid-animation: start was called but onComplete hasn't fired yet
+      expect(mockDissolveStart).toHaveBeenCalled();
       expect(deleteFileFn).not.toHaveBeenCalled();
       expect(onChange).not.toHaveBeenCalled();
 
@@ -350,6 +333,36 @@ describe("ImageUpload", () => {
       });
     });
 
+    it("mounts a fresh DOM node for dropzone after dissolve (no stale inline styles)", async () => {
+      const user = userEvent.setup();
+      const onChange = vi.fn();
+
+      const { container, rerender } = render(
+        <ImageUpload
+          value="https://storage.example.com/image.png"
+          onChange={onChange}
+        />
+      );
+
+      // Grab the preview container DOM node
+      const previewNode = container.querySelector(".space-y-2")!.firstElementChild!;
+
+      // Trigger dissolve
+      const removeButton = screen.getByRole("button");
+      await user.click(removeButton);
+
+      act(() => {
+        completeDissolve();
+      });
+
+      // Parent re-renders with null value
+      rerender(<ImageUpload value={null} onChange={onChange} />);
+
+      // The dropzone should be a DIFFERENT DOM node than the preview was
+      const dropzoneNode = container.querySelector(".space-y-2")!.firstElementChild!;
+      expect(dropzoneNode).not.toBe(previewNode);
+    });
+
     it("cleans up animation on unmount during dissolve", async () => {
       const user = userEvent.setup();
       const deleteFileFn = vi.fn().mockResolvedValue(undefined);
@@ -368,7 +381,7 @@ describe("ImageUpload", () => {
       // Unmount mid-animation
       unmount();
 
-      expect(window.cancelAnimationFrame).toHaveBeenCalled();
+      expect(mockDissolveCancel).toHaveBeenCalled();
       // deleteFileFn should NOT be called since animation was cancelled
       expect(deleteFileFn).not.toHaveBeenCalled();
     });

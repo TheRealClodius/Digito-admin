@@ -129,6 +129,7 @@ export function ImageUpload({
     <div className={cn("space-y-2", className)}>
       {displayUrl ? (
         <div
+          key="preview"
           className={cn(
             "group relative inline-block",
             dissolving && "z-20 overflow-visible"
@@ -225,6 +226,7 @@ export function ImageUpload({
         </div>
       ) : (
         <div
+          key="dropzone"
           {...getRootProps()}
           className={cn(
             "flex h-[200px] w-[200px] cursor-pointer flex-col items-center justify-center rounded-md border-2 border-dashed bg-muted/20 transition-colors hover:bg-muted/40",

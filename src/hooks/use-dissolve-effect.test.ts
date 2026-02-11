@@ -345,6 +345,29 @@ describe("useDissolveEffect", () => {
     expect(window.requestAnimationFrame).not.toHaveBeenCalled();
   });
 
+  it("resets inline styles on animation completion", () => {
+    const onComplete = vi.fn();
+    const { image, container, asRefs } = createRefs();
+
+    const { result } = renderHook(() =>
+      useDissolveEffect(asRefs, { onComplete })
+    );
+
+    act(() => {
+      result.current.start();
+    });
+
+    act(() => {
+      tickUntilComplete(1300);
+    });
+
+    expect(onComplete).toHaveBeenCalledTimes(1);
+    // Inline styles should be cleared (empty string removes override)
+    expect(container.style.opacity).toBe("");
+    expect(image.style.opacity).toBe("");
+    expect(image.style.transform).toBe("");
+  });
+
   it("supports custom duration", () => {
     const onComplete = vi.fn();
     const { asRefs } = createRefs();
