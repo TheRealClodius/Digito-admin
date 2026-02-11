@@ -65,7 +65,7 @@ export function CreateEventDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex h-screen w-screen max-w-none flex-col gap-0 rounded-none sm:rounded-none p-0">
+      <DialogContent className="flex h-screen w-screen max-w-none flex-col gap-0 rounded-none p-0">
         <DialogHeader className="border-b px-6 py-4">
           <DialogTitle>{t("events.newTitle")}</DialogTitle>
           <DialogDescription>{t("events.newDescription")}</DialogDescription>
