@@ -60,8 +60,8 @@ interface MigrationResult {
 }
 
 async function migrateUser(uid: string, email: string, result: MigrationResult) {
-  // SECURITY CHECK: Only allow emails in the approved list
-  if (!ALLOWED_SUPERADMINS.includes(email)) {
+  // SECURITY CHECK: Only allow emails in the approved list (case-insensitive)
+  if (!ALLOWED_SUPERADMINS.includes(email.toLowerCase())) {
     console.warn(`⚠️  SECURITY: ${email} has admin claim but is NOT in allowed list. Removing admin claim.`);
 
     try {
@@ -85,10 +85,10 @@ async function migrateUser(uid: string, email: string, result: MigrationResult) 
       superadmin: true  // New claim
     });
 
-    // Create or update userPermissions document
+    // Create or update userPermissions document (store email in lowercase for consistent matching)
     await db.collection("userPermissions").doc(uid).set({
       userId: uid,
-      email: email,
+      email: email.toLowerCase(),
       role: 'superadmin',
       clientIds: null,  // null = full access
       eventIds: null,   // null = full access
@@ -99,7 +99,7 @@ async function migrateUser(uid: string, email: string, result: MigrationResult) 
     });
 
     // Ensure superAdmins collection document exists
-    await db.collection("superAdmins").doc(uid).set({ email });
+    await db.collection("superAdmins").doc(uid).set({ email: email.toLowerCase() });
 
     result.migratedCount++;
     result.migratedUsers.push(email);
