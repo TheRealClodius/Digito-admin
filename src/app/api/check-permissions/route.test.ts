@@ -19,6 +19,8 @@ const mockFirestoreState = {
   queryResults: [] as Array<{ id: string; data: Record<string, unknown> }>,
   sets: [] as Array<{ path: string; data: unknown }>,
   deletes: [] as string[],
+  whereArgs: [] as Array<{ field: string; op: string; value: unknown }>,
+  shouldThrow: false,
 };
 
 vi.mock("@/lib/firebase-admin", () => ({
@@ -33,6 +35,9 @@ vi.mock("@/lib/firebase-admin", () => ({
         const path = `${collectionName}/${docId}`;
         return {
           get: () => {
+            if (mockFirestoreState.shouldThrow) {
+              return Promise.reject(new Error("Firestore unavailable"));
+            }
             const data = mockFirestoreState.docs[path];
             return Promise.resolve({
               exists: data !== undefined,
@@ -49,26 +54,29 @@ vi.mock("@/lib/firebase-admin", () => ({
           },
         };
       },
-      where: () => ({
-        limit: () => ({
-          get: () =>
-            Promise.resolve({
-              empty: mockFirestoreState.queryResults.length === 0,
-              docs: mockFirestoreState.queryResults.map((doc) => ({
-                id: doc.id,
-                data: () => doc.data,
-                ref: {
-                  delete: () => {
-                    mockFirestoreState.deletes.push(
-                      `${collectionName}/${doc.id}`
-                    );
-                    return Promise.resolve();
+      where: (field: string, op: string, value: unknown) => {
+        mockFirestoreState.whereArgs.push({ field, op, value });
+        return {
+          limit: () => ({
+            get: () =>
+              Promise.resolve({
+                empty: mockFirestoreState.queryResults.length === 0,
+                docs: mockFirestoreState.queryResults.map((doc) => ({
+                  id: doc.id,
+                  data: () => doc.data,
+                  ref: {
+                    delete: () => {
+                      mockFirestoreState.deletes.push(
+                        `${collectionName}/${doc.id}`
+                      );
+                      return Promise.resolve();
+                    },
                   },
-                },
-              })),
-            }),
-        }),
-      }),
+                })),
+              }),
+          }),
+        };
+      },
     }),
   }),
 }));
@@ -93,6 +101,8 @@ describe("GET /api/check-permissions", () => {
     mockFirestoreState.queryResults = [];
     mockFirestoreState.sets = [];
     mockFirestoreState.deletes = [];
+    mockFirestoreState.whereArgs = [];
+    mockFirestoreState.shouldThrow = false;
     mockSetCustomUserClaims.mockResolvedValue(undefined);
   });
 
@@ -220,6 +230,50 @@ describe("GET /api/check-permissions", () => {
     const res = await GET(createRequest());
     const body = await res.json();
     expect(body.role).toBeNull();
+  });
+
+  it("normalizes email to lowercase for Firestore email query", async () => {
+    mockVerifyIdToken.mockResolvedValue({
+      uid: "new-uid",
+      email: "Andrei.Clodius@Goodgest.com",  // Mixed-case from Google Auth
+    });
+    // No doc at userPermissions/new-uid
+    mockFirestoreState.queryResults = [
+      {
+        id: "old-uid",
+        data: {
+          userId: "old-uid",
+          email: "andrei.clodius@goodgest.com",
+          role: "superadmin",
+          clientIds: null,
+          eventIds: null,
+        },
+      },
+    ];
+
+    const res = await GET(createRequest());
+    const body = await res.json();
+    expect(body.role).toBe("superadmin");
+
+    // The email query must use lowercase email
+    const emailWhere = mockFirestoreState.whereArgs.find(
+      (w) => w.field === "email"
+    );
+    expect(emailWhere).toBeDefined();
+    expect(emailWhere!.value).toBe("andrei.clodius@goodgest.com");
+  });
+
+  it("returns 500 when Firestore is unavailable instead of crashing", async () => {
+    mockVerifyIdToken.mockResolvedValue({
+      uid: "user-uid",
+      email: "user@test.com",
+    });
+    mockFirestoreState.shouldThrow = true;
+
+    const res = await GET(createRequest());
+    expect(res.status).toBe(500);
+    const body = await res.json();
+    expect(body.error).toBe("Firestore operation failed");
   });
 
   it("does not auto-heal when claims already match", async () => {

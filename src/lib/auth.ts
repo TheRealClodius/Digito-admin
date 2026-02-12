@@ -105,6 +105,9 @@ export async function verifyPermissions(
   if (!res.ok) {
     const text = await res.text();
     console.error(`[verifyPermissions] API returned ${res.status}: ${text}`);
+    if (res.status >= 500) {
+      throw new Error(`Permission check failed (server error ${res.status})`);
+    }
     return { role: null, permissions: null };
   }
 
