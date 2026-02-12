@@ -14,9 +14,11 @@ export async function GET(request: Request) {
     decoded = await getAdminAuth().verifyIdToken(
       authHeader.replace("Bearer ", "")
     );
-  } catch (err) {
-    console.error("[check-permissions] Token verification failed:", err);
-    return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+  } catch (err: unknown) {
+    const errMsg = err instanceof Error ? err.message : String(err);
+    console.error("[check-permissions] Token verification failed:", errMsg);
+    console.error("[check-permissions] Admin SDK config: projectId=", process.env.FIREBASE_ADMIN_PROJECT_ID ? "set" : "MISSING", "clientEmail=", process.env.FIREBASE_ADMIN_CLIENT_EMAIL ? "set" : "MISSING", "privateKey=", process.env.FIREBASE_ADMIN_PRIVATE_KEY ? "set" : "MISSING");
+    return NextResponse.json({ error: "Invalid token", detail: errMsg }, { status: 401 });
   }
 
   const { uid, email } = decoded;

@@ -24,7 +24,8 @@ const SERVICE_ACCOUNT_PATH = resolve(process.cwd(), "service-account-key.json");
 // SECURITY: Hardcoded list of allowed superadmin emails
 const ALLOWED_SUPERADMINS = [
   'andrei.clodius@goodgest.com',
-  'ga.ibba@goodgest.com'
+  'ga.ibba@goodgest.com',
+  'simone.marra@goodgest.com'
 ];
 
 // Read admin emails from environment variable
