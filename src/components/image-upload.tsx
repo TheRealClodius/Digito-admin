@@ -148,7 +148,7 @@ export function ImageUpload({
   }, [dissolving, dissolveEffect]);
 
   return (
-    <div className={cn("space-y-2", className)}>
+    <div className={cn("min-w-0 space-y-2", className)}>
       {displayUrl ? (
         <div
           key="preview"
@@ -252,20 +252,20 @@ export function ImageUpload({
           key="dropzone"
           {...getRootProps()}
           className={cn(
-            "flex h-[200px] w-[200px] cursor-pointer flex-col items-center justify-center rounded-md border-2 border-dashed bg-muted/20 transition-colors hover:bg-muted/40 animate-in fade-in-0 duration-300",
+            "flex aspect-square w-full max-w-[200px] min-w-[160px] cursor-pointer flex-col items-center justify-center overflow-hidden rounded-md border-2 border-dashed bg-muted/20 px-4 py-4 transition-colors hover:bg-muted/40 animate-in fade-in-0 duration-300",
             isDragActive && "bg-muted/50",
             (disabled || uploading) && "cursor-not-allowed opacity-50"
           )}
           style={{ borderColor: isDragActive ? 'var(--primary)' : 'var(--muted-foreground)' }}
         >
           <input {...getInputProps()} />
-          <Upload className="mb-2 size-8 text-muted-foreground" />
-          <p className="text-center text-sm text-muted-foreground">
+          <Upload className="mb-2 size-8 shrink-0 text-muted-foreground" />
+          <p className="min-w-0 break-words text-center text-sm text-muted-foreground">
             {isDragActive
               ? t("common.dropHere")
               : t("common.dragAndDrop")}
           </p>
-          <p className="mt-1 text-xs text-muted-foreground">
+          <p className="mt-1 min-w-0 text-center text-xs text-muted-foreground">
             {t("common.maxSize", { size: Math.round(maxSize / 1024 / 1024) })}
           </p>
         </div>
