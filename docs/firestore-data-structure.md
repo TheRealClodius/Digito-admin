@@ -264,5 +264,36 @@ Kept for backward compatibility; `seed-admins.ts` still writes here.
 | **Root users vs event users** | ⚠️ Two different concepts: global profile vs per-event attendee. |
 | **userPermissions** | ✅ Correct. Three-tier role system (superadmin, clientAdmin, eventAdmin) enforced via custom claims + Firestore scoping rules (`hasClientAccess`, `hasEventAccess`, `canWriteEventContent`). |
 
+---
+
+## 7. Sessions
+
+**Path:** `clients/{clientId}/events/{eventId}/sessions/{sessionId}`
+
+**Access:** Any admin with `canWriteEventContent` (read/write).
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `title` | string | yes | Session title |
+| `description` | string | no | Session description |
+| `startTime` | Timestamp | yes | Start time |
+| `endTime` | Timestamp | yes | End time |
+| `location` | string | no | Room/area |
+| `type` | enum | yes | `"talk"` \| `"workshop"` \| `"panel"` \| `"networking"` \| `"other"` |
+| `speakerName` | string | no | Speaker name (denormalized from participant) |
+| `speakerBio` | string | no | Speaker bio (denormalized from participant) |
+| `speakerAvatarUrl` | string | no | Speaker photo URL |
+| `participantId` | string | no | Linked participant ID |
+| `requiresAccess` | boolean | yes | Whether session requires special access (default: false) |
+| `accessTier` | enum \| null | no | `"regular"` \| `"premium"` \| `"vip"` \| `"staff"` — shown when requiresAccess is true |
+| `imageUrl` | string | no | Cover image URL |
+| `createdAt` | Timestamp | yes | Server timestamp on create |
+
+**Flutter contract:** The Flutter app reads `requiresAccess` (boolean) and `accessTier` (string, nullable). These field names must match exactly.
+
+**Type:** `Session` (see `src/types/session.ts`)
+
+---
+
 **Potential issues:**
 1. **Event users doc id:** Event users use Firebase Auth UID as doc id. Whitelist matches by email. If the same person uses different auth methods, email match may fail — acceptable if auth is unified (e.g. Google only).
