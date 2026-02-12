@@ -58,9 +58,6 @@ export function ClientForm({
   const isNameEmpty = !nameValue || nameValue.trim() === "";
 
   const handleFormSubmit = (data: ClientFormValues) => {
-    if (defaultValues?.logoUrl && defaultValues.logoUrl !== data.logoUrl) {
-      deleteFile(defaultValues.logoUrl);
-    }
     onSubmit(data);
   };
 

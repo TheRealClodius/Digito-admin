@@ -99,9 +99,6 @@ export function ParticipantForm({
   const isLastNameEmpty = !lastNameValue || lastNameValue.trim() === "";
 
   const handleFormSubmit = (data: ParticipantFormValues) => {
-    if (defaultValues?.avatarUrl && defaultValues.avatarUrl !== data.avatarUrl) {
-      deleteFile(defaultValues.avatarUrl);
-    }
     onSubmit(data);
   };
 

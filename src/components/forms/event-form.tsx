@@ -101,12 +101,6 @@ export function EventForm({
   const isSubmitDisabled = !nameValue?.trim() || isSubmitting;
 
   const onFormSubmit = (data: FormValues) => {
-    if (defaultValues?.logoUrl && defaultValues.logoUrl !== data.logoUrl) {
-      deleteFile(defaultValues.logoUrl);
-    }
-    if (defaultValues?.bannerUrl && defaultValues.bannerUrl !== data.bannerUrl) {
-      deleteFile(defaultValues.bannerUrl);
-    }
     onSubmit({
       clientId,
       ...data,

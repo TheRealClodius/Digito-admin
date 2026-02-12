@@ -60,13 +60,6 @@ export function BrandForm({
   const isNameEmpty = !nameValue || nameValue.trim() === "";
 
   const handleFormSubmit = (data: BrandFormValues) => {
-    // Clean up orphaned Storage files on save
-    if (defaultValues?.logoUrl && defaultValues.logoUrl !== data.logoUrl) {
-      deleteFile(defaultValues.logoUrl);
-    }
-    if (defaultValues?.imageUrl && defaultValues.imageUrl !== data.imageUrl) {
-      deleteFile(defaultValues.imageUrl);
-    }
     onSubmit(data);
   };
 

@@ -62,9 +62,6 @@ export function PostForm({
   const isImageEmpty = !imageUrlValue || imageUrlValue.trim() === "";
 
   const handleFormSubmit = (data: PostFormValues) => {
-    if (defaultValues?.imageUrl && defaultValues.imageUrl !== data.imageUrl) {
-      deleteFile(defaultValues.imageUrl);
-    }
     // Automatically use event logo as author avatar
     onSubmit({
       ...data,
