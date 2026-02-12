@@ -410,6 +410,132 @@ describe("ImageUpload", () => {
     });
   });
 
+  describe("upload flow", () => {
+    /** Helper: get the hidden file input rendered by react-dropzone */
+    function getFileInput() {
+      const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+      expect(input).not.toBeNull();
+      return input;
+    }
+
+    it("calls uploadFn with the dropped file", async () => {
+      const uploadFn = vi.fn().mockResolvedValue("https://storage.example.com/new.png");
+      const onChange = vi.fn();
+
+      render(<ImageUpload value={null} onChange={onChange} uploadFn={uploadFn} />);
+
+      const file = new File(["img"], "photo.png", { type: "image/png" });
+      fireEvent.change(getFileInput(), { target: { files: [file] } });
+
+      await waitFor(() => {
+        expect(uploadFn).toHaveBeenCalledWith(file);
+      });
+    });
+
+    it("calls onChange with the download URL after successful upload", async () => {
+      const downloadUrl = "https://storage.example.com/uploaded.png";
+      const uploadFn = vi.fn().mockResolvedValue(downloadUrl);
+      const onChange = vi.fn();
+
+      render(<ImageUpload value={null} onChange={onChange} uploadFn={uploadFn} />);
+
+      const file = new File(["img"], "photo.png", { type: "image/png" });
+      fireEvent.change(getFileInput(), { target: { files: [file] } });
+
+      await waitFor(() => {
+        expect(onChange).toHaveBeenCalledWith(downloadUrl);
+      });
+    });
+
+    it("shows uploading overlay during upload", async () => {
+      let resolveUpload!: (url: string) => void;
+      const uploadFn = vi.fn(
+        () => new Promise<string>((resolve) => { resolveUpload = resolve; })
+      );
+
+      render(<ImageUpload value={null} onChange={vi.fn()} uploadFn={uploadFn} />);
+
+      const file = new File(["img"], "photo.png", { type: "image/png" });
+      fireEvent.change(getFileInput(), { target: { files: [file] } });
+
+      // Loader should be visible while upload is in-flight
+      await waitFor(() => {
+        expect(document.querySelector(".animate-spin")).toBeInTheDocument();
+      });
+
+      // Resolve the upload
+      await act(async () => {
+        resolveUpload("https://storage.example.com/done.png");
+      });
+
+      // Loader should disappear
+      expect(document.querySelector(".animate-spin")).not.toBeInTheDocument();
+    });
+
+    it("clears local preview after successful upload so value prop is displayed", async () => {
+      const downloadUrl = "https://firebasestorage.googleapis.com/v0/b/bucket/o/uploaded.png?alt=media";
+      const uploadFn = vi.fn().mockResolvedValue(downloadUrl);
+      const onChange = vi.fn();
+
+      const { rerender } = render(
+        <ImageUpload value={null} onChange={onChange} uploadFn={uploadFn} />
+      );
+
+      const file = new File(["img"], "photo.png", { type: "image/png" });
+      fireEvent.change(getFileInput(), { target: { files: [file] } });
+
+      await waitFor(() => {
+        expect(onChange).toHaveBeenCalledWith(downloadUrl);
+      });
+
+      // Parent re-renders with the real download URL
+      rerender(
+        <ImageUpload value={downloadUrl} onChange={onChange} uploadFn={uploadFn} />
+      );
+
+      // The displayed image should use the real download URL, not the stale blob
+      const img = screen.getByAltText("Upload preview");
+      expect(img).toHaveAttribute("src", downloadUrl);
+    });
+
+    it("clears preview and does not call onChange when upload fails", async () => {
+      const uploadFn = vi.fn().mockRejectedValue(new Error("Network error"));
+      const onChange = vi.fn();
+
+      render(<ImageUpload value={null} onChange={onChange} uploadFn={uploadFn} />);
+
+      const file = new File(["img"], "photo.png", { type: "image/png" });
+      fireEvent.change(getFileInput(), { target: { files: [file] } });
+
+      await waitFor(() => {
+        expect(uploadFn).toHaveBeenCalled();
+      });
+
+      // onChange should NOT have been called
+      expect(onChange).not.toHaveBeenCalled();
+
+      // Preview should be cleared — dropzone visible again
+      expect(screen.getByText(/drag & drop or click to upload/i)).toBeInTheDocument();
+    });
+
+    it("does not call onChange when uploadFn is not provided", async () => {
+      const onChange = vi.fn();
+
+      render(<ImageUpload value={null} onChange={onChange} />);
+
+      const file = new File(["img"], "photo.png", { type: "image/png" });
+      fireEvent.change(getFileInput(), { target: { files: [file] } });
+
+      // Give any async work time to settle
+      await waitFor(() => {
+        expect(screen.getByAltText("Upload preview")).toBeInTheDocument();
+      });
+
+      // onChange should never be called — image won't persist
+      expect(onChange).not.toHaveBeenCalled();
+    });
+  });
+
   describe("rendering states", () => {
     it("shows dropzone when there is no value", () => {
       render(<ImageUpload value={null} onChange={vi.fn()} />);

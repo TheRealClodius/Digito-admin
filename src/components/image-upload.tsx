@@ -112,6 +112,7 @@ export function ImageUpload({
             deleteFileFn(value).catch(() => {});
           }
           const downloadUrl = await uploadFn(file);
+          setPreview(null);
           onChange(downloadUrl);
         } catch (err) {
           console.error("Upload failed:", err);
