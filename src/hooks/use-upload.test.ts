@@ -137,6 +137,18 @@ describe("useUpload", () => {
     );
   });
 
+  it("refreshes auth token before deleting", async () => {
+    mockDeleteObject.mockResolvedValue(undefined);
+
+    const { result } = renderHook(() => useUpload({ basePath: "test/path" }));
+
+    await act(async () => {
+      await result.current.deleteFile("https://storage.example.com/test/file.png");
+    });
+
+    expect(mockGetIdToken).toHaveBeenCalledWith(true);
+  });
+
   it("deleteFile swallows errors silently", async () => {
     mockDeleteObject.mockRejectedValue(new Error("Not found"));
 

@@ -54,6 +54,11 @@ export function useUpload({ basePath }: UseUploadOptions) {
 
   async function deleteFile(fileUrl: string) {
     try {
+      // Force token refresh to ensure valid custom claims for storage rules
+      const user = getAuthInstance().currentUser;
+      if (user) {
+        await user.getIdToken(true);
+      }
       const fileRef = ref(getStorageInstance(), fileUrl);
       await deleteObject(fileRef);
     } catch (err) {
