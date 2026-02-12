@@ -36,6 +36,7 @@
     "dropHere": "Rilascia il file qui",
     "maxSize": "Dimensione massima: {{size}}MB",
     "uploadPreview": "Anteprima caricamento",
+    "uploadFailed": "Caricamento fallito. Riprova.",
     "close": "Chiudi"
   },
   "nav": {

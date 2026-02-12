@@ -9,6 +9,7 @@ const mockUploadTask = {
 
 const mockGetDownloadURL = vi.fn();
 const mockDeleteObject = vi.fn();
+const mockGetIdToken = vi.fn().mockResolvedValue("fresh-token");
 
 vi.mock("firebase/app", () => ({
   initializeApp: vi.fn(),
@@ -29,6 +30,13 @@ vi.mock("firebase/storage", () => ({
   uploadBytesResumable: vi.fn(() => mockUploadTask),
   getDownloadURL: (...args: unknown[]) => mockGetDownloadURL(...args),
   deleteObject: (...args: unknown[]) => mockDeleteObject(...args),
+}));
+
+vi.mock("@/lib/firebase", () => ({
+  getStorageInstance: vi.fn(),
+  getAuthInstance: vi.fn(() => ({
+    currentUser: { getIdToken: mockGetIdToken },
+  })),
 }));
 
 describe("useUpload", () => {
@@ -157,5 +165,43 @@ describe("useUpload", () => {
 
     // uploadBytesResumable should have been called with a ref that has sanitized path
     expect(uploadBytesResumable).toHaveBeenCalled();
+  });
+
+  it("refreshes auth token before uploading", async () => {
+    mockGetDownloadURL.mockResolvedValue("https://example.com/file.png");
+    mockUploadTask.on.mockImplementation(
+      (_event: string, _progress: unknown, _error: unknown, complete: () => void) => {
+        complete();
+      }
+    );
+
+    const { result } = renderHook(() => useUpload({ basePath: "test/path" }));
+
+    await act(async () => {
+      await result.current.upload(new File(["data"], "test.png"));
+    });
+
+    expect(mockGetIdToken).toHaveBeenCalledWith(true);
+  });
+
+  it("proceeds without token refresh when no user is signed in", async () => {
+    const { getAuthInstance } = await import("@/lib/firebase");
+    (getAuthInstance as ReturnType<typeof vi.fn>).mockReturnValueOnce({ currentUser: null });
+
+    mockGetDownloadURL.mockResolvedValue("https://example.com/file.png");
+    mockUploadTask.on.mockImplementation(
+      (_event: string, _progress: unknown, _error: unknown, complete: () => void) => {
+        complete();
+      }
+    );
+
+    const { result } = renderHook(() => useUpload({ basePath: "test/path" }));
+
+    mockGetIdToken.mockClear();
+    await act(async () => {
+      await result.current.upload(new File(["data"], "test.png"));
+    });
+
+    expect(mockGetIdToken).not.toHaveBeenCalled();
   });
 });

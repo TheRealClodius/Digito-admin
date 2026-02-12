@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from "firebase/storage";
-import { getStorageInstance } from "@/lib/firebase";
+import { getStorageInstance, getAuthInstance } from "@/lib/firebase";
 import { sanitizeFilename } from "@/lib/validation";
 
 interface UseUploadOptions {
@@ -21,6 +21,12 @@ export function useUpload({ basePath }: UseUploadOptions) {
     setUploading(true);
     setProgress(0);
     setError(null);
+
+    // Force token refresh to ensure valid custom claims for storage rules
+    const user = getAuthInstance().currentUser;
+    if (user) {
+      await user.getIdToken(true);
+    }
 
     return new Promise((resolve, reject) => {
       const uploadTask = uploadBytesResumable(storageRef, file);

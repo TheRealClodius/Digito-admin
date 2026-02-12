@@ -518,6 +518,31 @@ describe("ImageUpload", () => {
       expect(screen.getByText(/drag & drop or click to upload/i)).toBeInTheDocument();
     });
 
+    it("calls onError callback when upload fails", async () => {
+      const uploadFn = vi.fn().mockRejectedValue(new Error("Storage unauthorized"));
+      const onChange = vi.fn();
+      const onError = vi.fn();
+
+      render(
+        <ImageUpload
+          value={null}
+          onChange={onChange}
+          uploadFn={uploadFn}
+          onError={onError}
+        />
+      );
+
+      const file = new File(["img"], "photo.png", { type: "image/png" });
+      fireEvent.change(getFileInput(), { target: { files: [file] } });
+
+      await waitFor(() => {
+        expect(onError).toHaveBeenCalledWith(expect.any(Error));
+      });
+
+      expect(onChange).not.toHaveBeenCalled();
+      expect(screen.getByText(/drag & drop or click to upload/i)).toBeInTheDocument();
+    });
+
     it("does not call onChange when uploadFn is not provided", async () => {
       const onChange = vi.fn();
 

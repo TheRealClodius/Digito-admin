@@ -2,6 +2,7 @@
 
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { toast } from "sonner";
 import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -79,6 +80,8 @@ export function PostForm({
           value={imageUrlValue || null}
           onChange={(url) => setValue("imageUrl", url ?? "", { shouldValidate: true })}
           uploadFn={storagePath ? (file) => upload(file, `image_${Date.now()}_${file.name}`) : undefined}
+          deleteFileFn={storagePath ? deleteFile : undefined}
+          onError={() => toast.error(t("common.uploadFailed"))}
           disabled={isSubmitting}
         />
         {(errors.imageUrl || isImageEmpty) && (

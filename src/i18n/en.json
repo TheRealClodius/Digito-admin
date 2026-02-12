@@ -36,6 +36,7 @@
     "dropHere": "Drop the file here",
     "maxSize": "Max size: {{size}}MB",
     "uploadPreview": "Upload preview",
+    "uploadFailed": "Upload failed. Please try again.",
     "close": "Close"
   },
   "nav": {

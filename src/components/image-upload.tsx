@@ -15,6 +15,7 @@ interface ImageUploadProps {
   onChange: (url: string | null) => void;
   uploadFn?: (file: File) => Promise<string>;
   deleteFileFn?: (url: string) => Promise<void>;
+  onError?: (error: unknown) => void;
   disabled?: boolean;
   className?: string;
   maxSize?: number;
@@ -26,6 +27,7 @@ export function ImageUpload({
   onChange,
   uploadFn,
   deleteFileFn,
+  onError,
   disabled,
   className,
   maxSize = 10 * 1024 * 1024, // 10MB
@@ -117,12 +119,13 @@ export function ImageUpload({
         } catch (err) {
           console.error("Upload failed:", err);
           setPreview(null);
+          onError?.(err);
         } finally {
           setUploading(false);
         }
       }
     },
-    [uploadFn, deleteFileFn, onChange, value]
+    [uploadFn, deleteFileFn, onChange, value, onError]
   );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({

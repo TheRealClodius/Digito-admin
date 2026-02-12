@@ -2,6 +2,7 @@
 
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { toast } from "sonner";
 import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -206,6 +207,8 @@ export function ParticipantForm({
           value={avatarUrlValue || null}
           onChange={(url) => setValue("avatarUrl", url)}
           uploadFn={storagePath ? (file) => upload(file, `avatar_${Date.now()}_${file.name}`) : undefined}
+          deleteFileFn={storagePath ? deleteFile : undefined}
+          onError={() => toast.error(t("common.uploadFailed"))}
           disabled={isSubmitting}
         />
       </div>

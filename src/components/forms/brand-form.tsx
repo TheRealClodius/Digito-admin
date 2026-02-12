@@ -2,6 +2,7 @@
 
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { toast } from "sonner";
 import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -131,6 +132,8 @@ export function BrandForm({
           value={logoUrlValue || null}
           onChange={(url) => setValue("logoUrl", url)}
           uploadFn={storagePath ? (file) => upload(file, `logo_${Date.now()}_${file.name}`) : undefined}
+          deleteFileFn={storagePath ? deleteFile : undefined}
+          onError={() => toast.error(t("common.uploadFailed"))}
           disabled={isSubmitting}
         />
       </div>
@@ -141,6 +144,8 @@ export function BrandForm({
           value={imageUrlValue || null}
           onChange={(url) => setValue("imageUrl", url)}
           uploadFn={storagePath ? (file) => upload(file, `image_${Date.now()}_${file.name}`) : undefined}
+          deleteFileFn={storagePath ? deleteFile : undefined}
+          onError={() => toast.error(t("common.uploadFailed"))}
           disabled={isSubmitting}
         />
       </div>
