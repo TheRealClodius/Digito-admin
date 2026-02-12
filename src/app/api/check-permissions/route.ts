@@ -64,7 +64,8 @@ export async function GET(request: Request) {
     if (permDoc.exists) {
       const data = permDoc.data()!;
       console.log(`[check-permissions] → ${data.role} (from Firestore UID lookup, auto-healing claims)`);
-      await getAdminAuth().setCustomUserClaims(uid, { role: data.role });
+      const claims = data.role === "superadmin" ? { superadmin: true } : { role: data.role };
+      await getAdminAuth().setCustomUserClaims(uid, claims);
       return NextResponse.json({ role: data.role, permissions: data });
     }
 
@@ -96,7 +97,8 @@ export async function GET(request: Request) {
           await oldDoc.ref.delete();
         }
 
-        await getAdminAuth().setCustomUserClaims(uid, { role: data.role });
+        const emailClaims = data.role === "superadmin" ? { superadmin: true } : { role: data.role };
+        await getAdminAuth().setCustomUserClaims(uid, emailClaims);
         return NextResponse.json({ role: data.role, permissions: data });
       }
     }

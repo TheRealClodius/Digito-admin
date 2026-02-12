@@ -15,6 +15,7 @@ const mockVerifyIdToken = vi.fn();
 const mockGetUserByEmail = vi.fn();
 const mockCreateUser = vi.fn();
 const mockSetCustomUserClaims = vi.fn();
+const mockGetUser = vi.fn();
 
 // Track Firestore operations
 const mockFirestoreState = {
@@ -29,6 +30,7 @@ vi.mock("@/lib/firebase-admin", () => ({
     createUser: (...args: unknown[]) => mockCreateUser(...args),
     setCustomUserClaims: (...args: unknown[]) =>
       mockSetCustomUserClaims(...args),
+    getUser: (...args: unknown[]) => mockGetUser(...args),
   }),
   getAdminDb: () => ({
     collection: (collectionName: string) => ({
@@ -108,6 +110,10 @@ describe("POST /api/set-user-role", () => {
     mockGetUserByEmail.mockResolvedValue({
       uid: "target-uid",
       email: "target@test.com",
+    });
+    mockGetUser.mockResolvedValue({
+      uid: "target-uid",
+      customClaims: {},
     });
     mockSetCustomUserClaims.mockResolvedValue(undefined);
   });
@@ -310,5 +316,27 @@ describe("POST /api/set-user-role", () => {
     const permData = permSet!.data as Record<string, unknown>;
     expect(permData.role).toBe("eventAdmin");
     expect(permData.createdBy).toBe("clientadmin-uid");
+  });
+
+  it("preserves existing superadmin claim when setting role", async () => {
+    setupSuperadminCaller();
+    // Target user already has superadmin: true claim
+    mockGetUser.mockResolvedValue({
+      uid: "target-uid",
+      customClaims: { superadmin: true },
+    });
+    const req = createRequest({
+      email: "target@test.com",
+      role: "clientAdmin",
+      clientIds: ["c1"],
+    });
+    const res = await POST(req);
+    expect(res.status).toBe(200);
+
+    // Must merge with existing claims, not replace
+    expect(mockSetCustomUserClaims).toHaveBeenCalledWith("target-uid", {
+      superadmin: true,
+      role: "clientAdmin",
+    });
   });
 });

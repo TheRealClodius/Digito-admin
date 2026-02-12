@@ -181,6 +181,55 @@ describe("GET /api/check-permissions", () => {
     });
   });
 
+  it("auto-heals superadmin with { superadmin: true } not { role: 'superadmin' }", async () => {
+    mockVerifyIdToken.mockResolvedValue({
+      uid: "super-uid",
+      email: "super@test.com",
+      // No superadmin claim — it was wiped
+    });
+    mockFirestoreState.docs["userPermissions/super-uid"] = {
+      userId: "super-uid",
+      email: "super@test.com",
+      role: "superadmin",
+      clientIds: null,
+      eventIds: null,
+    };
+    const res = await GET(createRequest());
+    const body = await res.json();
+    expect(body.role).toBe("superadmin");
+
+    // Must use { superadmin: true } so storage.rules isSuperAdmin() matches
+    expect(mockSetCustomUserClaims).toHaveBeenCalledWith("super-uid", {
+      superadmin: true,
+    });
+  });
+
+  it("auto-heals superadmin via email fallback with correct claim format", async () => {
+    mockVerifyIdToken.mockResolvedValue({
+      uid: "new-super-uid",
+      email: "super@test.com",
+    });
+    mockFirestoreState.queryResults = [
+      {
+        id: "old-super-uid",
+        data: {
+          userId: "old-super-uid",
+          email: "super@test.com",
+          role: "superadmin",
+          clientIds: null,
+          eventIds: null,
+        },
+      },
+    ];
+    const res = await GET(createRequest());
+    const body = await res.json();
+    expect(body.role).toBe("superadmin");
+
+    expect(mockSetCustomUserClaims).toHaveBeenCalledWith("new-super-uid", {
+      superadmin: true,
+    });
+  });
+
   it("falls back to email search when UID doc missing, fixes UID and auto-heals", async () => {
     mockVerifyIdToken.mockResolvedValue({
       uid: "new-uid",

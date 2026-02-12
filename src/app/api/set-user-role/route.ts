@@ -97,8 +97,10 @@ export async function POST(request: Request) {
     }
   }
 
-  // 5. Set custom claims
-  await getAdminAuth().setCustomUserClaims(targetUser.uid, { role });
+  // 5. Set custom claims (merge with existing to avoid wiping superadmin, etc.)
+  const existingUser = await getAdminAuth().getUser(targetUser.uid);
+  const existingClaims = existingUser.customClaims || {};
+  await getAdminAuth().setCustomUserClaims(targetUser.uid, { ...existingClaims, role });
 
   // 6. Create userPermissions document
   await getAdminDb()
