@@ -54,8 +54,8 @@ export const sessionSchema = z.object({
   speakerBio: z.string().nullable().optional(),
   speakerAvatarUrl: z.string().nullable().optional(),
   participantId: z.string().nullable().optional(),
-  requiresRegistration: z.boolean().optional(),
-  requiresVIPAccess: z.boolean().optional(),
+  requiresAccess: z.boolean().optional(),
+  accessTier: z.enum(["regular", "premium", "vip", "staff"]).nullable().optional(),
   imageUrl: z.string().nullable().optional(),
 });
 

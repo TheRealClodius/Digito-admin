@@ -70,8 +70,8 @@ export default function SessionsPage({
             type: editingEntity.type,
             speakerName: editingEntity.speakerName ?? null,
             speakerBio: editingEntity.speakerBio ?? null,
-            requiresRegistration: editingEntity.requiresRegistration,
-            requiresVIPAccess: editingEntity.requiresVIPAccess,
+            requiresAccess: editingEntity.requiresAccess,
+            accessTier: editingEntity.accessTier as "regular" | "premium" | "vip" | "staff" | null | undefined,
           } : undefined}
           onSubmit={onSubmit}
           onCancel={onCancel}

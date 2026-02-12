@@ -13,8 +13,8 @@ export interface Session {
   speakerBio?: string | null;
   speakerAvatarUrl?: string | null;
   participantId?: string | null;
-  requiresRegistration: boolean;
-  requiresVIPAccess: boolean;
+  requiresAccess: boolean;
+  accessTier?: string | null;
   imageUrl?: string | null;
   createdAt: Timestamp;
 }

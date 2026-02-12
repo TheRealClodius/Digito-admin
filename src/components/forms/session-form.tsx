@@ -11,6 +11,8 @@ import { useTranslation } from "@/hooks/use-translation";
 
 type SubmitStatus = "idle" | "saving" | "success" | "error";
 
+type AccessTierValue = "regular" | "premium" | "vip" | "staff";
+
 interface SessionFormDefaultValues {
   title?: string | null;
   description?: string | null;
@@ -20,8 +22,8 @@ interface SessionFormDefaultValues {
   type?: SessionType | null;
   speakerName?: string | null;
   speakerBio?: string | null;
-  requiresRegistration?: boolean;
-  requiresVIPAccess?: boolean;
+  requiresAccess?: boolean;
+  accessTier?: AccessTierValue | null;
 }
 
 interface SessionFormProps {
@@ -41,6 +43,8 @@ function formatDateForInput(date: Date | null | undefined): string {
   return `${year}-${month}-${day}T${hours}:${minutes}`;
 }
 
+const ACCESS_TIERS: AccessTierValue[] = ["regular", "premium", "vip", "staff"];
+
 interface FormValues {
   title: string;
   description: string;
@@ -50,8 +54,8 @@ interface FormValues {
   type: SessionType;
   speakerName: string;
   speakerBio: string;
-  requiresRegistration: boolean;
-  requiresVIPAccess: boolean;
+  requiresAccess: boolean;
+  accessTier: AccessTierValue;
 }
 
 const SESSION_TYPES: SessionType[] = [
@@ -87,13 +91,13 @@ export function SessionForm({
       type: defaultValues?.type ?? "talk",
       speakerName: defaultValues?.speakerName ?? "",
       speakerBio: defaultValues?.speakerBio ?? "",
-      requiresRegistration: defaultValues?.requiresRegistration ?? false,
-      requiresVIPAccess: defaultValues?.requiresVIPAccess ?? false,
+      requiresAccess: defaultValues?.requiresAccess ?? false,
+      accessTier: defaultValues?.accessTier ?? "regular",
     },
     mode: "onBlur",
   });
 
-  const titleValue = watch("title");
+  const [titleValue, requiresAccessValue] = watch(["title", "requiresAccess"]);
 
   const isSubmitDisabled = !titleValue?.trim() || isSubmitting;
 
@@ -216,24 +220,33 @@ export function SessionForm({
       <div className="flex items-center space-x-2">
         <input
           type="checkbox"
-          id="requiresRegistration"
-          aria-label={t("common.requiresRegistration")}
-          {...register("requiresRegistration")}
+          role="switch"
+          id="requiresAccess"
+          aria-label={t("common.requiresAccess")}
+          checked={requiresAccessValue}
+          onChange={(e) => setValue("requiresAccess", e.target.checked)}
           className="h-4 w-4"
         />
-        <Label htmlFor="requiresRegistration">{t("common.requiresRegistration")}</Label>
+        <Label htmlFor="requiresAccess">{t("common.requiresAccess")}</Label>
       </div>
 
-      <div className="flex items-center space-x-2">
-        <input
-          type="checkbox"
-          id="requiresVIPAccess"
-          aria-label={t("common.requiresVIPAccess")}
-          {...register("requiresVIPAccess")}
-          className="h-4 w-4"
-        />
-        <Label htmlFor="requiresVIPAccess">{t("common.requiresVIPAccess")}</Label>
-      </div>
+      {requiresAccessValue && (
+        <div className="space-y-3">
+          <Label htmlFor="accessTier">{t("sessions.accessTier")}</Label>
+          <select
+            id="accessTier"
+            aria-label={t("sessions.accessTier")}
+            className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+            {...register("accessTier")}
+          >
+            {ACCESS_TIERS.map((tier) => (
+              <option key={tier} value={tier}>
+                {tier}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
 
       <div className="col-span-2 flex items-center gap-4">
         <Button type="submit" disabled={isSubmitDisabled}>

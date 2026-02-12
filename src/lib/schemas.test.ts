@@ -459,8 +459,8 @@ describe("sessionSchema", () => {
     const result = sessionSchema.safeParse(validSession);
     expect(result.success).toBe(true);
     if (result.success) {
-      expect(result.data.requiresRegistration).toBeUndefined();
-      expect(result.data.requiresVIPAccess).toBeUndefined();
+      expect(result.data.requiresAccess).toBeUndefined();
+      expect(result.data.accessTier).toBeUndefined();
     }
   });
 
@@ -498,22 +498,31 @@ describe("sessionSchema", () => {
     expect(sessionSchema.safeParse({ ...validSession, type: "meetup" }).success).toBe(false);
   });
 
-  it("accepts requiresRegistration boolean", () => {
-    expect(sessionSchema.safeParse({ ...validSession, requiresRegistration: true }).success).toBe(true);
-    expect(sessionSchema.safeParse({ ...validSession, requiresRegistration: false }).success).toBe(true);
+  it("accepts requiresAccess boolean", () => {
+    expect(sessionSchema.safeParse({ ...validSession, requiresAccess: true }).success).toBe(true);
+    expect(sessionSchema.safeParse({ ...validSession, requiresAccess: false }).success).toBe(true);
   });
 
-  it("accepts requiresVIPAccess boolean", () => {
-    expect(sessionSchema.safeParse({ ...validSession, requiresVIPAccess: true }).success).toBe(true);
-    expect(sessionSchema.safeParse({ ...validSession, requiresVIPAccess: false }).success).toBe(true);
+  it("accepts valid accessTier enum values", () => {
+    for (const tier of ["regular", "premium", "vip", "staff"]) {
+      expect(sessionSchema.safeParse({ ...validSession, accessTier: tier }).success).toBe(true);
+    }
   });
 
-  it("leaves requiresRegistration and requiresVIPAccess undefined when not provided", () => {
+  it("accepts null accessTier", () => {
+    expect(sessionSchema.safeParse({ ...validSession, accessTier: null }).success).toBe(true);
+  });
+
+  it("rejects invalid accessTier value", () => {
+    expect(sessionSchema.safeParse({ ...validSession, accessTier: "gold" }).success).toBe(false);
+  });
+
+  it("leaves requiresAccess and accessTier undefined when not provided", () => {
     const result = sessionSchema.safeParse(validSession);
     expect(result.success).toBe(true);
     if (result.success) {
-      expect(result.data.requiresRegistration).toBeUndefined();
-      expect(result.data.requiresVIPAccess).toBeUndefined();
+      expect(result.data.requiresAccess).toBeUndefined();
+      expect(result.data.accessTier).toBeUndefined();
     }
   });
 

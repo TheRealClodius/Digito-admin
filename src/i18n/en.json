@@ -209,6 +209,7 @@
     "speakerName": "Speaker Name",
     "speakerBio": "Speaker Bio",
     "speaker": "Speaker",
+    "accessTier": "Access Tier",
     "countLabel": "{{count}} session(s)",
     "noSessionsFound": "No sessions found"
   },

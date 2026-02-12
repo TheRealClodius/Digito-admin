@@ -209,6 +209,7 @@
     "speakerName": "Nome Relatore",
     "speakerBio": "Bio Relatore",
     "speaker": "Relatore",
+    "accessTier": "Livello di Accesso",
     "countLabel": "{{count}} sessione/i",
     "noSessionsFound": "Nessuna sessione trovata"
   },

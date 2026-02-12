@@ -117,11 +117,16 @@ describe("SessionForm", () => {
     expect(screen.getByRole("textbox", { name: /speaker bio/i })).toBeInTheDocument();
   });
 
-  it("renders the Requires Registration and Requires VIP Access checkboxes", () => {
+  it("renders the Requires Access checkbox", () => {
     render(<SessionForm {...defaultProps} />);
 
-    expect(screen.getByLabelText(/requires registration/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/requires vip access/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/requires access/i)).toBeInTheDocument();
+  });
+
+  it("does not render Access Tier dropdown when requiresAccess is false", () => {
+    render(<SessionForm {...defaultProps} />);
+
+    expect(screen.queryByLabelText(/access tier/i)).not.toBeInTheDocument();
   });
 
   // ---- Submit and Cancel buttons ----
@@ -205,8 +210,7 @@ describe("SessionForm", () => {
           speakerName: "Alice",
           speakerBio: "Expert in testing",
           type: "workshop",
-          requiresRegistration: false,
-          requiresVIPAccess: false,
+          requiresAccess: false,
         }}
       />,
     );
@@ -293,28 +297,78 @@ describe("SessionForm", () => {
     expect(optionValues).toContain("other");
   });
 
-  // ---- Checkboxes reflect default values ----
+  // ---- requiresAccess and accessTier ----
 
-  it("pre-fills requiresRegistration when defaultValues has it true", () => {
+  it("pre-fills requiresAccess when defaultValues has it true", () => {
     render(
       <SessionForm
         {...defaultProps}
-        defaultValues={{ requiresRegistration: true }}
+        defaultValues={{ requiresAccess: true }}
       />,
     );
 
-    expect(screen.getByLabelText(/requires registration/i)).toBeChecked();
+    expect(screen.getByLabelText(/requires access/i)).toBeChecked();
   });
 
-  it("pre-fills requiresVIPAccess when defaultValues has it true", () => {
+  it("shows Access Tier dropdown when requiresAccess is true", () => {
     render(
       <SessionForm
         {...defaultProps}
-        defaultValues={{ requiresVIPAccess: true }}
+        defaultValues={{ requiresAccess: true }}
       />,
     );
 
-    expect(screen.getByLabelText(/requires vip access/i)).toBeChecked();
+    const tierSelect = screen.getByLabelText(/access tier/i);
+    expect(tierSelect).toBeInTheDocument();
+
+    const options = tierSelect.querySelectorAll("option");
+    const optionValues = Array.from(options).map((o) =>
+      (o as HTMLOptionElement).value,
+    );
+    expect(optionValues).toContain("regular");
+    expect(optionValues).toContain("premium");
+    expect(optionValues).toContain("vip");
+    expect(optionValues).toContain("staff");
+  });
+
+  it("pre-fills accessTier when defaultValues has it set", () => {
+    render(
+      <SessionForm
+        {...defaultProps}
+        defaultValues={{ requiresAccess: true, accessTier: "vip" }}
+      />,
+    );
+
+    expect(screen.getByLabelText(/access tier/i)).toHaveValue("vip");
+  });
+
+  it("shows Access Tier dropdown when requiresAccess is toggled on", async () => {
+    const user = userEvent.setup();
+    render(<SessionForm {...defaultProps} />);
+
+    expect(screen.queryByLabelText(/access tier/i)).not.toBeInTheDocument();
+
+    const checkbox = screen.getByLabelText(/requires access/i);
+    await user.click(checkbox);
+
+    expect(screen.getByLabelText(/access tier/i)).toBeInTheDocument();
+  });
+
+  it("hides Access Tier dropdown when requiresAccess is toggled off", async () => {
+    const user = userEvent.setup();
+    render(
+      <SessionForm
+        {...defaultProps}
+        defaultValues={{ requiresAccess: true }}
+      />,
+    );
+
+    expect(screen.getByLabelText(/access tier/i)).toBeInTheDocument();
+
+    const checkbox = screen.getByLabelText(/requires access/i);
+    await user.click(checkbox);
+
+    expect(screen.queryByLabelText(/access tier/i)).not.toBeInTheDocument();
   });
 
   // ---- Calls onSubmit with form data on valid submission ----
