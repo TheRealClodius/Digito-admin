@@ -18,11 +18,19 @@ export function useFeedback(clientId: string, eventId: string) {
     setRefreshKey((k) => k + 1);
   }, []);
 
+  const isAuthenticated = !!user;
+
   useEffect(() => {
     if (!clientId || !eventId) {
       setData([]);
       setLoading(false);
       setError(null);
+      return;
+    }
+
+    // Wait for auth to be ready before fetching
+    if (!userRef.current) {
+      setLoading(true);
       return;
     }
 
@@ -32,7 +40,7 @@ export function useFeedback(clientId: string, eventId: string) {
 
     (async () => {
       try {
-        const token = await userRef.current?.getIdToken();
+        const token = await userRef.current!.getIdToken();
         const res = await fetch(
           `/api/feedback?clientId=${encodeURIComponent(clientId)}&eventId=${encodeURIComponent(eventId)}`,
           {
@@ -62,7 +70,7 @@ export function useFeedback(clientId: string, eventId: string) {
     return () => {
       cancelled = true;
     };
-  }, [clientId, eventId, refreshKey]);
+  }, [clientId, eventId, refreshKey, isAuthenticated]);
 
   return { data, loading, error, refresh };
 }
