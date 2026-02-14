@@ -48,6 +48,7 @@
     "happenings": "Happenings",
     "participants": "Participants",
     "posts": "Posts",
+    "feedback": "Feedback",
     "whitelist": "Whitelist",
     "settings": "Settings",
     "signOut": "Sign Out",
@@ -270,6 +271,18 @@
     "countLabelPlural": "{{count}} entries",
     "noEntriesFound": "No entries found",
     "failedToSave": "Failed to save whitelist entry"
+  },
+  "feedback": {
+    "title": "User Feedback",
+    "description": "Feedback collected from app users via the AI assistant",
+    "noFeedbackFound": "No feedback yet",
+    "user": "User",
+    "feedback": "Feedback",
+    "company": "Company",
+    "date": "Date",
+    "refreshButton": "Refresh",
+    "accessDenied": "Only super admins can view feedback",
+    "countLabel": "{{count}} feedback entries"
   },
   "crud": {
     "newEntity": "New {{entity}}",

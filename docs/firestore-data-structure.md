@@ -19,7 +19,8 @@ Firestore Root
         │
         ├── whitelist/{whitelistId}   ← Allowed attendees + access tier
         ├── users/{userId}            ← Event-scoped user profile (attendee data)
-        │   └── {document=**}         ← Optional nested docs (e.g. profile, favorites)
+        │   ├── feedback/{feedbackId} ← User feedback (from AI chat agent)
+        │   └── {document=**}         ← Other nested docs (favorites, chats, chatMeta)
         │
         ├── brands/{docId}
         ├── stands/{docId}
@@ -292,6 +293,28 @@ Kept for backward compatibility; `seed-admins.ts` still writes here.
 **Flutter contract:** The Flutter app reads `requiresAccess` (boolean) and `accessTier` (string, nullable). These field names must match exactly.
 
 **Type:** `Session` (see `src/types/session.ts`)
+
+---
+
+---
+
+## 8. Feedback (user subcollection)
+
+**Path:** `clients/{clientId}/events/{eventId}/users/{userId}/feedback/{feedbackId}`
+
+**Access:** Owner (read/write, if active). Admins with `canWriteEventContent` (read only).
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `feedbackText` | string | yes | The user's feedback message |
+| `timestamp` | string | yes | ISO 8601 timestamp (e.g. `"2026-02-06T19:31:45.978310+00:00"`) |
+| `chatSessionId` | string | yes | ID of the AI chat session that collected the feedback |
+
+**Source:** Created by the Flutter app's AI chat agent when users provide feedback via the feedback tool.
+
+**Admin access:** SuperAdmins can view aggregated feedback via the admin dashboard at `/events/{eventId}/feedback`. The dashboard enriches feedback with user profile data (name, email, company) server-side via the `GET /api/feedback` route.
+
+**Type:** `FeedbackEntry` (see `src/types/feedback.ts`)
 
 ---
 

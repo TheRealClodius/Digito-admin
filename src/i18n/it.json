@@ -48,6 +48,7 @@
     "happenings": "Happening",
     "participants": "Partecipanti",
     "posts": "Post",
+    "feedback": "Feedback",
     "whitelist": "Whitelist",
     "settings": "Impostazioni",
     "signOut": "Esci",
@@ -270,6 +271,18 @@
     "countLabelPlural": "{{count}} voci",
     "noEntriesFound": "Nessuna voce trovata",
     "failedToSave": "Impossibile salvare la voce della whitelist"
+  },
+  "feedback": {
+    "title": "Feedback Utenti",
+    "description": "Feedback raccolto dagli utenti dell'app tramite l'assistente AI",
+    "noFeedbackFound": "Nessun feedback ancora",
+    "user": "Utente",
+    "feedback": "Feedback",
+    "company": "Azienda",
+    "date": "Data",
+    "refreshButton": "Aggiorna",
+    "accessDenied": "Solo i super admin possono visualizzare il feedback",
+    "countLabel": "{{count}} voci di feedback"
   },
   "crud": {
     "newEntity": "Nuovo {{entity}}",

@@ -554,7 +554,27 @@ Scoped to the selected client + event context.
 - **No create/edit/delete** — user profiles are owned by users
 - Expand row to see: favorites count, attending sessions count, chat sessions count
 
-### 6.13 Settings Page (`/settings`)
+### 6.13 Feedback Page (`/events/[eventId]/feedback`) — SuperAdmin Only, Read-Only
+
+Displays user feedback collected by the Flutter app's AI chat agent.
+
+**Data source:** `clients/{clientId}/events/{eventId}/users/{userId}/feedback/{feedbackId}` — aggregated across all users via `GET /api/feedback` API route using Firebase Admin SDK.
+
+**List View:**
+- Table: user (name + email), company, feedback text, date
+- Refresh button to re-fetch data
+- No create/edit/delete — feedback is submitted by app users only
+
+**Access:** SuperAdmin only. Non-superadmins see an access denied message. The sidebar "Feedback" nav item is hidden for non-superadmins.
+
+**Files:**
+- Type: `src/types/feedback.ts`
+- API route: `src/app/api/feedback/route.ts`
+- Hook: `src/hooks/use-feedback.ts`
+- Table: `src/components/tables/feedback-table.tsx`
+- Page: `src/app/(dashboard)/events/[eventId]/feedback/page.tsx`
+
+### 6.14 Settings Page (`/settings`)
 
 - Current admin info (email, display name)
 - Manage super admins (list, add by email — creates Firebase Auth user + superAdmins doc)

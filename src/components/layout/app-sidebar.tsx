@@ -14,6 +14,7 @@ import {
   Sparkles,
   Users,
   FileImage,
+  MessageSquareText,
   Settings,
   LogOut,
   ChevronsUp,
@@ -37,13 +38,14 @@ const allMainNav = [
 
 const ROLE_LEVEL = { superadmin: 3, clientAdmin: 2, eventAdmin: 1 } as const;
 
-const eventNav = [
+const allEventNav = [
   { labelKey: "nav.overview" as TranslationKey, href: "", icon: Calendar },
   { labelKey: "nav.stands" as TranslationKey, href: "/stands", icon: MapPin },
   { labelKey: "nav.sessions" as TranslationKey, href: "/sessions", icon: Mic2 },
   { labelKey: "nav.happenings" as TranslationKey, href: "/happenings", icon: Sparkles },
   { labelKey: "nav.participants" as TranslationKey, href: "/whitelist", icon: Users },
   { labelKey: "nav.posts" as TranslationKey, href: "/posts", icon: FileImage },
+  { labelKey: "nav.feedback" as TranslationKey, href: "/feedback", icon: MessageSquareText, minRole: "superadmin" as const },
 ];
 
 interface AppSidebarProps {
@@ -62,6 +64,12 @@ export function AppSidebar({ collapsed = false, onToggleCollapse }: AppSidebarPr
   // Filter main nav based on role
   const mainNav = useMemo(
     () => allMainNav.filter((item) => roleLevel >= ROLE_LEVEL[item.minRole]),
+    [roleLevel]
+  );
+
+  // Filter event nav based on role (items without minRole are visible to all)
+  const eventNav = useMemo(
+    () => allEventNav.filter((item) => !item.minRole || roleLevel >= ROLE_LEVEL[item.minRole]),
     [roleLevel]
   );
 
