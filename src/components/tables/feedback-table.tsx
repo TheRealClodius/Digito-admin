@@ -11,6 +11,7 @@ import {
   TableHead,
   TableCell,
 } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
 import { useTranslation } from "@/hooks/use-translation";
 
 interface FeedbackTableProps {
@@ -44,9 +45,9 @@ export const FeedbackTable = memo(function FeedbackTable({
 
   return (
     <>
-      <div className="mb-2 text-sm text-muted-foreground">
+      <Badge variant="secondary">
         {t("feedback.countLabel", { count: entries.length })}
-      </div>
+      </Badge>
       <Table>
         <TableHeader>
           <TableRow>
