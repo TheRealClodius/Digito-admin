@@ -60,7 +60,7 @@ export function PermissionsProvider({ children }: { children: ReactNode }) {
             email: user!.email ?? "",
             role: "superadmin",
             clientIds: null,
-            eventIds: null,
+            eventCodes: null,
             createdAt: new Date(),
             updatedAt: new Date(),
             createdBy: user!.uid,

@@ -141,7 +141,7 @@ export default function DebugAuthPage() {
               <div className="text-sm space-y-1">
                 <p><strong>Role:</strong> {permissions.role}</p>
                 <p><strong>Client Access:</strong> {permissions.clientIds === null ? "All clients" : permissions.clientIds?.join(", ") || "None"}</p>
-                <p><strong>Event Access:</strong> {permissions.eventIds === null ? "All events" : permissions.eventIds?.join(", ") || "None"}</p>
+                <p><strong>Event Access:</strong> {permissions.eventCodes === null ? "All events" : permissions.eventCodes?.join(", ") || "None"}</p>
               </div>
             </div>
           ) : (

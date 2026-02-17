@@ -31,8 +31,8 @@ export function canAccessEvent(
   // clientAdmins have access to all events in their assigned clients
   if (permissions.role === "clientAdmin") return true;
   // eventAdmins need explicit event assignment
-  if (!permissions.eventIds) return false;
-  return permissions.eventIds.includes(eventId);
+  if (!permissions.eventCodes) return false;
+  return permissions.eventCodes.includes(eventId);
 }
 
 /** Only superadmins can create/edit/delete clients */
@@ -82,5 +82,5 @@ export function getAccessibleEventIds(
 ): string[] | null {
   if (permissions.role === "superadmin") return null;
   if (permissions.role === "clientAdmin") return null;
-  return permissions.eventIds ?? [];
+  return permissions.eventCodes ?? [];
 }

@@ -9,7 +9,7 @@ interface AddAdminParams {
   email: string;
   role: "clientAdmin" | "eventAdmin";
   clientIds: string[];
-  eventIds?: string[];
+  eventCodes?: string[];
 }
 
 export function useAdminManagement() {

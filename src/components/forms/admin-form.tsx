@@ -15,7 +15,7 @@ interface AdminFormProps {
     email: string;
     role: "clientAdmin" | "eventAdmin";
     clientIds: string[];
-    eventIds?: string[];
+    eventCodes?: string[];
   }) => void;
   onCancel: () => void;
   submitStatus?: SubmitStatus;
@@ -75,6 +75,8 @@ export function AdminForm({
         <Label htmlFor="admin-role">{t("participants.role")}</Label>
         <select
           id="admin-role"
+          aria-labelledby="admin-role"
+          title="admin-role"
           value={role}
           onChange={(e) => setRole(e.target.value as "clientAdmin" | "eventAdmin")}
           disabled={isSubmitting || restrictToEventAdmin}

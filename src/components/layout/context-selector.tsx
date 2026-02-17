@@ -68,11 +68,11 @@ export function ContextSelector() {
     return allClients.filter((c) => permissions.clientIds!.includes(c.id));
   }, [allClients, permissions?.clientIds]);
 
-  // Filter events for eventAdmins (null eventIds = full access)
+  // Filter events for eventAdmins (null eventCodes = full access)
   const events = useMemo(() => {
-    if (!permissions?.eventIds) return allEvents;
-    return allEvents.filter((e) => permissions.eventIds!.includes(e.id));
-  }, [allEvents, permissions?.eventIds]);
+    if (!permissions?.eventCodes) return allEvents;
+    return allEvents.filter((e) => permissions.eventCodes!.includes(e.id));
+  }, [allEvents, permissions?.eventCodes]);
 
   // Auto-select first available client for non-SuperAdmins
   useEffect(() => {

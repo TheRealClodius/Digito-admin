@@ -1020,3 +1020,160 @@ The dashboard TypeScript types must produce Firestore documents that the Flutter
 3. **Use `merge: true`** (`setDoc` with `{ merge: true }`) — never overwrite entire documents
 4. **Boolean defaults** — always explicitly set `isHighlighted: false`, `requiresAccess: false`, `isActive: true`
 5. **New collections are safe** — the Flutter app ignores collections it doesn't query
+
+---
+
+## 12. Architecture Migration: Firebase → MongoDB Atlas + AWS Amplify Gen 2 + Cognito
+
+**Status:** Phase 0 (Foundation) completed — Feb 2026
+
+The Goodgest admin dashboard is migrating from Firebase to align with the existing Goodgest ecosystem infrastructure (MongoDB Atlas, Cognito, Cloudflare R2, AWS Amplify). This migration follows a phased approach to minimize breaking changes.
+
+### Migration Plan Overview
+
+See `goodgest-arch-migration.md` for the complete migration plan.
+
+**Phases:**
+- ✅ **Phase 0** — Foundation (MongoDB + Dependencies) — Completed
+- 🔄 **Phase 1** — Authentication (Firebase Auth → Cognito)
+- 🔄 **Phase 2** — Data Layer (Firestore → MongoDB API Routes + React Query)
+- 🔄 **Phase 3** — File Storage (Firebase Storage → Cloudflare R2)
+- 🔄 **Phase 4** — Security (Proxy + Server-side RBAC)
+- 🔄 **Phase 5** — Cleanup + Deployment
+
+### Phase 0 Implementation (Completed)
+
+**Goal:** Add MongoDB infrastructure without breaking existing Firebase functionality.
+
+#### New Dependencies
+- `mongodb@7.1.0` — Native MongoDB driver for multi-database access
+- `@tanstack/react-query@5.90.21` — Data fetching, caching, and state management
+
+#### MongoDB Connection Layer
+
+**File:** `src/lib/mongodb.ts`
+- Singleton `MongoClient` with connection pooling (optimized for Next.js serverless)
+- Connection pool: `maxPoolSize: 10`, `minPoolSize: 1`, `maxIdleTimeMS: 60000`
+- Functions:
+  - `getAdminDb()` → Returns master database (`goodgest-admin`)
+  - `getEventDb(eventCode)` → Returns event database by code (e.g., `"2025089"`)
+  - `closeConnection()` → Cleanup for tests
+
+**File:** `src/lib/mongodb-collections.ts`
+- Typed collection accessors:
+  - `getAdminUsersCollection()` → `Collection<AdminUser>`
+  - `getClientsCollection()` → `Collection<ClientDocument>`
+  - `getClientEventsCollection()` → `Collection<ClientEventDocument>`
+  - `getEventCollection<T>(eventCode, collectionName)` → Generic event collection accessor
+
+#### Master Database Schema (`goodgest-admin`)
+
+**Collection: `adminUsers`**
+```typescript
+{
+  _id: ObjectId,
+  cognitoSub?: string,        // Cognito user ID (added in Phase 1)
+  email: string,              // Lowercase, unique index
+  role: "superadmin" | "clientAdmin" | "eventAdmin",
+  clientIds: string[] | null, // null = all
+  eventCodes: string[] | null,// Event database names (e.g., ["2025089"])
+  firstName: string,
+  lastName: string,
+  isActive: boolean,
+  language: "en" | "it",
+  createdAt: Date,
+  updatedAt: Date,
+  createdBy: string,          // cognitoSub of creator
+  updatedBy: string,
+}
+```
+
+**Collection: `clients`**
+```typescript
+{
+  _id: ObjectId,
+  name: string,
+  description: string | null,
+  logoUrl: string | null,
+  createdAt: Date,
+  updatedAt: Date,
+}
+```
+
+**Collection: `clientEvents`** (mapping table)
+```typescript
+{
+  _id: ObjectId,
+  clientId: ObjectId,         // Reference to clients._id
+  eventCode: string,          // MongoDB database name (e.g., "2025089")
+  eventName: string,          // Cached display name
+  isActive: boolean,
+  createdAt: Date,
+}
+```
+
+#### TypeScript Type Updates
+
+**Breaking change: `eventIds` → `eventCodes`**
+- `UserPermissions.eventIds` renamed to `UserPermissions.eventCodes`
+- `eventCodes` contains MongoDB database names (e.g., `["2025089", "2026003"]`)
+- Updated in 8+ production files across hooks, components, API routes
+
+**New types:**
+- `src/types/admin-user.ts` — Admin user types for MongoDB
+- `src/types/mongodb-schema.ts` — Client and ClientEvent document schemas
+- `src/types/client.ts` — Updated: `Timestamp` → `Date | string`
+- `src/types/event.ts` — Updated: `Timestamp` → `Date | string`, added `eventCode` field
+
+#### React Query Integration
+
+**File:** `src/app/providers.tsx`
+- Added `QueryClientProvider` wrapper (outermost provider)
+- Default options:
+  - `staleTime: 30s` — Data considered fresh for 30 seconds
+  - `gcTime: 5min` — Unused data kept in cache for 5 minutes
+  - `retry: 1` — Single retry on failure
+  - `refetchOnWindowFocus: false` — Prevent automatic refetch
+
+#### Tests
+
+**Created test suites (72 tests, all passing):**
+- `src/lib/mongodb.test.ts` — Connection layer, singleton, pooling, concurrent access
+- `src/lib/mongodb-collections.test.ts` — Collection accessors, error handling
+- `src/types/admin-user.test.ts` — Type validation, role constraints
+- `src/types/mongodb-schema.test.ts` — Document schemas, relationships
+
+#### Environment Variables
+
+**Added to `.env`:**
+```bash
+MONGODB_URI=mongodb+srv://<username>:<password>@<cluster>.mongodb.net/?retryWrites=true&w=majority
+MONGODB_ADMIN_DB_NAME=goodgest-admin  # Optional, defaults to "goodgest-admin"
+```
+
+#### Event Database Architecture
+
+Each event has its own MongoDB database identified by `eventCode` (e.g., `"2025089"`).
+
+**Standard event collections:**
+- `brands`, `sessions`, `happenings`, `participants`, `posts`, `whitelist`, `stands`, `users`, `feedback`
+
+**Access pattern:**
+```typescript
+const participants = await getEventCollection("2025089", "participants");
+const allParticipants = await participants.find().toArray();
+```
+
+#### Migration Notes
+
+**Phase 0 is "no breaking changes":**
+- App continues to use Firebase for all operations
+- MongoDB infrastructure is additive only
+- All production code compiles and runs
+- 72 new tests ensure MongoDB layer works correctly
+
+**Next steps (Phase 1):**
+- Replace Firebase Auth with AWS Cognito
+- Implement Amplify Gen 2 backend with Lambda triggers
+- Add server-side `proxy.ts` for route protection (Next.js 16 feature)
+- Create user sync flow (Cognito ↔ MongoDB)

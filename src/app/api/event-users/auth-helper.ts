@@ -57,7 +57,7 @@ export async function verifyEventUserAccess(
     .get();
   const callerPerms = callerPermsSnap.data();
   const callerClientIds: string[] = callerPerms?.clientIds || [];
-  const callerEventIds: string[] = callerPerms?.eventIds || [];
+  const callerEventIds: string[] = callerPerms?.eventCodes || [];
 
   if (!callerClientIds.includes(clientId)) {
     return NextResponse.json(

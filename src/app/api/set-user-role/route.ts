@@ -23,7 +23,7 @@ export async function POST(request: Request) {
 
   // 2. Parse and validate body
   const body = await request.json();
-  const { email, role, clientIds, eventIds } = body;
+  const { email, role, clientIds, eventCodes } = body;
 
   if (!email || typeof email !== "string") {
     return NextResponse.json({ error: "email is required" }, { status: 400 });
@@ -111,7 +111,7 @@ export async function POST(request: Request) {
       email: targetUser.email,
       role,
       clientIds,
-      eventIds: eventIds || null,
+      eventCodes: eventCodes || null,
       createdAt: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp(),
       createdBy: callerClaims.uid,

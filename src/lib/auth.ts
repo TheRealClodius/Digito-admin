@@ -78,7 +78,7 @@ export async function getUserPermissions(userId: string): Promise<UserPermission
       createdAt: data.createdAt?.toDate() || new Date(),
       updatedAt: data.updatedAt?.toDate() || new Date(),
       clientIds: data.clientIds || null,
-      eventIds: data.eventIds || null,
+      eventCodes: data.eventCodes || null,
       createdBy: data.createdBy,
       updatedBy: data.updatedBy,
     };
@@ -121,7 +121,7 @@ export async function verifyPermissions(
           email: data.permissions.email,
           role: data.permissions.role,
           clientIds: data.permissions.clientIds || null,
-          eventIds: data.permissions.eventIds || null,
+          eventCodes: data.permissions.eventCodes || null,
           createdAt: data.permissions.createdAt
             ? new Date(data.permissions.createdAt)
             : new Date(),

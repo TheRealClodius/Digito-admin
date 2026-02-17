@@ -45,7 +45,7 @@ export default function SettingsPage() {
     email: string;
     role: "clientAdmin" | "eventAdmin";
     clientIds: string[];
-    eventIds?: string[];
+    eventCodes?: string[];
   }) {
     setSubmitStatus("saving");
     try {

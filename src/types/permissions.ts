@@ -8,38 +8,43 @@
 export type UserRole = 'superadmin' | 'clientAdmin' | 'eventAdmin';
 
 /**
- * User permissions document stored in Firestore
- * Collection: userPermissions/{userId}
+ * User permissions document stored in MongoDB
+ * Collection: adminUsers (in goodgest-admin database)
  *
  * @example Superadmin (full access)
  * {
  *   userId: "abc123",
+ *   cognitoSub: "cognito-uuid-xxx",
  *   email: "andrei.clodius@goodgest.com",
  *   role: "superadmin",
- *   clientIds: null,  // null = full access
- *   eventIds: null,   // null = full access
- *   createdAt: Timestamp,
- *   updatedAt: Timestamp,
- *   createdBy: "abc123",
- *   updatedBy: "abc123"
+ *   clientIds: null,     // null = full access
+ *   eventCodes: null,    // null = full access
+ *   createdAt: Date,
+ *   updatedAt: Date,
+ *   createdBy: "cognito-uuid-xxx",
+ *   updatedBy: "cognito-uuid-xxx"
  * }
  *
  * @example Client Admin (scoped access)
  * {
  *   userId: "def456",
+ *   cognitoSub: "cognito-uuid-yyy",
  *   email: "client-admin@example.com",
  *   role: "clientAdmin",
  *   clientIds: ["client-1", "client-2"],  // Specific clients
- *   eventIds: null,                        // All events in allowed clients
- *   createdAt: Timestamp,
- *   updatedAt: Timestamp,
- *   createdBy: "abc123",
- *   updatedBy: "abc123"
+ *   eventCodes: null,                      // All events in allowed clients
+ *   createdAt: Date,
+ *   updatedAt: Date,
+ *   createdBy: "cognito-uuid-xxx",
+ *   updatedBy: "cognito-uuid-xxx"
  * }
  */
 export interface UserPermissions {
-  /** Firebase Auth UID */
+  /** User ID (for backward compatibility, will be removed in future) */
   userId: string;
+
+  /** Cognito user identifier (immutable) - primary auth link (optional during Phase 0) */
+  cognitoSub?: string;
 
   /** User email (for debugging and display) */
   email: string;
@@ -62,16 +67,16 @@ export interface UserPermissions {
   clientIds?: string[] | null;
 
   /**
-   * List of event IDs this user can access
-   * - null = full access (for superadmins)
+   * List of event codes (MongoDB database names) this user can access
+   * - null = full access (for superadmins and clientAdmins within their clients)
    * - [] = no access
-   * - ['event-1', 'event-2'] = scoped access
+   * - ['2025089', '2026003'] = scoped access to specific events
    */
-  eventIds?: string[] | null;
+  eventCodes?: string[] | null;
 
-  /** UID of user who created this permission */
+  /** Cognito sub of user who created this permission */
   createdBy: string;
 
-  /** UID of user who last updated this permission */
+  /** Cognito sub of user who last updated this permission */
   updatedBy: string;
 }
