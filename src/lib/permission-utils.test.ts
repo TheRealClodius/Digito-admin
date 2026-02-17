@@ -12,7 +12,7 @@ function makePermissions(overrides: Partial<UserPermissions>): UserPermissions {
     createdAt: new Date(),
     updatedAt: new Date(),
     clientIds: null,
-    eventIds: null,
+    eventCodes: null,
     createdBy: "creator-uid",
     updatedBy: "creator-uid",
     ...overrides,
@@ -88,7 +88,7 @@ describe("permission-utils", () => {
       const perms = makePermissions({
         role: "eventAdmin",
         clientIds: ["client-1"],
-        eventIds: ["event-1"],
+        eventCodes: ["event-1"],
       });
       expect(canAccessClient(perms, "client-1")).toBe(true);
     });
@@ -97,7 +97,7 @@ describe("permission-utils", () => {
       const perms = makePermissions({
         role: "eventAdmin",
         clientIds: ["client-1"],
-        eventIds: ["event-1"],
+        eventCodes: ["event-1"],
       });
       expect(canAccessClient(perms, "client-99")).toBe(false);
     });
@@ -121,7 +121,7 @@ describe("permission-utils", () => {
       const perms = makePermissions({
         role: "clientAdmin",
         clientIds: ["client-1"],
-        eventIds: null,
+        eventCodes: null,
       });
       expect(canAccessEvent(perms, "client-1", "any-event")).toBe(true);
     });
@@ -138,7 +138,7 @@ describe("permission-utils", () => {
       const perms = makePermissions({
         role: "eventAdmin",
         clientIds: ["client-1"],
-        eventIds: ["event-1", "event-2"],
+        eventCodes: ["event-1", "event-2"],
       });
       expect(canAccessEvent(perms, "client-1", "event-1")).toBe(true);
       expect(canAccessEvent(perms, "client-1", "event-2")).toBe(true);
@@ -148,7 +148,7 @@ describe("permission-utils", () => {
       const perms = makePermissions({
         role: "eventAdmin",
         clientIds: ["client-1"],
-        eventIds: ["event-1"],
+        eventCodes: ["event-1"],
       });
       expect(canAccessEvent(perms, "client-1", "event-99")).toBe(false);
     });
@@ -157,7 +157,7 @@ describe("permission-utils", () => {
       const perms = makePermissions({
         role: "eventAdmin",
         clientIds: ["client-1"],
-        eventIds: ["event-1"],
+        eventCodes: ["event-1"],
       });
       expect(canAccessEvent(perms, "client-99", "event-1")).toBe(false);
     });
@@ -197,7 +197,7 @@ describe("permission-utils", () => {
       const perms = makePermissions({
         role: "eventAdmin",
         clientIds: ["client-1"],
-        eventIds: ["event-1"],
+        eventCodes: ["event-1"],
       });
       expect(canWriteEvent(perms, "client-1")).toBe(false);
     });
@@ -229,7 +229,7 @@ describe("permission-utils", () => {
       const perms = makePermissions({
         role: "eventAdmin",
         clientIds: ["client-1"],
-        eventIds: ["event-1"],
+        eventCodes: ["event-1"],
       });
       expect(canWriteEventContent(perms, "client-1", "event-1")).toBe(true);
     });
@@ -238,7 +238,7 @@ describe("permission-utils", () => {
       const perms = makePermissions({
         role: "eventAdmin",
         clientIds: ["client-1"],
-        eventIds: ["event-1"],
+        eventCodes: ["event-1"],
       });
       expect(canWriteEventContent(perms, "client-1", "event-99")).toBe(false);
     });
@@ -262,7 +262,7 @@ describe("permission-utils", () => {
       const perms = makePermissions({
         role: "eventAdmin",
         clientIds: ["client-1"],
-        eventIds: ["event-1"],
+        eventCodes: ["event-1"],
       });
       expect(getAccessibleClientIds(perms)).toEqual(["client-1"]);
     });
@@ -278,16 +278,16 @@ describe("permission-utils", () => {
       const perms = makePermissions({
         role: "clientAdmin",
         clientIds: ["client-1"],
-        eventIds: null,
+        eventCodes: null,
       });
       expect(getAccessibleEventIds(perms)).toBeNull();
     });
 
-    it("returns eventIds for eventAdmin", () => {
+    it("returns eventCodes for eventAdmin", () => {
       const perms = makePermissions({
         role: "eventAdmin",
         clientIds: ["client-1"],
-        eventIds: ["event-1", "event-2"],
+        eventCodes: ["event-1", "event-2"],
       });
       expect(getAccessibleEventIds(perms)).toEqual(["event-1", "event-2"]);
     });

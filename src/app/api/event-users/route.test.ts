@@ -1,6 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import { NextResponse } from "next/server";
+import { ObjectId } from "mongodb";
 
-// Mock Firebase modules
+// Mock Firebase client SDK (imported transitively by some modules)
 vi.mock("firebase/app", () => ({
   initializeApp: vi.fn(),
   getApps: vi.fn(() => []),
@@ -9,9 +11,15 @@ vi.mock("firebase/auth", () => ({ getAuth: vi.fn() }));
 vi.mock("firebase/firestore", () => ({ getFirestore: vi.fn() }));
 vi.mock("firebase/storage", () => ({ getStorage: vi.fn() }));
 
-// === Firebase admin mock ===
+// === api-auth mock (replaces firebase-admin verifyIdToken) ===
 
-const mockVerifyIdToken = vi.fn();
+const mockRequireAuth = vi.fn();
+
+vi.mock("@/lib/api-auth", () => ({
+  requireAuth: (...args: unknown[]) => mockRequireAuth(...args),
+}));
+
+// === Firebase admin mock (still used by sub-routes for Firestore data access) ===
 
 const mockFirestoreState = {
   docs: {} as Record<string, Record<string, unknown> | undefined>,
@@ -26,9 +34,6 @@ const mockFirestoreState = {
 };
 
 vi.mock("@/lib/firebase-admin", () => ({
-  getAdminAuth: () => ({
-    verifyIdToken: (...args: unknown[]) => mockVerifyIdToken(...args),
-  }),
   getAdminDb: () => ({
     collection: (collectionPath: string) => ({
       doc: (docId: string) => {
@@ -110,34 +115,84 @@ function createRequest(
   });
 }
 
+function makeAdminUser(overrides: Record<string, unknown> = {}) {
+  return {
+    _id: new ObjectId(),
+    cognitoSub: "default-sub",
+    email: "admin@test.com",
+    role: "superadmin",
+    clientIds: null,
+    eventCodes: null,
+    firstName: "Test",
+    lastName: "Admin",
+    isActive: true,
+    language: "en",
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    createdBy: "system",
+    updatedBy: "system",
+    ...overrides,
+  };
+}
+
 function setupSuperadminCaller() {
-  mockVerifyIdToken.mockResolvedValue({
-    uid: "superadmin-uid",
-    superadmin: true,
+  const adminUser = makeAdminUser({
+    cognitoSub: "superadmin-sub",
+    email: "superadmin@test.com",
+    role: "superadmin",
+    clientIds: null,
+    eventCodes: null,
+  });
+  mockRequireAuth.mockResolvedValue({
+    sub: "superadmin-sub",
+    email: "superadmin@test.com",
+    role: "superadmin",
+    isSuperAdmin: true,
+    adminUser,
   });
 }
 
 function setupClientAdminCaller() {
-  mockVerifyIdToken.mockResolvedValue({
-    uid: "clientadmin-uid",
-    role: "clientAdmin",
-  });
-  mockFirestoreState.docs["userPermissions/clientadmin-uid"] = {
+  const adminUser = makeAdminUser({
+    cognitoSub: "clientadmin-sub",
+    email: "clientadmin@test.com",
     role: "clientAdmin",
     clientIds: ["client-1"],
-  };
+    eventCodes: null,
+  });
+  mockRequireAuth.mockResolvedValue({
+    sub: "clientadmin-sub",
+    email: "clientadmin@test.com",
+    role: "clientAdmin",
+    isSuperAdmin: false,
+    adminUser,
+  });
 }
 
 function setupEventAdminCaller() {
-  mockVerifyIdToken.mockResolvedValue({
-    uid: "eventadmin-uid",
-    role: "eventAdmin",
-  });
-  mockFirestoreState.docs["userPermissions/eventadmin-uid"] = {
+  const adminUser = makeAdminUser({
+    cognitoSub: "eventadmin-sub",
+    email: "eventadmin@test.com",
     role: "eventAdmin",
     clientIds: ["client-1"],
-    eventIds: ["event-1"],
-  };
+    eventCodes: ["event-1"],
+  });
+  mockRequireAuth.mockResolvedValue({
+    sub: "eventadmin-sub",
+    email: "eventadmin@test.com",
+    role: "eventAdmin",
+    isSuperAdmin: false,
+    adminUser,
+  });
+}
+
+function setupUnauthenticated() {
+  mockRequireAuth.mockResolvedValue(
+    NextResponse.json(
+      { error: "Missing or invalid authorization header" },
+      { status: 401 }
+    )
+  );
 }
 
 function seedUserDoc() {
@@ -166,6 +221,15 @@ function seedDeactivatedUserDoc() {
   };
 }
 
+function resetFirestoreState() {
+  mockFirestoreState.docs = {};
+  mockFirestoreState.queries = {};
+  mockFirestoreState.updates = [];
+  mockFirestoreState.sets = [];
+  mockFirestoreState.deletes = [];
+  mockFirestoreState.recursiveDeletes = [];
+}
+
 // === Tests ===
 
 describe("POST /api/event-users/deactivate", () => {
@@ -174,15 +238,11 @@ describe("POST /api/event-users/deactivate", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mockFirestoreState.docs = {};
-    mockFirestoreState.queries = {};
-    mockFirestoreState.updates = [];
-    mockFirestoreState.sets = [];
-    mockFirestoreState.deletes = [];
-    mockFirestoreState.recursiveDeletes = [];
+    resetFirestoreState();
   });
 
   it("returns 401 without authorization", async () => {
+    setupUnauthenticated();
     const req = createRequest(url, body, null);
     const res = await deactivate(req);
     expect(res.status).toBe(401);
@@ -271,15 +331,11 @@ describe("POST /api/event-users/reactivate", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mockFirestoreState.docs = {};
-    mockFirestoreState.queries = {};
-    mockFirestoreState.updates = [];
-    mockFirestoreState.sets = [];
-    mockFirestoreState.deletes = [];
-    mockFirestoreState.recursiveDeletes = [];
+    resetFirestoreState();
   });
 
   it("returns 401 without authorization", async () => {
+    setupUnauthenticated();
     const req = createRequest(url, body, null);
     const res = await reactivate(req);
     expect(res.status).toBe(401);
@@ -345,15 +401,11 @@ describe("POST /api/event-users/delete", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mockFirestoreState.docs = {};
-    mockFirestoreState.queries = {};
-    mockFirestoreState.updates = [];
-    mockFirestoreState.sets = [];
-    mockFirestoreState.deletes = [];
-    mockFirestoreState.recursiveDeletes = [];
+    resetFirestoreState();
   });
 
   it("returns 401 without authorization", async () => {
+    setupUnauthenticated();
     const req = createRequest(url, body, null);
     const res = await deleteUser(req);
     expect(res.status).toBe(401);

@@ -4,7 +4,7 @@ import { renderHook, act } from "@testing-library/react";
 // Mock dependencies
 vi.mock("@/hooks/use-auth", () => ({
   useAuth: vi.fn(() => ({
-    user: { uid: "caller-uid", getIdToken: vi.fn().mockResolvedValue("mock-token") },
+    user: { uid: "caller-uid", getToken: vi.fn().mockResolvedValue("mock-token") },
     loading: false,
   })),
 }));

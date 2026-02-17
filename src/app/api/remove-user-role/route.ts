@@ -1,21 +1,13 @@
 import { NextResponse } from "next/server";
-import { getAdminAuth, getAdminDb } from "@/lib/firebase-admin";
+import { requireAuth } from "@/lib/api-auth";
+import { disableCognitoUser } from "@/lib/cognito-admin";
+import { getAdminUsersCollection } from "@/lib/mongodb-collections";
+import { ObjectId } from "mongodb";
 
 export async function DELETE(request: Request) {
-  // 1. Verify caller's token
-  const authHeader = request.headers.get("Authorization");
-  if (!authHeader?.startsWith("Bearer ")) {
-    return NextResponse.json({ error: "Missing authorization" }, { status: 401 });
-  }
-
-  let callerClaims;
-  try {
-    callerClaims = await getAdminAuth().verifyIdToken(
-      authHeader.replace("Bearer ", "")
-    );
-  } catch {
-    return NextResponse.json({ error: "Invalid token" }, { status: 401 });
-  }
+  // 1. Verify caller
+  const caller = await requireAuth(request);
+  if (caller instanceof NextResponse) return caller;
 
   // 2. Parse and validate body
   const body = await request.json();
@@ -25,23 +17,29 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ error: "userId is required" }, { status: 400 });
   }
 
-  // 3. Get target user's permissions
-  const targetPermsSnap = await getAdminDb()
-    .collection("userPermissions")
-    .doc(userId)
-    .get();
+  // 3. Find target user in MongoDB (by ObjectId or cognitoSub)
+  const collection = await getAdminUsersCollection();
+  let targetUser;
 
-  if (!targetPermsSnap.exists) {
+  if (ObjectId.isValid(userId)) {
+    targetUser = await collection.findOne({ _id: new ObjectId(userId) });
+  }
+  if (!targetUser) {
+    targetUser = await collection.findOne({ cognitoSub: userId });
+  }
+  if (!targetUser) {
+    targetUser = await collection.findOne({ email: userId.toLowerCase() });
+  }
+
+  if (!targetUser) {
     return NextResponse.json(
-      { error: "User permissions not found" },
+      { error: "User not found" },
       { status: 404 }
     );
   }
 
-  const targetPerms = targetPermsSnap.data()!;
-
   // Cannot remove superadmin via API
-  if (targetPerms.role === "superadmin") {
+  if (targetUser.role === "superadmin") {
     return NextResponse.json(
       { error: "Cannot remove superadmin role via API" },
       { status: 403 }
@@ -49,11 +47,7 @@ export async function DELETE(request: Request) {
   }
 
   // 4. Authorize caller
-  const isSuperAdmin =
-    callerClaims.superadmin === true || callerClaims.admin === true;
-  const isCallerClientAdmin = callerClaims.role === "clientAdmin";
-
-  if (!isSuperAdmin && !isCallerClientAdmin) {
+  if (!caller.isSuperAdmin && caller.role !== "clientAdmin") {
     return NextResponse.json(
       { error: "Only superadmins and clientAdmins can remove roles" },
       { status: 403 }
@@ -61,23 +55,16 @@ export async function DELETE(request: Request) {
   }
 
   // ClientAdmin restrictions
-  if (isCallerClientAdmin) {
-    // ClientAdmins can only remove eventAdmins
-    if (targetPerms.role !== "eventAdmin") {
+  if (caller.role === "clientAdmin") {
+    if (targetUser.role !== "eventAdmin") {
       return NextResponse.json(
         { error: "ClientAdmins can only remove eventAdmin roles" },
         { status: 403 }
       );
     }
 
-    // ClientAdmin must have access to target's clients
-    const callerPermsSnap = await getAdminDb()
-      .collection("userPermissions")
-      .doc(callerClaims.uid)
-      .get();
-    const callerPerms = callerPermsSnap.data();
-    const callerClientIds: string[] = callerPerms?.clientIds || [];
-    const targetClientIds: string[] = targetPerms.clientIds || [];
+    const callerClientIds: string[] = caller.adminUser.clientIds || [];
+    const targetClientIds: string[] = targetUser.clientIds || [];
 
     const hasAccess = targetClientIds.every((id: string) =>
       callerClientIds.includes(id)
@@ -90,11 +77,25 @@ export async function DELETE(request: Request) {
     }
   }
 
-  // 5. Remove custom claims
-  await getAdminAuth().setCustomUserClaims(userId, { role: null });
+  // 5. Deactivate in MongoDB
+  await collection.updateOne(
+    { _id: targetUser._id },
+    {
+      $set: {
+        isActive: false,
+        updatedAt: new Date(),
+        updatedBy: caller.sub,
+      },
+    }
+  );
 
-  // 6. Delete userPermissions document
-  await getAdminDb().collection("userPermissions").doc(userId).delete();
+  // 6. Disable in Cognito (prevent login)
+  try {
+    await disableCognitoUser(targetUser.email);
+  } catch (error) {
+    console.error("Failed to disable Cognito user:", error);
+    // Non-blocking: MongoDB is already updated
+  }
 
   return NextResponse.json({ success: true });
 }

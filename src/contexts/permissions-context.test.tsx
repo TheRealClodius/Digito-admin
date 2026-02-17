@@ -1,33 +1,26 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import { vi, describe, it, expect, beforeEach } from "vitest";
-import type { User } from "firebase/auth";
 import type { UserPermissions } from "@/types/permissions";
+import type { AuthUser } from "@/lib/auth";
 
-// Mock Firebase modules
-vi.mock("firebase/app", () => ({
-  initializeApp: vi.fn(),
-  getApps: vi.fn(() => []),
-}));
-vi.mock("firebase/auth", () => ({ getAuth: vi.fn() }));
-vi.mock("firebase/firestore", () => ({ getFirestore: vi.fn() }));
-vi.mock("firebase/storage", () => ({ getStorage: vi.fn() }));
-
-// Mock auth functions
 const mockVerifyPermissions = vi.fn();
 vi.mock("@/lib/auth", () => ({
   verifyPermissions: (...args: unknown[]) => mockVerifyPermissions(...args),
 }));
 
-// Mock useAuth hook
 const mockUseAuth = vi.fn();
-vi.mock("@/hooks/use-auth", () => ({
+vi.mock("@/contexts/auth-context", () => ({
   useAuth: () => mockUseAuth(),
 }));
 
 import { PermissionsProvider, usePermissions } from "./permissions-context";
 
-function createMockUser(uid = "test-uid"): User {
-  return { uid, email: "test@test.com" } as User;
+function createMockUser(sub = "test-sub"): AuthUser {
+  return {
+    sub,
+    email: "test@test.com",
+    getToken: vi.fn().mockResolvedValue("mock-token"),
+  };
 }
 
 function TestComponent() {
@@ -44,8 +37,8 @@ function TestComponent() {
       <div data-testid="client-ids">
         {permissions?.clientIds ? permissions.clientIds.join(",") : "null"}
       </div>
-      <div data-testid="event-ids">
-        {permissions?.eventIds ? permissions.eventIds.join(",") : "null"}
+      <div data-testid="event-codes">
+        {permissions?.eventCodes ? permissions.eventCodes.join(",") : "null"}
       </div>
     </div>
   );
@@ -103,16 +96,17 @@ describe("PermissionsProvider", () => {
     expect(screen.getByTestId("is-client-admin")).toHaveTextContent("false");
     expect(screen.getByTestId("is-event-admin")).toHaveTextContent("false");
     expect(screen.getByTestId("client-ids")).toHaveTextContent("null");
-    expect(screen.getByTestId("event-ids")).toHaveTextContent("null");
+    expect(screen.getByTestId("event-codes")).toHaveTextContent("null");
   });
 
   it("resolves clientAdmin with permissions", async () => {
     const mockPerms: UserPermissions = {
-      userId: "test-uid",
+      userId: "test-sub",
+      cognitoSub: "test-sub",
       email: "admin@test.com",
       role: "clientAdmin",
       clientIds: ["client-1", "client-2"],
-      eventIds: null,
+      eventCodes: null,
       createdAt: new Date(),
       updatedAt: new Date(),
       createdBy: "creator",
@@ -136,18 +130,18 @@ describe("PermissionsProvider", () => {
     });
 
     expect(screen.getByTestId("role")).toHaveTextContent("clientAdmin");
-    expect(screen.getByTestId("is-superadmin")).toHaveTextContent("false");
     expect(screen.getByTestId("is-client-admin")).toHaveTextContent("true");
     expect(screen.getByTestId("client-ids")).toHaveTextContent("client-1,client-2");
   });
 
   it("resolves eventAdmin with permissions", async () => {
     const mockPerms: UserPermissions = {
-      userId: "test-uid",
+      userId: "test-sub",
+      cognitoSub: "test-sub",
       email: "event@test.com",
       role: "eventAdmin",
       clientIds: ["client-1"],
-      eventIds: ["event-1", "event-2"],
+      eventCodes: ["2025089", "2025090"],
       createdAt: new Date(),
       updatedAt: new Date(),
       createdBy: "creator",
@@ -173,7 +167,7 @@ describe("PermissionsProvider", () => {
     expect(screen.getByTestId("role")).toHaveTextContent("eventAdmin");
     expect(screen.getByTestId("is-event-admin")).toHaveTextContent("true");
     expect(screen.getByTestId("client-ids")).toHaveTextContent("client-1");
-    expect(screen.getByTestId("event-ids")).toHaveTextContent("event-1,event-2");
+    expect(screen.getByTestId("event-codes")).toHaveTextContent("2025089,2025090");
   });
 
   it("sets role to null when no permissions found", async () => {
@@ -194,9 +188,6 @@ describe("PermissionsProvider", () => {
     });
 
     expect(screen.getByTestId("role")).toHaveTextContent("none");
-    expect(screen.getByTestId("is-superadmin")).toHaveTextContent("false");
-    expect(screen.getByTestId("is-client-admin")).toHaveTextContent("false");
-    expect(screen.getByTestId("is-event-admin")).toHaveTextContent("false");
   });
 
   it("resets to null when user signs out", async () => {

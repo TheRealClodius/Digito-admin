@@ -1,34 +1,12 @@
 import { NextResponse } from "next/server";
-import { getAdminAuth, getAdminDb } from "@/lib/firebase-admin";
+import { requireRole } from "@/lib/api-auth";
+import { getAdminDb } from "@/lib/firebase-admin";
 import type { FeedbackEntry } from "@/types/feedback";
 
 export async function GET(request: Request) {
-  // Auth: verify token
-  const authHeader = request.headers.get("Authorization");
-  if (!authHeader?.startsWith("Bearer ")) {
-    return NextResponse.json(
-      { error: "Missing authorization" },
-      { status: 401 }
-    );
-  }
-
-  let claims;
-  try {
-    claims = await getAdminAuth().verifyIdToken(
-      authHeader.replace("Bearer ", "")
-    );
-  } catch {
-    return NextResponse.json({ error: "Invalid token" }, { status: 401 });
-  }
-
-  // Only superadmins can view feedback
-  const isSuperAdmin = claims.superadmin === true || claims.admin === true;
-  if (!isSuperAdmin) {
-    return NextResponse.json(
-      { error: "Only super admins can view feedback" },
-      { status: 403 }
-    );
-  }
+  // Auth: only superadmins can view feedback
+  const caller = await requireRole(request, ["superadmin"]);
+  if (caller instanceof NextResponse) return caller;
 
   // Validate query params
   const { searchParams } = new URL(request.url);
@@ -42,6 +20,7 @@ export async function GET(request: Request) {
     );
   }
 
+  // Data still comes from Firestore (migrates in Phase 2)
   const db = getAdminDb();
 
   // 1. List all users in the event

@@ -23,7 +23,7 @@ export function useAdminManagement() {
 
   const getToken = useCallback(async () => {
     if (!user) throw new Error("Not authenticated");
-    return user.getIdToken();
+    return user.getToken();
   }, [user]);
 
   const addAdmin = useCallback(

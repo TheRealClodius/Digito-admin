@@ -19,7 +19,7 @@ vi.mock("firebase/storage", () => ({ getStorage: vi.fn() }));
 
 vi.mock("@/hooks/use-auth", () => ({
   useAuth: vi.fn(() => ({
-    user: { getIdToken: vi.fn().mockResolvedValue("mock-token") },
+    user: { getToken: vi.fn().mockResolvedValue("mock-token") },
     loading: false,
   })),
 }));

@@ -1,21 +1,34 @@
 import { render, screen, waitFor } from "@testing-library/react";
-import { vi } from "vitest";
+import { vi, describe, it, expect, beforeEach } from "vitest";
 import { AuthProvider, useAuth } from "./auth-context";
-import type { User } from "firebase/auth";
 
-// Mock Firebase auth
-const mockOnAuthStateChanged = vi.fn();
-const mockUser: Partial<User> = {
-  uid: "test-user-123",
-  email: "test@test.com",
-};
+const mockGetCurrentAuthUser = vi.fn();
+let hubCallback: ((event: { payload: { event: string } }) => void) | null = null;
+const mockHubUnsubscribe = vi.fn();
 
-vi.mock("firebase/auth", () => ({
-  getAuth: vi.fn(() => ({})),
-  onAuthStateChanged: (...args: unknown[]) => mockOnAuthStateChanged(...args),
+vi.mock("@/lib/auth", () => ({
+  getCurrentAuthUser: (...args: unknown[]) => mockGetCurrentAuthUser(...args),
 }));
 
-// Test component that uses useAuth
+vi.mock("@/lib/amplify-config", () => ({
+  ensureAmplifyConfigured: vi.fn(),
+}));
+
+vi.mock("aws-amplify/utils", () => ({
+  Hub: {
+    listen: vi.fn((_channel: string, callback: (event: { payload: { event: string } }) => void) => {
+      hubCallback = callback;
+      return mockHubUnsubscribe;
+    }),
+  },
+}));
+
+const mockUser = {
+  sub: "sub-123",
+  email: "test@test.com",
+  getToken: vi.fn().mockResolvedValue("mock-token"),
+};
+
 function TestComponent({ id }: { id: string }) {
   const { user, loading } = useAuth();
 
@@ -30,22 +43,12 @@ function TestComponent({ id }: { id: string }) {
 describe("AuthProvider", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-  });
-
-  it("calls onAuthStateChanged only once even with multiple consumers", () => {
-    render(
-      <AuthProvider>
-        <TestComponent id="first" />
-        <TestComponent id="second" />
-        <TestComponent id="third" />
-      </AuthProvider>
-    );
-
-    // Should be called exactly once despite 3 components using useAuth
-    expect(mockOnAuthStateChanged).toHaveBeenCalledTimes(1);
+    hubCallback = null;
   });
 
   it("provides loading state initially", () => {
+    mockGetCurrentAuthUser.mockReturnValue(new Promise(() => {})); // never resolves
+
     render(
       <AuthProvider>
         <TestComponent id="test" />
@@ -55,12 +58,8 @@ describe("AuthProvider", () => {
     expect(screen.getByTestId("test-loading")).toHaveTextContent("loading");
   });
 
-  it("provides user data after auth state changes", async () => {
-    mockOnAuthStateChanged.mockImplementation((auth, callback) => {
-      // Simulate auth state change
-      setTimeout(() => callback(mockUser), 0);
-      return vi.fn(); // unsubscribe function
-    });
+  it("provides user data after initial check", async () => {
+    mockGetCurrentAuthUser.mockResolvedValue(mockUser);
 
     render(
       <AuthProvider>
@@ -74,11 +73,8 @@ describe("AuthProvider", () => {
     });
   });
 
-  it("provides null user when signed out", async () => {
-    mockOnAuthStateChanged.mockImplementation((auth, callback) => {
-      setTimeout(() => callback(null), 0);
-      return vi.fn();
-    });
+  it("provides null user when not authenticated", async () => {
+    mockGetCurrentAuthUser.mockResolvedValue(null);
 
     render(
       <AuthProvider>
@@ -92,8 +88,50 @@ describe("AuthProvider", () => {
     });
   });
 
+  it("updates user on signedIn hub event", async () => {
+    mockGetCurrentAuthUser
+      .mockResolvedValueOnce(null) // initial check
+      .mockResolvedValueOnce(mockUser); // after signedIn
+
+    render(
+      <AuthProvider>
+        <TestComponent id="test" />
+      </AuthProvider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("test-user")).toHaveTextContent("no-user");
+    });
+
+    // Simulate signedIn event
+    hubCallback?.({ payload: { event: "signedIn" } });
+
+    await waitFor(() => {
+      expect(screen.getByTestId("test-user")).toHaveTextContent("test@test.com");
+    });
+  });
+
+  it("clears user on signedOut hub event", async () => {
+    mockGetCurrentAuthUser.mockResolvedValue(mockUser);
+
+    render(
+      <AuthProvider>
+        <TestComponent id="test" />
+      </AuthProvider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("test-user")).toHaveTextContent("test@test.com");
+    });
+
+    hubCallback?.({ payload: { event: "signedOut" } });
+
+    await waitFor(() => {
+      expect(screen.getByTestId("test-user")).toHaveTextContent("no-user");
+    });
+  });
+
   it("throws error when useAuth is used outside AuthProvider", () => {
-    // Suppress console.error for this test
     const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 
     expect(() => {
@@ -103,9 +141,8 @@ describe("AuthProvider", () => {
     consoleSpy.mockRestore();
   });
 
-  it("unsubscribes from auth state on unmount", () => {
-    const mockUnsubscribe = vi.fn();
-    mockOnAuthStateChanged.mockReturnValue(mockUnsubscribe);
+  it("unsubscribes from Hub on unmount", async () => {
+    mockGetCurrentAuthUser.mockResolvedValue(null);
 
     const { unmount } = render(
       <AuthProvider>
@@ -114,7 +151,6 @@ describe("AuthProvider", () => {
     );
 
     unmount();
-
-    expect(mockUnsubscribe).toHaveBeenCalled();
+    expect(mockHubUnsubscribe).toHaveBeenCalled();
   });
 });

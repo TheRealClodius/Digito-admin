@@ -40,7 +40,7 @@ export function useFeedback(clientId: string, eventId: string) {
 
     (async () => {
       try {
-        const token = await userRef.current!.getIdToken();
+        const token = await userRef.current!.getToken();
         const res = await fetch(
           `/api/feedback?clientId=${encodeURIComponent(clientId)}&eventId=${encodeURIComponent(eventId)}`,
           {

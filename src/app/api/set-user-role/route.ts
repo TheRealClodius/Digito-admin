@@ -1,29 +1,19 @@
 import { NextResponse } from "next/server";
-import { getAdminAuth, getAdminDb } from "@/lib/firebase-admin";
-import { FieldValue } from "firebase-admin/firestore";
+import { requireAuth } from "@/lib/api-auth";
+import { createCognitoUser, generateTemporaryPassword } from "@/lib/cognito-admin";
+import { getAdminUsersCollection } from "@/lib/mongodb-collections";
 import type { UserRole } from "@/types/permissions";
 
 const ASSIGNABLE_ROLES: UserRole[] = ["clientAdmin", "eventAdmin"];
 
 export async function POST(request: Request) {
-  // 1. Verify caller's token
-  const authHeader = request.headers.get("Authorization");
-  if (!authHeader?.startsWith("Bearer ")) {
-    return NextResponse.json({ error: "Missing authorization" }, { status: 401 });
-  }
-
-  let callerClaims;
-  try {
-    callerClaims = await getAdminAuth().verifyIdToken(
-      authHeader.replace("Bearer ", "")
-    );
-  } catch {
-    return NextResponse.json({ error: "Invalid token" }, { status: 401 });
-  }
+  // 1. Verify caller
+  const caller = await requireAuth(request);
+  if (caller instanceof NextResponse) return caller;
 
   // 2. Parse and validate body
   const body = await request.json();
-  const { email, role, clientIds, eventCodes } = body;
+  const { email, role, clientIds, eventCodes, firstName, lastName } = body;
 
   if (!email || typeof email !== "string") {
     return NextResponse.json({ error: "email is required" }, { status: 400 });
@@ -42,11 +32,7 @@ export async function POST(request: Request) {
   }
 
   // 3. Authorize caller
-  const isSuperAdmin =
-    callerClaims.superadmin === true || callerClaims.admin === true;
-  const isCallerClientAdmin = callerClaims.role === "clientAdmin";
-
-  if (!isSuperAdmin && !isCallerClientAdmin) {
+  if (!caller.isSuperAdmin && caller.role !== "clientAdmin") {
     return NextResponse.json(
       { error: "Only superadmins and clientAdmins can assign roles" },
       { status: 403 }
@@ -54,8 +40,7 @@ export async function POST(request: Request) {
   }
 
   // ClientAdmin restrictions
-  if (isCallerClientAdmin) {
-    // ClientAdmins can only create eventAdmins
+  if (caller.role === "clientAdmin") {
     if (role !== "eventAdmin") {
       return NextResponse.json(
         { error: "ClientAdmins can only assign the eventAdmin role" },
@@ -63,14 +48,7 @@ export async function POST(request: Request) {
       );
     }
 
-    // ClientAdmin must have access to all requested clientIds
-    const callerPermsSnap = await getAdminDb()
-      .collection("userPermissions")
-      .doc(callerClaims.uid)
-      .get();
-    const callerPerms = callerPermsSnap.data();
-    const callerClientIds: string[] = callerPerms?.clientIds || [];
-
+    const callerClientIds: string[] = caller.adminUser.clientIds || [];
     const hasAccess = clientIds.every((id: string) =>
       callerClientIds.includes(id)
     );
@@ -82,41 +60,65 @@ export async function POST(request: Request) {
     }
   }
 
-  // 4. Look up or create target user
-  let targetUser;
+  // 4. Create Cognito user (will fail if user already exists in Cognito, which is fine)
+  let cognitoSub: string | undefined;
+  const normalizedEmail = email.toLowerCase();
+
   try {
-    targetUser = await getAdminAuth().getUserByEmail(email);
+    const tempPassword = generateTemporaryPassword();
+    const result = await createCognitoUser({
+      email: normalizedEmail,
+      temporaryPassword: tempPassword,
+      firstName,
+      lastName,
+    });
+    cognitoSub = result.cognitoSub;
   } catch (error: unknown) {
-    const code = (error as { code?: string }).code;
-    if (code === "auth/user-not-found") {
-      // Pre-create the user so claims and permissions are ready
-      // when they first sign in (Google will auto-link to this account)
-      targetUser = await getAdminAuth().createUser({ email });
-    } else {
-      throw error;
+    const errorName = (error as { name?: string }).name;
+    if (errorName !== "UsernameExistsException") {
+      console.error("Failed to create Cognito user:", error);
+      return NextResponse.json(
+        { error: "Failed to create user in authentication system" },
+        { status: 500 }
+      );
     }
+    // User already exists in Cognito — that's ok, we'll upsert in MongoDB
   }
 
-  // 5. Set custom claims (merge with existing to avoid wiping superadmin, etc.)
-  const existingUser = await getAdminAuth().getUser(targetUser.uid);
-  const existingClaims = existingUser.customClaims || {};
-  await getAdminAuth().setCustomUserClaims(targetUser.uid, { ...existingClaims, role });
+  // 5. Upsert admin user in MongoDB
+  const collection = await getAdminUsersCollection();
+  const now = new Date();
 
-  // 6. Create userPermissions document
-  await getAdminDb()
-    .collection("userPermissions")
-    .doc(targetUser.uid)
-    .set({
-      userId: targetUser.uid,
-      email: targetUser.email,
-      role,
-      clientIds,
-      eventCodes: eventCodes || null,
-      createdAt: FieldValue.serverTimestamp(),
-      updatedAt: FieldValue.serverTimestamp(),
-      createdBy: callerClaims.uid,
-      updatedBy: callerClaims.uid,
-    });
+  const updateDoc: Record<string, unknown> = {
+    role,
+    clientIds,
+    eventCodes: eventCodes || null,
+    isActive: true,
+    updatedAt: now,
+    updatedBy: caller.sub,
+  };
 
-  return NextResponse.json({ success: true, userId: targetUser.uid });
+  if (cognitoSub) {
+    updateDoc.cognitoSub = cognitoSub;
+  }
+  if (firstName) updateDoc.firstName = firstName;
+  if (lastName) updateDoc.lastName = lastName;
+
+  const result = await collection.updateOne(
+    { email: normalizedEmail },
+    {
+      $set: updateDoc,
+      $setOnInsert: {
+        email: normalizedEmail,
+        language: "it",
+        createdAt: now,
+        createdBy: caller.sub,
+      },
+    },
+    { upsert: true }
+  );
+
+  const userId = result.upsertedId?.toString() || normalizedEmail;
+
+  return NextResponse.json({ success: true, userId });
 }

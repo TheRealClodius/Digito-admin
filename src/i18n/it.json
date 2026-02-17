@@ -324,5 +324,10 @@
     "headingStyle": "Stile intestazione",
     "paragraph": "Paragrafo",
     "subtitle": "Sottotitolo"
+  },
+  "auth": {
+    "callback": {
+      "loading": "Completamento accesso..."
+    }
   }
 }

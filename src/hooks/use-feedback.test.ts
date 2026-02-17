@@ -4,7 +4,7 @@ import { renderHook, act, waitFor } from "@testing-library/react";
 const mockGetIdToken = vi.fn().mockResolvedValue("mock-token");
 vi.mock("@/hooks/use-auth", () => ({
   useAuth: () => ({
-    user: { getIdToken: mockGetIdToken },
+    user: { getToken: mockGetIdToken },
   }),
 }));
 

@@ -1,31 +1,24 @@
 import { vi, describe, it, expect, beforeEach } from "vitest";
 
-// Mock Firebase modules before any imports
-vi.mock("firebase/app", () => ({
-  initializeApp: vi.fn(),
-  getApps: vi.fn(() => []),
+const mockAmplifySignIn = vi.fn();
+const mockSignInWithRedirect = vi.fn();
+const mockAmplifySignOut = vi.fn();
+const mockGetCurrentUser = vi.fn();
+const mockFetchAuthSession = vi.fn();
+
+vi.mock("aws-amplify/auth", () => ({
+  signIn: (...args: unknown[]) => mockAmplifySignIn(...args),
+  signInWithRedirect: (...args: unknown[]) => mockSignInWithRedirect(...args),
+  signOut: (...args: unknown[]) => mockAmplifySignOut(...args),
+  getCurrentUser: (...args: unknown[]) => mockGetCurrentUser(...args),
+  fetchAuthSession: (...args: unknown[]) => mockFetchAuthSession(...args),
 }));
 
-const mockSignInWithEmailAndPassword = vi.fn();
-const mockSignInWithPopup = vi.fn();
-const mockFirebaseSignOut = vi.fn();
-const mockOnAuthStateChanged = vi.fn();
-
-vi.mock("firebase/auth", () => ({
-  getAuth: vi.fn(),
-  signInWithEmailAndPassword: (...args: unknown[]) =>
-    mockSignInWithEmailAndPassword(...args),
-  signInWithPopup: (...args: unknown[]) => mockSignInWithPopup(...args),
-  signOut: (...args: unknown[]) => mockFirebaseSignOut(...args),
-  onAuthStateChanged: (...args: unknown[]) =>
-    mockOnAuthStateChanged(...args),
-  GoogleAuthProvider: vi.fn(),
+vi.mock("./amplify-config", () => ({
+  ensureAmplifyConfigured: vi.fn(),
 }));
 
-vi.mock("firebase/firestore", () => ({ getFirestore: vi.fn() }));
-vi.mock("firebase/storage", () => ({ getStorage: vi.fn() }));
-
-import { signIn, signInWithGoogle, signOut, checkSuperAdmin, checkUserRole, onAuthChange } from "./auth";
+import { signIn, signInWithGoogle, signOut, getCurrentAuthUser, verifyPermissions } from "./auth";
 
 describe("auth", () => {
   beforeEach(() => {
@@ -33,231 +26,163 @@ describe("auth", () => {
   });
 
   describe("signIn", () => {
-    it("calls signInWithEmailAndPassword and returns the user", async () => {
-      const mockUser = { uid: "123", email: "test@test.com" };
-      mockSignInWithEmailAndPassword.mockResolvedValue({ user: mockUser });
+    it("calls Amplify signIn with username and password", async () => {
+      mockAmplifySignIn.mockResolvedValue({});
 
-      const result = await signIn("test@test.com", "password");
+      await signIn("test@test.com", "password");
 
-      expect(mockSignInWithEmailAndPassword).toHaveBeenCalledWith(
-        undefined, // auth instance is undefined in test context
-        "test@test.com",
-        "password"
-      );
-      expect(result).toEqual(mockUser);
+      expect(mockAmplifySignIn).toHaveBeenCalledWith({
+        username: "test@test.com",
+        password: "password",
+      });
     });
   });
 
   describe("signInWithGoogle", () => {
-    it("calls signInWithPopup and returns the user", async () => {
-      const mockUser = { uid: "456", email: "google@test.com" };
-      mockSignInWithPopup.mockResolvedValue({ user: mockUser });
+    it("calls signInWithRedirect with Google provider", async () => {
+      mockSignInWithRedirect.mockResolvedValue(undefined);
 
-      const result = await signInWithGoogle();
+      await signInWithGoogle();
 
-      expect(mockSignInWithPopup).toHaveBeenCalled();
-      expect(result).toEqual(mockUser);
-    });
-
-    it("throws when popup is cancelled", async () => {
-      mockSignInWithPopup.mockRejectedValue(new Error("popup closed"));
-
-      await expect(signInWithGoogle()).rejects.toThrow("popup closed");
+      expect(mockSignInWithRedirect).toHaveBeenCalledWith({
+        provider: "Google",
+      });
     });
   });
 
   describe("signOut", () => {
-    it("calls Firebase signOut", async () => {
-      mockFirebaseSignOut.mockResolvedValue(undefined);
+    it("calls Amplify signOut", async () => {
+      mockAmplifySignOut.mockResolvedValue(undefined);
 
       await signOut();
 
-      expect(mockFirebaseSignOut).toHaveBeenCalled();
+      expect(mockAmplifySignOut).toHaveBeenCalled();
     });
   });
 
-  describe("checkSuperAdmin", () => {
-    it("returns true when user has superadmin custom claim", async () => {
-      const mockUser = {
-        getIdTokenResult: vi.fn().mockResolvedValue({
-          claims: { superadmin: true },
-        }),
-      } as unknown as import("firebase/auth").User;
+  describe("getCurrentAuthUser", () => {
+    it("returns AuthUser when authenticated", async () => {
+      mockGetCurrentUser.mockResolvedValue({
+        userId: "sub-123",
+        signInDetails: { loginId: "test@test.com" },
+      });
+      mockFetchAuthSession.mockResolvedValue({
+        tokens: {
+          accessToken: { toString: () => "mock-access-token" },
+        },
+      });
 
-      const result = await checkSuperAdmin(mockUser);
+      const user = await getCurrentAuthUser();
 
-      expect(result).toBe(true);
-      expect(mockUser.getIdTokenResult).toHaveBeenCalledWith(true); // Force refresh
+      expect(user).not.toBeNull();
+      expect(user!.sub).toBe("sub-123");
+      expect(user!.email).toBe("test@test.com");
     });
 
-    it("returns true when user has legacy admin claim (backward compatibility)", async () => {
-      const mockUser = {
-        getIdTokenResult: vi.fn().mockResolvedValue({
-          claims: { admin: true },
-        }),
-      } as unknown as import("firebase/auth").User;
+    it("returns null when not authenticated", async () => {
+      mockGetCurrentUser.mockRejectedValue(new Error("Not signed in"));
 
-      const result = await checkSuperAdmin(mockUser);
+      const user = await getCurrentAuthUser();
 
-      expect(result).toBe(true);
-      expect(mockUser.getIdTokenResult).toHaveBeenCalledWith(true);
+      expect(user).toBeNull();
     });
 
-    it("returns true when user has BOTH superadmin and admin claims", async () => {
-      const mockUser = {
-        getIdTokenResult: vi.fn().mockResolvedValue({
-          claims: { superadmin: true, admin: true },
-        }),
-      } as unknown as import("firebase/auth").User;
+    it("returns null when no access token", async () => {
+      mockGetCurrentUser.mockResolvedValue({ userId: "sub-123" });
+      mockFetchAuthSession.mockResolvedValue({ tokens: {} });
 
-      const result = await checkSuperAdmin(mockUser);
+      const user = await getCurrentAuthUser();
 
-      expect(result).toBe(true);
-    });
-
-    it("returns false when user does not have superadmin or admin claim", async () => {
-      const mockUser = {
-        getIdTokenResult: vi.fn().mockResolvedValue({
-          claims: {},
-        }),
-      } as unknown as import("firebase/auth").User;
-
-      const result = await checkSuperAdmin(mockUser);
-
-      expect(result).toBe(false);
-    });
-
-    it("returns false when superadmin claim is false", async () => {
-      const mockUser = {
-        getIdTokenResult: vi.fn().mockResolvedValue({
-          claims: { superadmin: false },
-        }),
-      } as unknown as import("firebase/auth").User;
-
-      const result = await checkSuperAdmin(mockUser);
-
-      expect(result).toBe(false);
-    });
-
-    it("returns false when only admin claim is false", async () => {
-      const mockUser = {
-        getIdTokenResult: vi.fn().mockResolvedValue({
-          claims: { admin: false },
-        }),
-      } as unknown as import("firebase/auth").User;
-
-      const result = await checkSuperAdmin(mockUser);
-
-      expect(result).toBe(false);
+      expect(user).toBeNull();
     });
   });
 
-  describe("onAuthChange", () => {
-    it("subscribes to auth state changes", () => {
-      const callback = vi.fn();
-      const mockUnsubscribe = vi.fn();
-      mockOnAuthStateChanged.mockReturnValue(mockUnsubscribe);
+  describe("verifyPermissions", () => {
+    it("calls /api/check-permissions with Bearer token", async () => {
+      const mockResponse = {
+        ok: true,
+        json: async () => ({
+          role: "superadmin",
+          permissions: null,
+        }),
+      };
+      global.fetch = vi.fn().mockResolvedValue(mockResponse);
 
-      const unsubscribe = onAuthChange(callback);
+      const user = {
+        sub: "sub-123",
+        email: "test@test.com",
+        getToken: vi.fn().mockResolvedValue("mock-token"),
+      };
 
-      expect(mockOnAuthStateChanged).toHaveBeenCalledWith(
-        undefined, // auth instance is undefined in test context
-        callback
-      );
-      expect(unsubscribe).toBe(mockUnsubscribe);
+      const result = await verifyPermissions(user);
+
+      expect(global.fetch).toHaveBeenCalledWith("/api/check-permissions", {
+        headers: { Authorization: "Bearer mock-token" },
+      });
+      expect(result.role).toBe("superadmin");
+      expect(result.permissions).toBeNull();
+    });
+
+    it("returns permissions when they exist", async () => {
+      const mockPerms = {
+        cognitoSub: "sub-123",
+        email: "admin@test.com",
+        role: "clientAdmin",
+        clientIds: ["client-1"],
+        eventCodes: null,
+        createdAt: "2024-01-01T00:00:00Z",
+        updatedAt: "2024-01-01T00:00:00Z",
+        createdBy: "creator",
+        updatedBy: "creator",
+      };
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ role: "clientAdmin", permissions: mockPerms }),
+      });
+
+      const user = {
+        sub: "sub-123",
+        email: "admin@test.com",
+        getToken: vi.fn().mockResolvedValue("mock-token"),
+      };
+
+      const result = await verifyPermissions(user);
+      expect(result.role).toBe("clientAdmin");
+      expect(result.permissions).not.toBeNull();
+      expect(result.permissions!.clientIds).toEqual(["client-1"]);
+    });
+
+    it("returns null role on 403", async () => {
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: false,
+        status: 403,
+        text: async () => "Forbidden",
+      });
+
+      const user = {
+        sub: "sub-123",
+        email: "test@test.com",
+        getToken: vi.fn().mockResolvedValue("mock-token"),
+      };
+
+      const result = await verifyPermissions(user);
+      expect(result.role).toBeNull();
+    });
+
+    it("throws on 500 errors", async () => {
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: false,
+        status: 500,
+        text: async () => "Internal Server Error",
+      });
+
+      const user = {
+        sub: "sub-123",
+        email: "test@test.com",
+        getToken: vi.fn().mockResolvedValue("mock-token"),
+      };
+
+      await expect(verifyPermissions(user)).rejects.toThrow("server error");
     });
   });
-
-  describe("checkUserRole", () => {
-    it("returns 'superadmin' when user has superadmin claim", async () => {
-      const mockUser = {
-        getIdTokenResult: vi.fn().mockResolvedValue({
-          claims: { superadmin: true },
-        }),
-      } as unknown as import("firebase/auth").User;
-
-      const result = await checkUserRole(mockUser);
-      expect(result).toBe("superadmin");
-    });
-
-    it("returns 'superadmin' when user has legacy admin claim", async () => {
-      const mockUser = {
-        getIdTokenResult: vi.fn().mockResolvedValue({
-          claims: { admin: true },
-        }),
-      } as unknown as import("firebase/auth").User;
-
-      const result = await checkUserRole(mockUser);
-      expect(result).toBe("superadmin");
-    });
-
-    it("returns 'clientAdmin' when user has role clientAdmin claim", async () => {
-      const mockUser = {
-        getIdTokenResult: vi.fn().mockResolvedValue({
-          claims: { role: "clientAdmin" },
-        }),
-      } as unknown as import("firebase/auth").User;
-
-      const result = await checkUserRole(mockUser);
-      expect(result).toBe("clientAdmin");
-    });
-
-    it("returns 'eventAdmin' when user has role eventAdmin claim", async () => {
-      const mockUser = {
-        getIdTokenResult: vi.fn().mockResolvedValue({
-          claims: { role: "eventAdmin" },
-        }),
-      } as unknown as import("firebase/auth").User;
-
-      const result = await checkUserRole(mockUser);
-      expect(result).toBe("eventAdmin");
-    });
-
-    it("returns null when user has no valid role claims", async () => {
-      const mockUser = {
-        getIdTokenResult: vi.fn().mockResolvedValue({
-          claims: {},
-        }),
-      } as unknown as import("firebase/auth").User;
-
-      const result = await checkUserRole(mockUser);
-      expect(result).toBeNull();
-    });
-
-    it("returns null when role claim is an unrecognized value", async () => {
-      const mockUser = {
-        getIdTokenResult: vi.fn().mockResolvedValue({
-          claims: { role: "unknownRole" },
-        }),
-      } as unknown as import("firebase/auth").User;
-
-      const result = await checkUserRole(mockUser);
-      expect(result).toBeNull();
-    });
-
-    it("prefers superadmin claim over role claim", async () => {
-      const mockUser = {
-        getIdTokenResult: vi.fn().mockResolvedValue({
-          claims: { superadmin: true, role: "clientAdmin" },
-        }),
-      } as unknown as import("firebase/auth").User;
-
-      const result = await checkUserRole(mockUser);
-      expect(result).toBe("superadmin");
-    });
-
-    it("force refreshes the token", async () => {
-      const mockUser = {
-        getIdTokenResult: vi.fn().mockResolvedValue({
-          claims: { superadmin: true },
-        }),
-      } as unknown as import("firebase/auth").User;
-
-      await checkUserRole(mockUser);
-      expect(mockUser.getIdTokenResult).toHaveBeenCalledWith(true);
-    });
-  });
-
-  // Note: getUserPermissions tests are in a separate test file
-  // since they require Firestore mocking which conflicts with these mocks
 });

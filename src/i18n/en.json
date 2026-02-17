@@ -324,5 +324,10 @@
     "headingStyle": "Heading style",
     "paragraph": "Paragraph",
     "subtitle": "Subtitle"
+  },
+  "auth": {
+    "callback": {
+      "loading": "Completing sign-in..."
+    }
   }
 }

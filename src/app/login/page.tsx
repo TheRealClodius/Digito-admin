@@ -3,7 +3,9 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { signInWithGoogle, verifyPermissions, signOut } from "@/lib/auth";
+import { signInWithGoogle } from "@/lib/auth";
+import { useAuth } from "@/hooks/use-auth";
+import { usePermissions } from "@/hooks/use-permissions";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "@/hooks/use-translation";
 
@@ -15,6 +17,8 @@ const BACKGROUND_IMAGES = [
 export default function LoginPage() {
   const router = useRouter();
   const { t } = useTranslation();
+  const { user } = useAuth();
+  const { role, loading: permissionsLoading } = usePermissions();
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -22,30 +26,29 @@ export default function LoginPage() {
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentImageIndex((prev) => (prev + 1) % BACKGROUND_IMAGES.length);
-    }, 10000); // 6 seconds visible + 4 seconds transition
+    }, 10000);
 
     return () => clearInterval(interval);
   }, []);
+
+  // Redirect to dashboard if already signed in with valid role
+  useEffect(() => {
+    if (user && !permissionsLoading && role) {
+      router.push("/");
+    }
+  }, [user, permissionsLoading, role, router]);
 
   async function handleGoogleSignIn() {
     setError(null);
     setLoading(true);
 
     try {
-      const user = await signInWithGoogle();
-      const { role } = await verifyPermissions(user);
-
-      if (!role) {
-        await signOut();
-        router.push("/unauthorized");
-        return;
-      }
-
-      router.push("/");
+      // Cognito uses redirect flow — browser navigates to Google
+      // After callback, the AuthProvider picks up the signedIn Hub event
+      await signInWithGoogle();
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       setError(`Google sign-in failed: ${message}`);
-    } finally {
       setLoading(false);
     }
   }

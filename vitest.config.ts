@@ -9,7 +9,7 @@ export default defineConfig({
     globals: true,
     setupFiles: ["./src/test/setup.ts"],
     css: false,
-    include: ["src/**/*.{test,spec}.{ts,tsx}"],
+    include: ["src/**/*.{test,spec}.{ts,tsx}", "amplify/**/*.{test,spec}.ts"],
     exclude: ["src/test/firestore-rules.test.ts"],
   },
   resolve: {

@@ -1,110 +1,84 @@
+"use client";
+
 import {
-  signInWithEmailAndPassword,
-  signInWithPopup,
-  signOut as firebaseSignOut,
-  onAuthStateChanged,
-  GoogleAuthProvider,
-  type User,
-} from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
-import { getAuthInstance, getDbInstance } from "./firebase";
+  signIn as amplifySignIn,
+  signInWithRedirect,
+  signOut as amplifySignOut,
+  getCurrentUser,
+  fetchAuthSession,
+} from "aws-amplify/auth";
+import { ensureAmplifyConfigured } from "./amplify-config";
 import type { UserPermissions, UserRole } from "@/types/permissions";
 
-const googleProvider = new GoogleAuthProvider();
-
-export async function signIn(email: string, password: string) {
-  const credential = await signInWithEmailAndPassword(getAuthInstance(), email, password);
-  return credential.user;
+/** Provider-agnostic auth user type used throughout the app */
+export interface AuthUser {
+  sub: string;
+  email: string | null;
+  getToken(): Promise<string>;
 }
 
-export async function signInWithGoogle() {
-  const credential = await signInWithPopup(getAuthInstance(), googleProvider);
-  return credential.user;
+/** Sign in with email and password via Cognito */
+export async function signIn(email: string, password: string): Promise<void> {
+  ensureAmplifyConfigured();
+  await amplifySignIn({ username: email, password });
 }
 
-export async function signOut() {
-  await firebaseSignOut(getAuthInstance());
+/** Sign in with Google OAuth (redirect flow — browser navigates away) */
+export async function signInWithGoogle(): Promise<void> {
+  ensureAmplifyConfigured();
+  await signInWithRedirect({ provider: "Google" });
 }
 
-/**
- * Check if user has superadmin custom claim
- * MIGRATION: During transition, accepts both 'superadmin' (new) and 'admin' (legacy)
- */
-export async function checkSuperAdmin(user: User): Promise<boolean> {
-  const tokenResult = await user.getIdTokenResult(true); // Force refresh
-  return tokenResult.claims.superadmin === true || tokenResult.claims.admin === true;
-}
-
-/**
- * Check user's role from custom claims.
- * Returns the UserRole or null if no valid role is found.
- * Checks superadmin/admin claims first, then the 'role' claim.
- */
-export async function checkUserRole(user: User): Promise<UserRole | null> {
-  const tokenResult = await user.getIdTokenResult(true);
-  const claims = tokenResult.claims;
-
-  // Superadmin takes priority (includes legacy 'admin' claim)
-  if (claims.superadmin === true || claims.admin === true) {
-    return "superadmin";
-  }
-
-  // Check for clientAdmin or eventAdmin role claim
-  const role = claims.role as string | undefined;
-  if (role === "clientAdmin" || role === "eventAdmin") {
-    return role;
-  }
-
-  return null;
+/** Sign out from Cognito */
+export async function signOut(): Promise<void> {
+  ensureAmplifyConfigured();
+  await amplifySignOut();
 }
 
 /**
- * Fetch user permissions from Firestore
- * Returns null if no permissions document exists
+ * Get the current authenticated user as an AuthUser.
+ * Returns null if not authenticated.
  */
-export async function getUserPermissions(userId: string): Promise<UserPermissions | null> {
+export async function getCurrentAuthUser(): Promise<AuthUser | null> {
+  ensureAmplifyConfigured();
   try {
-    const permDoc = await getDoc(doc(getDbInstance(), "userPermissions", userId));
+    const user = await getCurrentUser();
+    const session = await fetchAuthSession();
+    const accessToken = session.tokens?.accessToken?.toString();
 
-    if (!permDoc.exists()) {
-      return null;
-    }
+    if (!accessToken) return null;
 
-    const data = permDoc.data();
     return {
-      userId: data.userId,
-      email: data.email,
-      role: data.role,
-      createdAt: data.createdAt?.toDate() || new Date(),
-      updatedAt: data.updatedAt?.toDate() || new Date(),
-      clientIds: data.clientIds || null,
-      eventCodes: data.eventCodes || null,
-      createdBy: data.createdBy,
-      updatedBy: data.updatedBy,
+      sub: user.userId,
+      email: user.signInDetails?.loginId || null,
+      getToken: async () => {
+        const s = await fetchAuthSession({ forceRefresh: false });
+        return s.tokens?.accessToken?.toString() || "";
+      },
     };
-  } catch (error) {
-    console.error("Error fetching user permissions:", error);
+  } catch {
     return null;
   }
 }
 
 /**
- * Server-side permission check via Admin SDK.
- * Bypasses client-side Firestore rules and auto-heals missing claims.
+ * Server-side permission check via API route.
+ * Calls /api/check-permissions with the Cognito access token.
  * Returns { role, permissions } or { role: null } if no permissions found.
  */
 export async function verifyPermissions(
-  user: User
+  user: AuthUser
 ): Promise<{ role: UserRole | null; permissions: UserPermissions | null }> {
-  console.log(`[verifyPermissions] checking for uid=${user.uid} email=${user.email}`);
-  const token = await user.getIdToken(true);
+  const token = await user.getToken();
   const res = await fetch("/api/check-permissions", {
     headers: { Authorization: `Bearer ${token}` },
   });
 
   if (!res.ok) {
     const text = await res.text();
-    console.error(`[verifyPermissions] API returned ${res.status}: ${text}`);
+    console.error(
+      `[verifyPermissions] API returned ${res.status}: ${text}`
+    );
     if (res.status >= 500) {
       throw new Error(`Permission check failed (server error ${res.status})`);
     }
@@ -112,12 +86,12 @@ export async function verifyPermissions(
   }
 
   const data = await res.json();
-  console.log(`[verifyPermissions] result:`, { role: data.role, hasPermissions: !!data.permissions });
   return {
     role: data.role ?? null,
     permissions: data.permissions
       ? {
-          userId: data.permissions.userId,
+          userId: data.permissions.userId || data.permissions.cognitoSub || user.sub,
+          cognitoSub: data.permissions.cognitoSub || user.sub,
           email: data.permissions.email,
           role: data.permissions.role,
           clientIds: data.permissions.clientIds || null,
@@ -133,8 +107,4 @@ export async function verifyPermissions(
         }
       : null,
   };
-}
-
-export function onAuthChange(callback: (user: User | null) => void) {
-  return onAuthStateChanged(getAuthInstance(), callback);
 }

@@ -12,6 +12,8 @@
     "test:rules": "firebase emulators:exec --only firestore --project digito-rules-test 'npx vitest run src/test/firestore-rules.test.ts'"
   },
   "dependencies": {
+    "@aws-sdk/client-cognito-identity-provider": "^3.991.0",
+    "@aws-sdk/client-ses": "^3.991.0",
     "@google/genai": "^1.40.0",
     "@hookform/resolvers": "^5.2.2",
     "@radix-ui/react-alert-dialog": "^1.1.15",
@@ -36,6 +38,8 @@
     "@tiptap/extension-placeholder": "^3.19.0",
     "@tiptap/react": "^3.19.0",
     "@tiptap/starter-kit": "^3.19.0",
+    "aws-amplify": "^6.16.2",
+    "aws-jwt-verify": "^5.1.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
@@ -58,20 +62,28 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@aws-amplify/backend": "^1.21.0",
+    "@aws-amplify/backend-cli": "^1.8.2",
     "@firebase/rules-unit-testing": "^5.0.0",
     "@tailwindcss/postcss": "^4.1.18",
     "@tailwindcss/typography": "^0.5.19",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",
+    "@types/aws-lambda": "^8.10.160",
     "@types/node": "^25.2.1",
     "@types/react": "^19.2.13",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.1.3",
+    "aws-cdk-lib": "^2.238.0",
+    "constructs": "^10.5.0",
+    "dotenv": "^17.3.1",
+    "esbuild": "^0.27.3",
     "eslint": "^9.39.2",
     "eslint-config-next": "16.1.6",
     "jsdom": "^28.0.0",
     "tailwindcss": "^4.1.18",
+    "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "vitest": "^4.0.18"
   }

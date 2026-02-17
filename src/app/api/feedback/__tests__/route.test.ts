@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import { NextResponse } from "next/server";
 
 // Mock Firebase client modules (required by transitive imports)
 vi.mock("firebase/app", () => ({
@@ -9,9 +10,15 @@ vi.mock("firebase/auth", () => ({ getAuth: vi.fn() }));
 vi.mock("firebase/firestore", () => ({ getFirestore: vi.fn() }));
 vi.mock("firebase/storage", () => ({ getStorage: vi.fn() }));
 
-// === Firebase admin mock ===
+// === Auth mock ===
 
-const mockVerifyIdToken = vi.fn();
+const mockRequireRole = vi.fn();
+
+vi.mock("@/lib/api-auth", () => ({
+  requireRole: (...args: unknown[]) => mockRequireRole(...args),
+}));
+
+// === Firestore mock ===
 
 // Store mock data per collection path
 const mockCollectionDocs: Record<
@@ -20,9 +27,6 @@ const mockCollectionDocs: Record<
 > = {};
 
 vi.mock("@/lib/firebase-admin", () => ({
-  getAdminAuth: () => ({
-    verifyIdToken: (...args: unknown[]) => mockVerifyIdToken(...args),
-  }),
   getAdminDb: () => ({
     collection: (collectionPath: string) => ({
       get: () => {
@@ -42,6 +46,27 @@ vi.mock("@/lib/firebase-admin", () => ({
 import { GET } from "../route";
 
 // === Helpers ===
+
+/** A valid VerifiedCaller object returned by requireRole on success */
+const superadminCaller = {
+  sub: "super-uid",
+  email: "admin@test.com",
+  role: "superadmin" as const,
+  isSuperAdmin: true,
+  adminUser: {
+    _id: "admin-id",
+    email: "admin@test.com",
+    role: "superadmin" as const,
+    cognitoSub: "super-uid",
+    isActive: true,
+    clientIds: null,
+    eventCodes: null,
+    createdAt: "2026-01-01T00:00:00Z",
+    updatedAt: "2026-01-01T00:00:00Z",
+    createdBy: "system",
+    updatedBy: "system",
+  },
+};
 
 function createRequest(
   params: Record<string, string>,
@@ -129,64 +154,70 @@ describe("GET /api/feedback", () => {
     }
   });
 
-  it("returns 401 without authorization header", async () => {
+  it("returns 401 when requireRole rejects due to missing auth header", async () => {
+    mockRequireRole.mockResolvedValue(
+      NextResponse.json(
+        { error: "Missing or invalid authorization header" },
+        { status: 401 }
+      )
+    );
     const req = createRequest(params, null);
     const res = await GET(req);
     expect(res.status).toBe(401);
   });
 
-  it("returns 401 with invalid token", async () => {
-    mockVerifyIdToken.mockRejectedValue(new Error("Invalid token"));
+  it("returns 401 when requireRole rejects due to invalid token", async () => {
+    mockRequireRole.mockResolvedValue(
+      NextResponse.json(
+        { error: "Invalid or expired token" },
+        { status: 401 }
+      )
+    );
     const req = createRequest(params);
     const res = await GET(req);
     expect(res.status).toBe(401);
   });
 
   it("returns 403 for non-superadmin (clientAdmin)", async () => {
-    mockVerifyIdToken.mockResolvedValue({
-      uid: "clientadmin-uid",
-      role: "clientAdmin",
-    });
+    mockRequireRole.mockResolvedValue(
+      NextResponse.json(
+        { error: "Insufficient permissions" },
+        { status: 403 }
+      )
+    );
     const req = createRequest(params);
     const res = await GET(req);
     expect(res.status).toBe(403);
   });
 
   it("returns 403 for non-superadmin (eventAdmin)", async () => {
-    mockVerifyIdToken.mockResolvedValue({
-      uid: "eventadmin-uid",
-      role: "eventAdmin",
-    });
+    mockRequireRole.mockResolvedValue(
+      NextResponse.json(
+        { error: "Insufficient permissions" },
+        { status: 403 }
+      )
+    );
     const req = createRequest(params);
     const res = await GET(req);
     expect(res.status).toBe(403);
   });
 
   it("returns 400 when clientId is missing", async () => {
-    mockVerifyIdToken.mockResolvedValue({
-      uid: "super-uid",
-      superadmin: true,
-    });
+    mockRequireRole.mockResolvedValue(superadminCaller);
     const req = createRequest({ eventId: "event-1" });
     const res = await GET(req);
     expect(res.status).toBe(400);
   });
 
   it("returns 400 when eventId is missing", async () => {
-    mockVerifyIdToken.mockResolvedValue({
-      uid: "super-uid",
-      superadmin: true,
-    });
+    mockRequireRole.mockResolvedValue(superadminCaller);
     const req = createRequest({ clientId: "client-1" });
     const res = await GET(req);
     expect(res.status).toBe(400);
   });
 
   it("returns enriched feedback sorted by timestamp descending", async () => {
-    mockVerifyIdToken.mockResolvedValue({
-      uid: "super-uid",
-      superadmin: true,
-    });
+    mockRequireRole.mockResolvedValue(superadminCaller);
     seedUsers();
     seedFeedback();
 
@@ -213,10 +244,7 @@ describe("GET /api/feedback", () => {
   });
 
   it("returns empty array when no users exist", async () => {
-    mockVerifyIdToken.mockResolvedValue({
-      uid: "super-uid",
-      superadmin: true,
-    });
+    mockRequireRole.mockResolvedValue(superadminCaller);
 
     const req = createRequest(params);
     const res = await GET(req);
@@ -227,10 +255,7 @@ describe("GET /api/feedback", () => {
   });
 
   it("returns empty array when users have no feedback", async () => {
-    mockVerifyIdToken.mockResolvedValue({
-      uid: "super-uid",
-      superadmin: true,
-    });
+    mockRequireRole.mockResolvedValue(superadminCaller);
     seedUsers();
     // No feedback seeded
 
@@ -242,27 +267,8 @@ describe("GET /api/feedback", () => {
     expect(json).toEqual([]);
   });
 
-  it("allows access with legacy admin claim", async () => {
-    mockVerifyIdToken.mockResolvedValue({
-      uid: "admin-uid",
-      admin: true,
-    });
-    seedUsers();
-    seedFeedback();
-
-    const req = createRequest(params);
-    const res = await GET(req);
-    expect(res.status).toBe(200);
-
-    const json = await res.json();
-    expect(json).toHaveLength(3);
-  });
-
   it("handles users with missing profile fields gracefully", async () => {
-    mockVerifyIdToken.mockResolvedValue({
-      uid: "super-uid",
-      superadmin: true,
-    });
+    mockRequireRole.mockResolvedValue(superadminCaller);
     mockCollectionDocs["clients/client-1/events/event-1/users"] = [
       {
         id: "user-sparse",
@@ -290,5 +296,15 @@ describe("GET /api/feedback", () => {
     expect(json).toHaveLength(1);
     expect(json[0].userName).toBe("");
     expect(json[0].userCompany).toBe("");
+  });
+
+  it("passes the request and correct roles to requireRole", async () => {
+    mockRequireRole.mockResolvedValue(superadminCaller);
+
+    const req = createRequest(params);
+    await GET(req);
+
+    expect(mockRequireRole).toHaveBeenCalledOnce();
+    expect(mockRequireRole).toHaveBeenCalledWith(req, ["superadmin"]);
   });
 });

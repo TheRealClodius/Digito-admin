@@ -43,7 +43,7 @@ export function UserManagementSection({ clientId, eventId }: UserManagementSecti
 
   async function getToken() {
     if (!authUser) throw new Error("Not authenticated");
-    return authUser.getIdToken();
+    return authUser.getToken();
   }
 
   async function handleDeactivate(userId: string) {

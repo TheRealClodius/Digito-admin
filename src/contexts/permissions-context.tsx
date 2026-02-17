@@ -7,7 +7,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/contexts/auth-context";
 import { verifyPermissions } from "@/lib/auth";
 import type { UserPermissions, UserRole } from "@/types/permissions";
 
@@ -28,12 +28,12 @@ export function PermissionsProvider({ children }: { children: ReactNode }) {
   const { user, loading: authLoading } = useAuth();
   const [role, setRole] = useState<UserRole | null>(null);
   const [permissions, setPermissions] = useState<UserPermissions | null>(null);
-  // Tracks which user UID we have resolved permissions for.
+  // Tracks which user sub we have resolved permissions for.
   // Lets us derive `loading` synchronously — no stale-state race condition.
-  const [resolvedUid, setResolvedUid] = useState<string | null>(null);
+  const [resolvedSub, setResolvedSub] = useState<string | null>(null);
 
   const loading =
-    authLoading || (user != null && resolvedUid !== user.uid);
+    authLoading || (user != null && resolvedSub !== user.sub);
 
   useEffect(() => {
     if (authLoading) return;
@@ -41,7 +41,7 @@ export function PermissionsProvider({ children }: { children: ReactNode }) {
     if (!user) {
       setRole(null);
       setPermissions(null);
-      setResolvedUid(null);
+      setResolvedSub(null);
       return;
     }
 
@@ -54,17 +54,18 @@ export function PermissionsProvider({ children }: { children: ReactNode }) {
         if (cancelled) return;
 
         if (result.role === "superadmin" && !result.permissions) {
-          // Superadmins don't have a Firestore doc — synthesize one
+          // Superadmins may not have a MongoDB doc — synthesize one
           const syntheticPerms: UserPermissions = {
-            userId: user!.uid,
+            userId: user!.sub,
+            cognitoSub: user!.sub,
             email: user!.email ?? "",
             role: "superadmin",
             clientIds: null,
             eventCodes: null,
             createdAt: new Date(),
             updatedAt: new Date(),
-            createdBy: user!.uid,
-            updatedBy: user!.uid,
+            createdBy: user!.sub,
+            updatedBy: user!.sub,
           };
           setRole("superadmin");
           setPermissions(syntheticPerms);
@@ -72,12 +73,12 @@ export function PermissionsProvider({ children }: { children: ReactNode }) {
           setRole(result.role);
           setPermissions(result.permissions);
         }
-        setResolvedUid(user!.uid);
+        setResolvedSub(user!.sub);
       } catch {
         if (!cancelled) {
           setRole(null);
           setPermissions(null);
-          setResolvedUid(user!.uid);
+          setResolvedSub(user!.sub);
         }
       }
     }
