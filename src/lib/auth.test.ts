@@ -5,6 +5,8 @@ const mockSignInWithRedirect = vi.fn();
 const mockAmplifySignOut = vi.fn();
 const mockGetCurrentUser = vi.fn();
 const mockFetchAuthSession = vi.fn();
+const mockConfirmSignIn = vi.fn();
+const mockFetchUserAttributes = vi.fn();
 
 vi.mock("aws-amplify/auth", () => ({
   signIn: (...args: unknown[]) => mockAmplifySignIn(...args),
@@ -12,13 +14,15 @@ vi.mock("aws-amplify/auth", () => ({
   signOut: (...args: unknown[]) => mockAmplifySignOut(...args),
   getCurrentUser: (...args: unknown[]) => mockGetCurrentUser(...args),
   fetchAuthSession: (...args: unknown[]) => mockFetchAuthSession(...args),
+  confirmSignIn: (...args: unknown[]) => mockConfirmSignIn(...args),
+  fetchUserAttributes: (...args: unknown[]) => mockFetchUserAttributes(...args),
 }));
 
 vi.mock("./amplify-config", () => ({
   ensureAmplifyConfigured: vi.fn(),
 }));
 
-import { signIn, signInWithGoogle, signOut, getCurrentAuthUser, verifyPermissions } from "./auth";
+import { signIn, signInWithGoogle, signOut, getCurrentAuthUser, verifyPermissions, signInWithEmailOTP, confirmEmailOTP } from "./auth";
 
 describe("auth", () => {
   beforeEach(() => {
@@ -94,6 +98,108 @@ describe("auth", () => {
       const user = await getCurrentAuthUser();
 
       expect(user).toBeNull();
+    });
+
+    it("falls back to fetchUserAttributes for email when loginId is missing (Google OAuth)", async () => {
+      mockGetCurrentUser.mockResolvedValue({
+        userId: "google-sub-123",
+        signInDetails: { loginId: undefined },
+      });
+      mockFetchAuthSession.mockResolvedValue({
+        tokens: {
+          accessToken: { toString: () => "mock-access-token" },
+        },
+      });
+      mockFetchUserAttributes.mockResolvedValue({ email: "simone@google.com" });
+
+      const user = await getCurrentAuthUser();
+
+      expect(user).not.toBeNull();
+      expect(user!.email).toBe("simone@google.com");
+      expect(mockFetchUserAttributes).toHaveBeenCalled();
+    });
+
+    it("returns null email gracefully when both loginId and fetchUserAttributes fail", async () => {
+      mockGetCurrentUser.mockResolvedValue({
+        userId: "google-sub-123",
+        signInDetails: {},
+      });
+      mockFetchAuthSession.mockResolvedValue({
+        tokens: {
+          accessToken: { toString: () => "mock-access-token" },
+        },
+      });
+      mockFetchUserAttributes.mockRejectedValue(new Error("Attributes unavailable"));
+
+      const user = await getCurrentAuthUser();
+
+      expect(user).not.toBeNull();
+      expect(user!.email).toBeNull();
+    });
+  });
+
+  describe("signInWithEmailOTP", () => {
+    it("calls signOut before signIn to clear any stale session", async () => {
+      const callOrder: string[] = [];
+      mockAmplifySignOut.mockImplementation(async () => { callOrder.push("signOut"); });
+      mockAmplifySignIn.mockImplementation(async () => {
+        callOrder.push("signIn");
+        return { isSignedIn: false, nextStep: { signInStep: "CONFIRM_SIGN_IN_WITH_CUSTOM_CHALLENGE" } };
+      });
+
+      await signInWithEmailOTP("user@test.com");
+
+      expect(callOrder[0]).toBe("signOut");
+      expect(callOrder[1]).toBe("signIn");
+    });
+
+    it("proceeds even if signOut fails (no existing session)", async () => {
+      mockAmplifySignOut.mockRejectedValue(new Error("No session to sign out"));
+      mockAmplifySignIn.mockResolvedValue({
+        isSignedIn: false,
+        nextStep: { signInStep: "CONFIRM_SIGN_IN_WITH_CUSTOM_CHALLENGE" },
+      });
+
+      const result = await signInWithEmailOTP("user@test.com");
+
+      expect(mockAmplifySignIn).toHaveBeenCalledWith({
+        username: "user@test.com",
+        options: { authFlowType: "CUSTOM_WITHOUT_SRP" },
+      });
+      expect(result.isSignedIn).toBe(false);
+    });
+
+    it("calls Amplify signIn with CUSTOM_WITHOUT_SRP auth flow", async () => {
+      mockAmplifySignOut.mockResolvedValue(undefined);
+      mockAmplifySignIn.mockResolvedValue({
+        isSignedIn: false,
+        nextStep: { signInStep: "CONFIRM_SIGN_IN_WITH_CUSTOM_CHALLENGE" },
+      });
+
+      const result = await signInWithEmailOTP("user@test.com");
+
+      expect(mockAmplifySignIn).toHaveBeenCalledWith({
+        username: "user@test.com",
+        options: { authFlowType: "CUSTOM_WITHOUT_SRP" },
+      });
+      expect(result.isSignedIn).toBe(false);
+      expect(result.nextStep.signInStep).toBe("CONFIRM_SIGN_IN_WITH_CUSTOM_CHALLENGE");
+    });
+  });
+
+  describe("confirmEmailOTP", () => {
+    it("calls confirmSignIn with the OTP code", async () => {
+      mockConfirmSignIn.mockResolvedValue({
+        isSignedIn: true,
+        nextStep: { signInStep: "DONE" },
+      });
+
+      const result = await confirmEmailOTP("123456");
+
+      expect(mockConfirmSignIn).toHaveBeenCalledWith({
+        challengeResponse: "123456",
+      });
+      expect(result.isSignedIn).toBe(true);
     });
   });
 

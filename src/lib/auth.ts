@@ -6,7 +6,10 @@ import {
   signOut as amplifySignOut,
   getCurrentUser,
   fetchAuthSession,
+  fetchUserAttributes,
+  confirmSignIn,
 } from "aws-amplify/auth";
+import type { SignInOutput } from "aws-amplify/auth";
 import { ensureAmplifyConfigured } from "./amplify-config";
 import type { UserPermissions, UserRole } from "@/types/permissions";
 
@@ -23,9 +26,40 @@ export async function signIn(email: string, password: string): Promise<void> {
   await amplifySignIn({ username: email, password });
 }
 
+/** Sign in with email OTP (custom auth challenge — sends 6-digit code via SES) */
+export async function signInWithEmailOTP(email: string): Promise<SignInOutput> {
+  ensureAmplifyConfigured();
+  try {
+    // Clear any stale Amplify session before starting the OTP flow.
+    // Without this, a leftover session (e.g. from Google OAuth or a previous
+    // OTP attempt) can corrupt the signInStore and cause confirmSignIn to fail
+    // with "signIn was not called before confirmSignIn".
+    await amplifySignOut({ global: false });
+  } catch {
+    // Ignore — no active session to clear is fine
+  }
+  return amplifySignIn({
+    username: email,
+    options: { authFlowType: "CUSTOM_WITHOUT_SRP" },
+  });
+}
+
+/** Confirm email OTP code (completes custom auth challenge) */
+export async function confirmEmailOTP(code: string): Promise<SignInOutput> {
+  ensureAmplifyConfigured();
+  return confirmSignIn({ challengeResponse: code });
+}
+
 /** Sign in with Google OAuth (redirect flow — browser navigates away) */
 export async function signInWithGoogle(): Promise<void> {
   ensureAmplifyConfigured();
+  try {
+    // Clear any stale Amplify session (stored in localStorage) before redirecting.
+    // Without this, Amplify throws "There is already a signed in user".
+    await amplifySignOut({ global: false });
+  } catch {
+    // Ignore — no active session to clear is fine
+  }
   await signInWithRedirect({ provider: "Google" });
 }
 
@@ -48,9 +82,21 @@ export async function getCurrentAuthUser(): Promise<AuthUser | null> {
 
     if (!accessToken) return null;
 
+    // loginId is available for email/password and OTP flows but null for Google OAuth.
+    // Fall back to fetchUserAttributes to get the email attribute.
+    let email: string | null = user.signInDetails?.loginId || null;
+    if (!email) {
+      try {
+        const attrs = await fetchUserAttributes();
+        email = attrs.email || null;
+      } catch {
+        // Attributes unavailable — email stays null
+      }
+    }
+
     return {
       sub: user.userId,
-      email: user.signInDetails?.loginId || null,
+      email,
       getToken: async () => {
         const s = await fetchAuthSession({ forceRefresh: false });
         return s.tokens?.accessToken?.toString() || "";

@@ -30,9 +30,9 @@ const nextConfig: NextConfig = {
               "script-src 'self' 'unsafe-inline' https://apis.google.com https://accounts.google.com",
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data: blob: https://firebasestorage.googleapis.com https://storage.googleapis.com https://*.firebasestorage.app",
-              "connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://ipapi.co https://api.sunrise-sunset.org https://cognito-idp.*.amazonaws.com https://*.amazoncognito.com https://*.auth.*.amazoncognito.com",
+              "connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://ipapi.co https://api.sunrise-sunset.org https://cognito-idp.eu-south-1.amazonaws.com https://cognito-identity.eu-south-1.amazonaws.com https://*.amazoncognito.com https://*.auth.eu-south-1.amazoncognito.com",
               "font-src 'self'",
-              "frame-src https://accounts.google.com https://*.firebaseapp.com https://*.amazoncognito.com https://*.auth.*.amazoncognito.com",
+              "frame-src https://accounts.google.com https://*.firebaseapp.com https://*.amazoncognito.com https://*.auth.eu-south-1.amazoncognito.com",
             ].join("; "),
           },
           {

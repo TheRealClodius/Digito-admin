@@ -78,7 +78,17 @@
     "signInWithGoogle": "Accedi con Google",
     "signingIn": "Accesso in corso...",
     "loginWithSSO": "Accedi con SSO",
-    "connectWithMagicLink": "Collegati con Magic Link"
+    "connectWithMagicLink": "Accedi con codice email",
+    "emailPlaceholder": "Inserisci la tua email",
+    "sendCode": "Invia codice",
+    "sendingCode": "Invio...",
+    "otpTitle": "Inserisci il codice di verifica",
+    "otpDescription": "Abbiamo inviato un codice a 6 cifre a {{email}}",
+    "verifyCode": "Verifica",
+    "verifying": "Verifica in corso...",
+    "resendCode": "Reinvia codice",
+    "backToLogin": "Indietro",
+    "sessionExpired": "Sessione scaduta. Richiedi un nuovo codice."
   },
   "unauthorized": {
     "title": "Accesso Negato",

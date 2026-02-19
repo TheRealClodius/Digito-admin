@@ -1,83 +1,43 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-// Mock Firebase client modules
-vi.mock("firebase/app", () => ({
-  initializeApp: vi.fn(),
-  getApps: vi.fn(() => []),
+// === Cognito verifier mock ===
+const mockVerifyCognitoToken = vi.fn();
+vi.mock("@/lib/cognito", () => ({
+  verifyCognitoToken: (...args: unknown[]) => mockVerifyCognitoToken(...args),
 }));
-vi.mock("firebase/auth", () => ({ getAuth: vi.fn() }));
-vi.mock("firebase/firestore", () => ({ getFirestore: vi.fn() }));
-vi.mock("firebase/storage", () => ({ getStorage: vi.fn() }));
 
-// === Firebase admin mock ===
+// === Cognito Admin mock (for AdminGetUser when username is not an email) ===
+const mockAdminSend = vi.fn();
+vi.mock("@/lib/cognito-admin", () => ({
+  getCognitoAdminClient: vi.fn(function () {
+    return { send: mockAdminSend };
+  }),
+  getUserPoolId: vi.fn(() => "eu-south-1_testpool"),
+}));
 
-const mockVerifyIdToken = vi.fn();
-const mockSetCustomUserClaims = vi.fn();
+vi.mock("@aws-sdk/client-cognito-identity-provider", () => ({
+  AdminGetUserCommand: vi.fn(function (input: unknown) {
+    return input;
+  }),
+}));
 
-const mockFirestoreState = {
-  docs: {} as Record<string, Record<string, unknown>>,
-  queryResults: [] as Array<{ id: string; data: Record<string, unknown> }>,
-  sets: [] as Array<{ path: string; data: unknown }>,
-  deletes: [] as string[],
-  whereArgs: [] as Array<{ field: string; op: string; value: unknown }>,
+// === MongoDB mock ===
+type DocData = Record<string, unknown>;
+
+const mockMongoState = {
+  userBySub: null as DocData | null,
+  userByEmail: null as DocData | null,
   shouldThrow: false,
 };
 
-vi.mock("@/lib/firebase-admin", () => ({
-  getAdminAuth: () => ({
-    verifyIdToken: (...args: unknown[]) => mockVerifyIdToken(...args),
-    setCustomUserClaims: (...args: unknown[]) =>
-      mockSetCustomUserClaims(...args),
-  }),
-  getAdminDb: () => ({
-    collection: (collectionName: string) => ({
-      doc: (docId: string) => {
-        const path = `${collectionName}/${docId}`;
-        return {
-          get: () => {
-            if (mockFirestoreState.shouldThrow) {
-              return Promise.reject(new Error("Firestore unavailable"));
-            }
-            const data = mockFirestoreState.docs[path];
-            return Promise.resolve({
-              exists: data !== undefined,
-              data: () => data,
-            });
-          },
-          set: (data: unknown) => {
-            mockFirestoreState.sets.push({ path, data });
-            return Promise.resolve();
-          },
-          delete: () => {
-            mockFirestoreState.deletes.push(path);
-            return Promise.resolve();
-          },
-        };
-      },
-      where: (field: string, op: string, value: unknown) => {
-        mockFirestoreState.whereArgs.push({ field, op, value });
-        return {
-          limit: () => ({
-            get: () =>
-              Promise.resolve({
-                empty: mockFirestoreState.queryResults.length === 0,
-                docs: mockFirestoreState.queryResults.map((doc) => ({
-                  id: doc.id,
-                  data: () => doc.data,
-                  ref: {
-                    delete: () => {
-                      mockFirestoreState.deletes.push(
-                        `${collectionName}/${doc.id}`
-                      );
-                      return Promise.resolve();
-                    },
-                  },
-                })),
-              }),
-          }),
-        };
-      },
-    }),
+vi.mock("@/lib/mongodb-collections", () => ({
+  getAdminUsersCollection: async () => ({
+    findOne: async (query: Record<string, unknown>) => {
+      if (mockMongoState.shouldThrow) throw new Error("MongoDB unavailable");
+      if (query.cognitoSub) return mockMongoState.userBySub;
+      if (query.email) return mockMongoState.userByEmail;
+      return null;
+    },
   }),
 }));
 
@@ -94,16 +54,28 @@ function createRequest(token: string | null = "valid-token") {
   });
 }
 
+const baseCognitoPayload = {
+  sub: "user-sub-123",
+  username: "user@test.com",
+  token_use: "access" as const,
+  client_id: "test-client",
+  iss: "https://cognito-idp.eu-south-1.amazonaws.com/pool",
+  exp: 9999999999,
+  iat: 1000000000,
+  jti: "jti",
+  origin_jti: "origin-jti",
+  scope: "",
+  auth_time: 1000000000,
+};
+
 describe("GET /api/check-permissions", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockFirestoreState.docs = {};
-    mockFirestoreState.queryResults = [];
-    mockFirestoreState.sets = [];
-    mockFirestoreState.deletes = [];
-    mockFirestoreState.whereArgs = [];
-    mockFirestoreState.shouldThrow = false;
-    mockSetCustomUserClaims.mockResolvedValue(undefined);
+    mockMongoState.userBySub = null;
+    mockMongoState.userByEmail = null;
+    mockMongoState.shouldThrow = false;
+    // Default: AdminGetUser returns no email (won't be called in most tests)
+    mockAdminSend.mockResolvedValue({ UserAttributes: [] });
   });
 
   it("returns 401 without authorization header", async () => {
@@ -112,232 +84,172 @@ describe("GET /api/check-permissions", () => {
   });
 
   it("returns 401 with invalid token", async () => {
-    mockVerifyIdToken.mockRejectedValue(new Error("Invalid token"));
+    mockVerifyCognitoToken.mockRejectedValue(new Error("Invalid token"));
     const res = await GET(createRequest());
     expect(res.status).toBe(401);
   });
 
-  it("returns superadmin role from custom claims", async () => {
-    mockVerifyIdToken.mockResolvedValue({
-      uid: "super-uid",
-      email: "super@test.com",
-      superadmin: true,
+  it("returns superadmin role when found by cognitoSub", async () => {
+    mockVerifyCognitoToken.mockResolvedValue({
+      ...baseCognitoPayload,
+      sub: "super-sub",
     });
+    mockMongoState.userBySub = {
+      cognitoSub: "super-sub",
+      email: "super@test.com",
+      role: "superadmin",
+      clientIds: null,
+      eventCodes: null,
+      isActive: true,
+    };
     const res = await GET(createRequest());
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.role).toBe("superadmin");
   });
 
-  it("returns superadmin role from legacy admin claim", async () => {
-    mockVerifyIdToken.mockResolvedValue({
-      uid: "super-uid",
-      email: "super@test.com",
-      admin: true,
+  it("returns clientAdmin role with permissions when found by cognitoSub", async () => {
+    mockVerifyCognitoToken.mockResolvedValue({
+      ...baseCognitoPayload,
+      sub: "client-sub",
     });
-    const res = await GET(createRequest());
-    const body = await res.json();
-    expect(body.role).toBe("superadmin");
-  });
-
-  it("returns clientAdmin role from custom claims with permissions", async () => {
-    mockVerifyIdToken.mockResolvedValue({
-      uid: "client-uid",
+    mockMongoState.userBySub = {
+      cognitoSub: "client-sub",
       email: "client@test.com",
       role: "clientAdmin",
-    });
-    mockFirestoreState.docs["userPermissions/client-uid"] = {
-      userId: "client-uid",
-      email: "client@test.com",
-      role: "clientAdmin",
-      clientIds: ["c1"],
-      eventIds: null,
+      clientIds: ["c1", "c2"],
+      eventCodes: null,
+      isActive: true,
     };
     const res = await GET(createRequest());
     const body = await res.json();
     expect(body.role).toBe("clientAdmin");
-    expect(body.permissions.clientIds).toEqual(["c1"]);
+    expect(body.permissions.clientIds).toEqual(["c1", "c2"]);
   });
 
-  it("falls back to Firestore by UID when no claims, auto-heals claims", async () => {
-    mockVerifyIdToken.mockResolvedValue({
-      uid: "user-uid",
-      email: "user@test.com",
+  it("falls back to email lookup when user not found by cognitoSub", async () => {
+    mockVerifyCognitoToken.mockResolvedValue({
+      ...baseCognitoPayload,
+      sub: "new-sub",
+      username: "user@test.com",
     });
-    mockFirestoreState.docs["userPermissions/user-uid"] = {
-      userId: "user-uid",
+    mockMongoState.userBySub = null;
+    mockMongoState.userByEmail = {
+      cognitoSub: "old-sub",
       email: "user@test.com",
-      role: "clientAdmin",
+      role: "eventAdmin",
       clientIds: ["c1"],
-      eventIds: null,
+      eventCodes: ["2025089"],
+      isActive: true,
     };
     const res = await GET(createRequest());
     const body = await res.json();
-    expect(body.role).toBe("clientAdmin");
-
-    // Should auto-heal claims
-    expect(mockSetCustomUserClaims).toHaveBeenCalledWith("user-uid", {
-      role: "clientAdmin",
-    });
+    expect(body.role).toBe("eventAdmin");
+    expect(body.permissions.eventCodes).toEqual(["2025089"]);
   });
 
-  it("auto-heals superadmin with { superadmin: true } not { role: 'superadmin' }", async () => {
-    mockVerifyIdToken.mockResolvedValue({
-      uid: "super-uid",
-      email: "super@test.com",
-      // No superadmin claim — it was wiped
+  it("uses lowercase email for lookup when username is mixed-case", async () => {
+    mockVerifyCognitoToken.mockResolvedValue({
+      ...baseCognitoPayload,
+      sub: "new-sub",
+      username: "User@Test.COM",
     });
-    mockFirestoreState.docs["userPermissions/super-uid"] = {
-      userId: "super-uid",
-      email: "super@test.com",
+    mockMongoState.userBySub = null;
+    mockMongoState.userByEmail = {
+      cognitoSub: "old-sub",
+      email: "user@test.com",
       role: "superadmin",
       clientIds: null,
-      eventIds: null,
+      eventCodes: null,
+      isActive: true,
     };
     const res = await GET(createRequest());
     const body = await res.json();
     expect(body.role).toBe("superadmin");
-
-    // Must use { superadmin: true } so storage.rules isSuperAdmin() matches
-    expect(mockSetCustomUserClaims).toHaveBeenCalledWith("super-uid", {
-      superadmin: true,
-    });
   });
 
-  it("auto-heals superadmin via email fallback with correct claim format", async () => {
-    mockVerifyIdToken.mockResolvedValue({
-      uid: "new-super-uid",
-      email: "super@test.com",
-    });
-    mockFirestoreState.queryResults = [
-      {
-        id: "old-super-uid",
-        data: {
-          userId: "old-super-uid",
-          email: "super@test.com",
-          role: "superadmin",
-          clientIds: null,
-          eventIds: null,
-        },
-      },
-    ];
+  it("returns null role when user not found anywhere", async () => {
+    mockVerifyCognitoToken.mockResolvedValue(baseCognitoPayload);
     const res = await GET(createRequest());
     const body = await res.json();
-    expect(body.role).toBe("superadmin");
-
-    expect(mockSetCustomUserClaims).toHaveBeenCalledWith("new-super-uid", {
-      superadmin: true,
-    });
+    expect(body.role).toBeNull();
+    expect(body.permissions).toBeNull();
   });
 
-  it("falls back to email search when UID doc missing, fixes UID and auto-heals", async () => {
-    mockVerifyIdToken.mockResolvedValue({
-      uid: "new-uid",
+  it("returns null role when user is inactive", async () => {
+    mockVerifyCognitoToken.mockResolvedValue(baseCognitoPayload);
+    mockMongoState.userBySub = {
+      cognitoSub: "user-sub-123",
       email: "user@test.com",
-    });
-    // No doc at userPermissions/new-uid
-    // But email query finds a doc under a different UID
-    mockFirestoreState.queryResults = [
-      {
-        id: "old-uid",
-        data: {
-          userId: "old-uid",
-          email: "user@test.com",
-          role: "clientAdmin",
-          clientIds: ["c1"],
-          eventIds: null,
-        },
-      },
-    ];
-
-    const res = await GET(createRequest());
-    const body = await res.json();
-    expect(body.role).toBe("clientAdmin");
-
-    // Should create new doc with correct UID
-    const newSet = mockFirestoreState.sets.find(
-      (s) => s.path === "userPermissions/new-uid"
-    );
-    expect(newSet).toBeDefined();
-    const newData = newSet!.data as Record<string, unknown>;
-    expect(newData.userId).toBe("new-uid");
-
-    // Should delete old doc
-    expect(mockFirestoreState.deletes).toContain("userPermissions/old-uid");
-
-    // Should auto-heal claims
-    expect(mockSetCustomUserClaims).toHaveBeenCalledWith("new-uid", {
       role: "clientAdmin",
-    });
-  });
-
-  it("returns null role when no permissions found anywhere", async () => {
-    mockVerifyIdToken.mockResolvedValue({
-      uid: "unknown-uid",
-      email: "unknown@test.com",
-    });
+      clientIds: ["c1"],
+      eventCodes: null,
+      isActive: false,
+    };
     const res = await GET(createRequest());
     const body = await res.json();
     expect(body.role).toBeNull();
   });
 
-  it("normalizes email to lowercase for Firestore email query", async () => {
-    mockVerifyIdToken.mockResolvedValue({
-      uid: "new-uid",
-      email: "Andrei.Clodius@Goodgest.com",  // Mixed-case from Google Auth
-    });
-    // No doc at userPermissions/new-uid
-    mockFirestoreState.queryResults = [
-      {
-        id: "old-uid",
-        data: {
-          userId: "old-uid",
-          email: "andrei.clodius@goodgest.com",
-          role: "superadmin",
-          clientIds: null,
-          eventIds: null,
-        },
-      },
-    ];
-
-    const res = await GET(createRequest());
-    const body = await res.json();
-    expect(body.role).toBe("superadmin");
-
-    // The email query must use lowercase email
-    const emailWhere = mockFirestoreState.whereArgs.find(
-      (w) => w.field === "email"
-    );
-    expect(emailWhere).toBeDefined();
-    expect(emailWhere!.value).toBe("andrei.clodius@goodgest.com");
-  });
-
-  it("returns 500 when Firestore is unavailable instead of crashing", async () => {
-    mockVerifyIdToken.mockResolvedValue({
-      uid: "user-uid",
-      email: "user@test.com",
-    });
-    mockFirestoreState.shouldThrow = true;
-
+  it("returns 500 when MongoDB is unavailable", async () => {
+    mockVerifyCognitoToken.mockResolvedValue(baseCognitoPayload);
+    mockMongoState.shouldThrow = true;
     const res = await GET(createRequest());
     expect(res.status).toBe(500);
     const body = await res.json();
-    expect(body.error).toBe("Firestore operation failed");
+    expect(body.error).toBeDefined();
   });
 
-  it("does not auto-heal when claims already match", async () => {
-    mockVerifyIdToken.mockResolvedValue({
-      uid: "user-uid",
-      email: "user@test.com",
-      role: "clientAdmin",
+  it("fetches email from Cognito when username is a UUID (not an email)", async () => {
+    mockVerifyCognitoToken.mockResolvedValue({
+      ...baseCognitoPayload,
+      sub: "uuid-sub-123",
+      username: "uuid-sub-123", // UUID, not an email address
     });
-    mockFirestoreState.docs["userPermissions/user-uid"] = {
-      userId: "user-uid",
+    mockAdminSend.mockResolvedValue({
+      UserAttributes: [{ Name: "email", Value: "user@test.com" }],
+    });
+    mockMongoState.userBySub = null;
+    mockMongoState.userByEmail = {
+      cognitoSub: "old-sub",
       email: "user@test.com",
-      role: "clientAdmin",
-      clientIds: ["c1"],
+      role: "superadmin",
+      clientIds: null,
+      eventCodes: null,
+      isActive: true,
+    };
+    const res = await GET(createRequest());
+    const body = await res.json();
+    expect(body.role).toBe("superadmin");
+  });
+
+  it("returns null role when username is UUID and Cognito fetch fails", async () => {
+    mockVerifyCognitoToken.mockResolvedValue({
+      ...baseCognitoPayload,
+      sub: "uuid-sub-123",
+      username: "uuid-sub-123",
+    });
+    mockAdminSend.mockRejectedValue(new Error("UserNotFoundException"));
+    mockMongoState.userBySub = null;
+    const res = await GET(createRequest());
+    const body = await res.json();
+    expect(body.role).toBeNull();
+  });
+
+  it("does not call AdminGetUser when username is already an email", async () => {
+    mockVerifyCognitoToken.mockResolvedValue({
+      ...baseCognitoPayload,
+      username: "user@test.com",
+    });
+    mockMongoState.userBySub = {
+      cognitoSub: "user-sub-123",
+      email: "user@test.com",
+      role: "eventAdmin",
+      clientIds: null,
+      eventCodes: null,
+      isActive: true,
     };
     await GET(createRequest());
-    expect(mockSetCustomUserClaims).not.toHaveBeenCalled();
+    expect(mockAdminSend).not.toHaveBeenCalled();
   });
 });

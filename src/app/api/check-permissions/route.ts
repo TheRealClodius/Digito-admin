@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
-import { getAdminAuth, getAdminDb } from "@/lib/firebase-admin";
-import { FieldValue } from "firebase-admin/firestore";
+import { AdminGetUserCommand } from "@aws-sdk/client-cognito-identity-provider";
+import { verifyCognitoToken } from "@/lib/cognito";
+import { getCognitoAdminClient, getUserPoolId } from "@/lib/cognito-admin";
+import { getAdminUsersCollection } from "@/lib/mongodb-collections";
 
 export async function GET(request: Request) {
   const authHeader = request.headers.get("Authorization");
@@ -9,105 +11,83 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Missing authorization" }, { status: 401 });
   }
 
-  let decoded;
+  let payload;
   try {
-    decoded = await getAdminAuth().verifyIdToken(
-      authHeader.replace("Bearer ", "")
-    );
+    payload = await verifyCognitoToken(authHeader.replace("Bearer ", ""));
   } catch (err: unknown) {
     const errMsg = err instanceof Error ? err.message : String(err);
     console.error("[check-permissions] Token verification failed:", errMsg);
-    console.error("[check-permissions] Admin SDK config: projectId=", process.env.FIREBASE_ADMIN_PROJECT_ID ? "set" : "MISSING", "clientEmail=", process.env.FIREBASE_ADMIN_CLIENT_EMAIL ? "set" : "MISSING", "privateKey=", process.env.FIREBASE_ADMIN_PRIVATE_KEY ? "set" : "MISSING");
     return NextResponse.json({ error: "Invalid token", detail: errMsg }, { status: 401 });
   }
 
-  const uid = decoded.uid;
-  const email = decoded.email?.toLowerCase();
-  console.log(`[check-permissions] uid=${uid} email=${email} claims=`, {
-    superadmin: decoded.superadmin,
-    admin: decoded.admin,
-    role: decoded.role,
-  });
+  const sub = payload.sub;
+  let email: string | undefined;
 
-  // 1. Check custom claims
-  if (decoded.superadmin === true || decoded.admin === true) {
-    console.log("[check-permissions] → superadmin (from claims)");
-    return NextResponse.json({ role: "superadmin", permissions: null });
-  }
-
-  const claimRole = decoded.role as string | undefined;
-  if (claimRole === "clientAdmin" || claimRole === "eventAdmin") {
+  if (typeof payload.username === "string" && payload.username.includes("@")) {
+    email = payload.username.toLowerCase();
+  } else if (typeof payload.username === "string" && payload.username) {
+    // Username is a UUID or federated identity (e.g. Google-linked user) — fetch email from Cognito
     try {
-      const permDoc = await getAdminDb()
-        .collection("userPermissions")
-        .doc(uid)
-        .get();
-      console.log(`[check-permissions] → ${claimRole} (from claims), firestore doc exists=${permDoc.exists}`);
-      return NextResponse.json({
-        role: claimRole,
-        permissions: permDoc.exists ? permDoc.data() : null,
-      });
-    } catch (err) {
-      console.error("[check-permissions] Firestore read failed for claim-based role:", err);
-      return NextResponse.json({ error: "Firestore read failed" }, { status: 500 });
+      const client = getCognitoAdminClient();
+      const userData = await client.send(
+        new AdminGetUserCommand({
+          UserPoolId: getUserPoolId(),
+          Username: payload.username,
+        })
+      );
+      const emailAttr = userData.UserAttributes?.find((a) => a.Name === "email");
+      if (emailAttr?.Value) {
+        email = emailAttr.Value.toLowerCase();
+      }
+    } catch {
+      // Could not fetch email from Cognito — proceed without email fallback
     }
   }
 
-  // 2. No claims — check Firestore by UID
+  console.log(`[check-permissions] sub=${sub} email=${email}`);
+
   try {
-    console.log("[check-permissions] No role claims found, checking Firestore by UID...");
-    const permDoc = await getAdminDb()
-      .collection("userPermissions")
-      .doc(uid)
-      .get();
+    const collection = await getAdminUsersCollection();
 
-    if (permDoc.exists) {
-      const data = permDoc.data()!;
-      console.log(`[check-permissions] → ${data.role} (from Firestore UID lookup, auto-healing claims)`);
-      const claims = data.role === "superadmin" ? { superadmin: true } : { role: data.role };
-      await getAdminAuth().setCustomUserClaims(uid, claims);
-      return NextResponse.json({ role: data.role, permissions: data });
-    }
+    // 1. Look up by Cognito sub (primary)
+    let user = await collection.findOne({ cognitoSub: sub });
 
-    // 3. No doc by UID — check by email (handles UID mismatch between providers)
-    console.log(`[check-permissions] No doc at userPermissions/${uid}, checking by email=${email}...`);
-    if (email) {
-      const emailQuery = await getAdminDb()
-        .collection("userPermissions")
-        .where("email", "==", email)
-        .limit(1)
-        .get();
-
-      if (!emailQuery.empty) {
-        const oldDoc = emailQuery.docs[0];
-        const data = oldDoc.data();
-        console.log(`[check-permissions] → ${data.role} (from email query, old doc id=${oldDoc.id}, migrating to uid=${uid})`);
-
-        // Migrate doc to correct UID
-        await getAdminDb()
-          .collection("userPermissions")
-          .doc(uid)
-          .set({
-            ...data,
-            userId: uid,
-            updatedAt: FieldValue.serverTimestamp(),
-          });
-
-        if (oldDoc.id !== uid) {
-          await oldDoc.ref.delete();
-        }
-
-        const emailClaims = data.role === "superadmin" ? { superadmin: true } : { role: data.role };
-        await getAdminAuth().setCustomUserClaims(uid, emailClaims);
-        return NextResponse.json({ role: data.role, permissions: data });
+    // 2. Fall back to email lookup (handles sub changes, e.g. after Google federation)
+    if (!user && email) {
+      user = await collection.findOne({ email });
+      if (user) {
+        console.log(`[check-permissions] Found user by email fallback (old sub=${user.cognitoSub}, new sub=${sub})`);
       }
     }
-  } catch (err) {
-    console.error("[check-permissions] Firestore operation failed:", err);
-    return NextResponse.json({ error: "Firestore operation failed" }, { status: 500 });
-  }
 
-  // 4. No permissions found
-  console.log("[check-permissions] → null (no permissions found anywhere)");
-  return NextResponse.json({ role: null, permissions: null });
+    if (!user) {
+      console.log("[check-permissions] → null (no user found)");
+      return NextResponse.json({ role: null, permissions: null });
+    }
+
+    if (!user.isActive) {
+      console.log(`[check-permissions] → null (user is inactive, email=${user.email})`);
+      return NextResponse.json({ role: null, permissions: null });
+    }
+
+    console.log(`[check-permissions] → ${user.role} (email=${user.email})`);
+    return NextResponse.json({
+      role: user.role,
+      permissions: {
+        userId: user.cognitoSub,
+        cognitoSub: user.cognitoSub,
+        email: user.email,
+        role: user.role,
+        clientIds: user.clientIds ?? null,
+        eventCodes: user.eventCodes ?? null,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
+        createdBy: user.createdBy,
+        updatedBy: user.updatedBy,
+      },
+    });
+  } catch (err) {
+    console.error("[check-permissions] MongoDB operation failed:", err);
+    return NextResponse.json({ error: "Database operation failed" }, { status: 500 });
+  }
 }

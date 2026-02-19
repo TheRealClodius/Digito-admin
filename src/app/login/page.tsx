@@ -3,16 +3,19 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { signInWithGoogle } from "@/lib/auth";
+import { signInWithGoogle, signInWithEmailOTP, confirmEmailOTP } from "@/lib/auth";
 import { useAuth } from "@/hooks/use-auth";
 import { usePermissions } from "@/hooks/use-permissions";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { useTranslation } from "@/hooks/use-translation";
 
 const BACKGROUND_IMAGES = [
   "/backgrounds/star-gazing-005.png",
   "/backgrounds/orange-big.png",
 ];
+
+type OtpStep = "idle" | "email" | "code";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -22,6 +25,12 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+  // OTP flow state
+  const [otpStep, setOtpStep] = useState<OtpStep>("idle");
+  const [email, setEmail] = useState("");
+  const [otpCode, setOtpCode] = useState("");
+  const [otpLoading, setOtpLoading] = useState(false);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -43,14 +52,197 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      // Cognito uses redirect flow — browser navigates to Google
-      // After callback, the AuthProvider picks up the signedIn Hub event
       await signInWithGoogle();
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       setError(`Google sign-in failed: ${message}`);
       setLoading(false);
     }
+  }
+
+  async function handleSendOTP() {
+    setError(null);
+    setOtpLoading(true);
+
+    try {
+      // Ensure a native Cognito user exists (federated-only users can't use CUSTOM_AUTH)
+      const provisionRes = await fetch("/api/auth/initiate-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      if (!provisionRes.ok) {
+        const data = await provisionRes.json();
+        throw new Error(data.error || "Failed to initiate OTP");
+      }
+
+      const result = await signInWithEmailOTP(email);
+      if (
+        !result.isSignedIn &&
+        result.nextStep.signInStep === "CONFIRM_SIGN_IN_WITH_CUSTOM_CHALLENGE"
+      ) {
+        setOtpStep("code");
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      setError(message);
+    } finally {
+      setOtpLoading(false);
+    }
+  }
+
+  async function handleVerifyOTP() {
+    setError(null);
+    setOtpLoading(true);
+
+    try {
+      await confirmEmailOTP(otpCode);
+      // AuthProvider Hub fires signedIn → redirect logic handles navigation
+    } catch (err) {
+      // SignInException means the Amplify sign-in session was lost (e.g. stale
+      // session cleared by signOut, page reload, or 3-minute Cognito expiry).
+      // Return the user to the email step so they can restart the OTP flow.
+      if (err instanceof Error && err.name === "SignInException") {
+        setOtpStep("email");
+        setOtpCode("");
+        setError(t("login.sessionExpired"));
+      } else {
+        const message = err instanceof Error ? err.message : String(err);
+        setError(message);
+      }
+    } finally {
+      setOtpLoading(false);
+    }
+  }
+
+  function handleBackToIdle() {
+    setOtpStep("idle");
+    setEmail("");
+    setOtpCode("");
+    setError(null);
+  }
+
+  function renderButtons() {
+    if (otpStep === "email") {
+      return (
+        <div className="space-y-3">
+          <Input
+            type="email"
+            placeholder={t("login.emailPlaceholder")}
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && email) handleSendOTP();
+            }}
+            autoFocus
+          />
+          <Button
+            variant="outline"
+            className="w-full"
+            onClick={handleSendOTP}
+            disabled={!email || otpLoading}
+          >
+            {otpLoading ? t("login.sendingCode") : t("login.sendCode")}
+          </Button>
+          <Button
+            variant="ghost"
+            className="w-full"
+            onClick={handleBackToIdle}
+          >
+            {t("login.backToLogin")}
+          </Button>
+        </div>
+      );
+    }
+
+    if (otpStep === "code") {
+      return (
+        <div className="space-y-3">
+          <p className="text-sm text-muted-foreground text-center">
+            {t("login.otpDescription", { email })}
+          </p>
+          <Input
+            data-testid="otp-input"
+            type="text"
+            inputMode="numeric"
+            maxLength={6}
+            pattern="\d{6}"
+            placeholder="000000"
+            value={otpCode}
+            onChange={(e) => {
+              const val = e.target.value.replace(/\D/g, "");
+              setOtpCode(val);
+            }}
+            className="text-center text-2xl tracking-[0.5em] font-mono"
+            autoFocus
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && otpCode.length === 6) handleVerifyOTP();
+            }}
+          />
+          <Button
+            variant="outline"
+            className="w-full"
+            onClick={handleVerifyOTP}
+            disabled={otpCode.length !== 6 || otpLoading}
+          >
+            {otpLoading ? t("login.verifying") : t("login.verifyCode")}
+          </Button>
+          <Button
+            variant="ghost"
+            className="w-full"
+            onClick={handleBackToIdle}
+          >
+            {t("login.backToLogin")}
+          </Button>
+        </div>
+      );
+    }
+
+    // Idle state — show all sign-in options
+    return (
+      <>
+        <Button
+          variant="outline"
+          className="w-full"
+          onClick={handleGoogleSignIn}
+          disabled={loading}
+        >
+          <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
+            <path
+              d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"
+              fill="#4285F4"
+            />
+            <path
+              d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+              fill="#34A853"
+            />
+            <path
+              d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+              fill="#FBBC05"
+            />
+            <path
+              d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+              fill="#EA4335"
+            />
+          </svg>
+          {loading ? t("login.signingIn") : t("login.signInWithGoogle")}
+        </Button>
+        <Button
+          variant="outline"
+          className="w-full"
+          disabled
+        >
+          {t("login.loginWithSSO")}
+        </Button>
+        <Button
+          variant="outline"
+          className="w-full"
+          onClick={() => setOtpStep("email")}
+        >
+          {t("login.connectWithMagicLink")}
+        </Button>
+      </>
+    );
   }
 
   return (
@@ -95,46 +287,7 @@ export default function LoginPage() {
               </div>
             </div>
             <div className="space-y-3 max-w-xs mx-auto">
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={handleGoogleSignIn}
-                disabled={loading}
-              >
-                <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
-                  <path
-                    d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"
-                    fill="#4285F4"
-                  />
-                  <path
-                    d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                    fill="#34A853"
-                  />
-                  <path
-                    d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                    fill="#FBBC05"
-                  />
-                  <path
-                    d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                    fill="#EA4335"
-                  />
-                </svg>
-                {loading ? t("login.signingIn") : t("login.signInWithGoogle")}
-              </Button>
-              <Button
-                variant="outline"
-                className="w-full"
-                disabled
-              >
-                {t("login.loginWithSSO")}
-              </Button>
-              <Button
-                variant="outline"
-                className="w-full"
-                disabled
-              >
-                {t("login.connectWithMagicLink")}
-              </Button>
+              {renderButtons()}
               {error && (
                 <p className="text-sm text-destructive text-center">{error}</p>
               )}

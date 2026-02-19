@@ -78,7 +78,17 @@
     "signInWithGoogle": "Sign in with Google",
     "signingIn": "Signing in...",
     "loginWithSSO": "Login with SSO",
-    "connectWithMagicLink": "Connect with Magic Link"
+    "connectWithMagicLink": "Sign in with email code",
+    "emailPlaceholder": "Enter your email",
+    "sendCode": "Send code",
+    "sendingCode": "Sending...",
+    "otpTitle": "Enter verification code",
+    "otpDescription": "We sent a 6-digit code to {{email}}",
+    "verifyCode": "Verify",
+    "verifying": "Verifying...",
+    "resendCode": "Resend code",
+    "backToLogin": "Back",
+    "sessionExpired": "Session expired. Please request a new code."
   },
   "unauthorized": {
     "title": "Access Denied",
