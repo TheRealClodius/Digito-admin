@@ -50,11 +50,15 @@ function interpolate(str: string, values?: InterpolationValues): string {
 export function LanguageProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
 
-  const [language, setLanguageState] = useState<Language>(() => {
-    if (typeof window === "undefined") return DEFAULT_LANGUAGE;
+  const [language, setLanguageState] = useState<Language>(DEFAULT_LANGUAGE);
+
+  // Hydrate language from localStorage after mount to avoid SSR mismatch
+  useEffect(() => {
     const stored = localStorage.getItem("language") as Language | null;
-    return stored === "it" ? "it" : DEFAULT_LANGUAGE;
-  });
+    if (stored === "it") {
+      setLanguageState("it");
+    }
+  }, []);
 
   // Update HTML lang attribute
   useEffect(() => {

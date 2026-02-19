@@ -13,10 +13,12 @@ vi.mock("@/lib/api-auth", () => ({
 
 const mockCreateCognitoUser = vi.fn();
 const mockGenerateTemporaryPassword = vi.fn();
+const mockEnableCognitoUser = vi.fn();
 vi.mock("@/lib/cognito-admin", () => ({
   createCognitoUser: (...args: unknown[]) => mockCreateCognitoUser(...args),
   generateTemporaryPassword: (...args: unknown[]) =>
     mockGenerateTemporaryPassword(...args),
+  enableCognitoUser: (...args: unknown[]) => mockEnableCognitoUser(...args),
 }));
 
 const mockUpdateOne = vi.fn();
@@ -250,6 +252,7 @@ describe("POST /api/set-user-role", () => {
     const usernameExistsError = new Error("User already exists");
     usernameExistsError.name = "UsernameExistsException";
     mockCreateCognitoUser.mockRejectedValue(usernameExistsError);
+    mockEnableCognitoUser.mockResolvedValue(undefined);
 
     const upsertedId = new ObjectId();
     mockUpdateOne.mockResolvedValue({
@@ -278,6 +281,55 @@ describe("POST /api/set-user-role", () => {
     const update = updateCall[1];
     expect(filter).toEqual({ email: "existing@test.com" });
     expect(update.$set.cognitoSub).toBeUndefined();
+  });
+
+  it("calls enableCognitoUser when user already exists in Cognito", async () => {
+    mockRequireAuth.mockResolvedValue(makeSuperadminCaller());
+    const usernameExistsError = new Error("User already exists");
+    usernameExistsError.name = "UsernameExistsException";
+    mockCreateCognitoUser.mockRejectedValue(usernameExistsError);
+    mockEnableCognitoUser.mockResolvedValue(undefined);
+
+    mockUpdateOne.mockResolvedValue({
+      upsertedId: null,
+      matchedCount: 1,
+      modifiedCount: 1,
+    });
+
+    const req = createRequest({
+      email: "Existing@Test.com",
+      role: "clientAdmin",
+      clientIds: ["c1"],
+    });
+    const res = await POST(req);
+    expect(res.status).toBe(200);
+
+    // Should call enableCognitoUser with lowercase email
+    expect(mockEnableCognitoUser).toHaveBeenCalledWith("existing@test.com");
+  });
+
+  it("succeeds even if enableCognitoUser fails (non-blocking)", async () => {
+    mockRequireAuth.mockResolvedValue(makeSuperadminCaller());
+    const usernameExistsError = new Error("User already exists");
+    usernameExistsError.name = "UsernameExistsException";
+    mockCreateCognitoUser.mockRejectedValue(usernameExistsError);
+    mockEnableCognitoUser.mockRejectedValue(new Error("SES error"));
+
+    mockUpdateOne.mockResolvedValue({
+      upsertedId: null,
+      matchedCount: 1,
+      modifiedCount: 1,
+    });
+
+    const req = createRequest({
+      email: "existing@test.com",
+      role: "clientAdmin",
+      clientIds: ["c1"],
+    });
+    const res = await POST(req);
+    expect(res.status).toBe(200);
+
+    expect(mockEnableCognitoUser).toHaveBeenCalled();
   });
 
   it("returns 500 when Cognito creation fails with unexpected error", async () => {

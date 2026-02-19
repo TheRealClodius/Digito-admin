@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAuth } from "@/lib/api-auth";
-import { createCognitoUser, generateTemporaryPassword } from "@/lib/cognito-admin";
+import { createCognitoUser, enableCognitoUser, generateTemporaryPassword } from "@/lib/cognito-admin";
 import { getAdminUsersCollection } from "@/lib/mongodb-collections";
 import type { UserRole } from "@/types/permissions";
 
@@ -82,7 +82,12 @@ export async function POST(request: Request) {
         { status: 500 }
       );
     }
-    // User already exists in Cognito — that's ok, we'll upsert in MongoDB
+    // User already exists in Cognito — re-enable in case they were previously disabled
+    try {
+      await enableCognitoUser(normalizedEmail);
+    } catch (enableError) {
+      console.error("Failed to enable Cognito user:", enableError);
+    }
   }
 
   // 5. Upsert admin user in MongoDB
