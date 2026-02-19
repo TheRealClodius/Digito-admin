@@ -1,6 +1,7 @@
 import { defineAuth, secret } from '@aws-amplify/backend';
 import { preSignUp } from './pre-signup/resource.ts';
 import { postConfirmation } from './post-confirmation/resource.ts';
+import { postAuthentication } from './post-authentication/resource.ts';
 import { defineAuthChallenge } from './define-auth-challenge/resource.ts';
 import { createAuthChallenge } from './create-auth-challenge/resource.ts';
 import { verifyAuthChallengeResponse } from './verify-auth-challenge-response/resource.ts';
@@ -60,6 +61,7 @@ export const auth = defineAuth({
   triggers: {
     preSignUp,
     postConfirmation,
+    postAuthentication,
     defineAuthChallenge,
     createAuthChallenge,
     verifyAuthChallengeResponse,

@@ -72,11 +72,10 @@ export function AdminForm({
       </div>
 
       <div className="space-y-3">
-        <Label htmlFor="admin-role">{t("participants.role")}</Label>
+        <Label id="admin-role-label" htmlFor="admin-role">{t("participants.role")}</Label>
         <select
           id="admin-role"
-          aria-labelledby="admin-role"
-          title="admin-role"
+          aria-labelledby="admin-role-label"
           value={role}
           onChange={(e) => setRole(e.target.value as "clientAdmin" | "eventAdmin")}
           disabled={isSubmitting || restrictToEventAdmin}

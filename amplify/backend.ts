@@ -4,6 +4,7 @@ import { Stack } from 'aws-cdk-lib';
 import { auth } from './auth/resource.ts';
 import { preSignUp } from './auth/pre-signup/resource.ts';
 import { postConfirmation } from './auth/post-confirmation/resource.ts';
+import { postAuthentication } from './auth/post-authentication/resource.ts';
 import { defineAuthChallenge } from './auth/define-auth-challenge/resource.ts';
 import { createAuthChallenge } from './auth/create-auth-challenge/resource.ts';
 import { verifyAuthChallengeResponse } from './auth/verify-auth-challenge-response/resource.ts';
@@ -12,6 +13,7 @@ const backend = defineBackend({
   auth,
   preSignUp,
   postConfirmation,
+  postAuthentication,
   defineAuthChallenge,
   createAuthChallenge,
   verifyAuthChallengeResponse,
