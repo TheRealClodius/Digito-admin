@@ -11,7 +11,7 @@ vi.mock("@/hooks/use-permissions", () => ({
 
 vi.mock("@/hooks/use-aggregate-stats", () => ({
   useAggregateStats: vi.fn(() => ({
-    stats: { totalClients: 0, totalEvents: 0, activeEvents: 0, totalParticipants: 0 },
+    stats: { totalClients: 0, totalEvents: 0, activeEvents: 0 },
     loading: false,
   })),
 }));
@@ -25,7 +25,7 @@ describe("DashboardHome - Access Control", () => {
     vi.clearAllMocks();
     vi.mocked(eventContextHook.useEventContext).mockReturnValue({
       selectedClientId: "client-1",
-      selectedEventId: "event-1",
+      selectedEventCode: "event-1",
       selectedClientName: "Client Alpha",
       selectedEventName: "Event One",
       setSelectedClient: vi.fn(),

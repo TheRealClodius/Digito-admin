@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { type ReactNode, useState, useEffect } from "react";
 import { Plus } from "lucide-react";
 import { useTranslation } from "@/hooks/use-translation";
 
@@ -11,6 +11,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Input } from "@/components/ui/input";
 import { ErrorBanner } from "@/components/error-banner";
 import { AISuggestionProvider } from "@/contexts/ai-suggestion-context";
 
@@ -59,6 +60,9 @@ interface CrudPageProps<T> {
   deleteTitle?: string;
   deleteDescription?: string;
   deleteActionLabel?: string;
+  /** When provided, user must type the returned word to confirm deletion */
+  getDeleteConfirmationWord?: (entity: T) => string;
+  deleteConfirmationPrompt?: string;
 }
 
 export function CrudPage<T extends { id: string }>({
@@ -88,9 +92,27 @@ export function CrudPage<T extends { id: string }>({
   deleteTitle,
   deleteDescription,
   deleteActionLabel,
+  getDeleteConfirmationWord,
+  deleteConfirmationPrompt,
 }: CrudPageProps<T>) {
   const { t } = useTranslation();
   const capitalizedName = entityName.charAt(0).toUpperCase() + entityName.slice(1);
+  const [deleteConfirmInput, setDeleteConfirmInput] = useState("");
+
+  // Reset input when dialog closes
+  useEffect(() => {
+    if (!deletingEntityId) setDeleteConfirmInput("");
+  }, [deletingEntityId]);
+
+  const deletingEntity = deletingEntityId
+    ? data.find((e) => e.id === deletingEntityId) ?? null
+    : null;
+  const confirmationWord = deletingEntity && getDeleteConfirmationWord
+    ? getDeleteConfirmationWord(deletingEntity)
+    : null;
+  const deleteConfirmed = confirmationWord
+    ? deleteConfirmInput === confirmationWord
+    : true;
 
   return (
     <div className="space-y-6">
@@ -164,9 +186,28 @@ export function CrudPage<T extends { id: string }>({
               {deleteDescription ?? t("crud.deleteConfirm")}
             </AlertDialogDescription>
           </AlertDialogHeader>
+          {confirmationWord && (
+            <div className="space-y-2">
+              <p
+                className="text-sm text-muted-foreground"
+                dangerouslySetInnerHTML={{
+                  __html: deleteConfirmationPrompt ?? t("crud.deleteTypeConfirm", { name: confirmationWord }),
+                }}
+              />
+              <Input
+                value={deleteConfirmInput}
+                onChange={(e) => setDeleteConfirmInput(e.target.value)}
+                placeholder={confirmationWord}
+                autoComplete="off"
+              />
+            </div>
+          )}
           <AlertDialogFooter>
             <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete}>
+            <AlertDialogAction
+              onClick={handleDelete}
+              disabled={!deleteConfirmed}
+            >
               {deleteActionLabel ?? t("common.delete")}
             </AlertDialogAction>
           </AlertDialogFooter>

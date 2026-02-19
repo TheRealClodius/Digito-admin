@@ -1,5 +1,3 @@
-import { Timestamp } from "firebase/firestore";
-
 export type ParticipantRole = "speaker" | "panelist" | "host" | "brand_rep" | "moderator" | "performer" | "other";
 
 export type AccessTier = "regular" | "premium" | "vip" | "staff";
@@ -22,8 +20,8 @@ export interface Participant {
   isHighlighted: boolean;
   accessTier: AccessTier;
   lockedFields?: string[];
-  createdAt: Timestamp;
-  addedAt: Timestamp;
+  createdAt: Date | string;
+  addedAt: Date | string;
 }
 
 export type ParticipantFormData = Omit<Participant, "id" | "createdAt" | "addedAt">;

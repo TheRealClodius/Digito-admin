@@ -1,5 +1,3 @@
-import { Timestamp } from "firebase/firestore";
-
 export interface Brand {
   id: string;
   name: string;
@@ -11,7 +9,7 @@ export interface Brand {
   instagramUrl?: string | null;
   stallNumber?: string | null;
   isHighlighted: boolean;
-  createdAt: Timestamp;
+  createdAt: Date | string;
 }
 
 export type BrandFormData = Omit<Brand, "id" | "createdAt">;

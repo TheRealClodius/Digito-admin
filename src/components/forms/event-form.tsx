@@ -14,6 +14,7 @@ import { useTranslation } from "@/hooks/use-translation";
 type SubmitStatus = "idle" | "saving" | "success" | "error";
 
 interface EventFormDefaultValues {
+  eventCode?: string | null;
   name?: string | null;
   description?: string | null;
   venue?: string | null;
@@ -31,6 +32,7 @@ interface EventFormDefaultValues {
 interface EventFormProps {
   clientId: string;
   defaultValues?: EventFormDefaultValues;
+  suggestedEventCode?: string;
   onSubmit: (data: Record<string, unknown>) => void;
   onCancel: () => void;
   submitStatus?: SubmitStatus;
@@ -48,6 +50,7 @@ function formatDateForInput(date: Date | null | undefined): string {
 }
 
 interface FormValues {
+  eventCode: string;
   name: string;
   description: string;
   venue: string;
@@ -64,12 +67,14 @@ interface FormValues {
 export function EventForm({
   clientId,
   defaultValues,
+  suggestedEventCode,
   onSubmit,
   onCancel,
   submitStatus = "idle",
   storagePath,
 }: EventFormProps) {
   const isSubmitting = submitStatus === "saving";
+  const isEditing = !!defaultValues;
   const { upload, deleteFile } = useUpload({ basePath: storagePath ?? "" });
   const { t } = useTranslation();
   const {
@@ -81,6 +86,7 @@ export function EventForm({
     formState: { errors },
   } = useForm<FormValues>({
     defaultValues: {
+      eventCode: defaultValues?.eventCode ?? suggestedEventCode ?? "",
       name: defaultValues?.name ?? "",
       description: defaultValues?.description ?? "",
       venue: defaultValues?.venue ?? "",
@@ -96,9 +102,9 @@ export function EventForm({
     mode: "onSubmit",
   });
 
-  const [nameValue, isActiveValue, logoUrlValue, bannerUrlValue] = watch(["name", "isActive", "logoUrl", "bannerUrl"]);
+  const [eventCodeValue, nameValue, isActiveValue, logoUrlValue, bannerUrlValue] = watch(["eventCode", "name", "isActive", "logoUrl", "bannerUrl"]);
 
-  const isSubmitDisabled = !nameValue?.trim() || isSubmitting;
+  const isSubmitDisabled = !nameValue?.trim() || !eventCodeValue?.trim() || isSubmitting;
 
   const onFormSubmit = (data: FormValues) => {
     onSubmit({
@@ -109,6 +115,24 @@ export function EventForm({
 
   return (
     <form onSubmit={handleSubmit(onFormSubmit)} className="grid grid-cols-2 gap-x-4 gap-y-6">
+      <div className="space-y-3">
+        <Label htmlFor="eventCode">{t("events.eventCode")}</Label>
+        <Input
+          id="eventCode"
+          aria-label={t("events.eventCode")}
+          placeholder={t("events.eventCodePlaceholder")}
+          readOnly={isEditing}
+          className={isEditing ? "bg-muted" : ""}
+          {...register("eventCode", { required: t("validation.eventCodeRequired") })}
+        />
+        {!isEditing && (
+          <p className="text-xs text-muted-foreground">{t("events.eventCodeHint")}</p>
+        )}
+        {errors.eventCode && (
+          <p className="text-sm text-destructive">{errors.eventCode.message}</p>
+        )}
+      </div>
+
       <div className="space-y-3">
         <Label htmlFor="name">{t("common.name")}</Label>
         <Input

@@ -1,7 +1,6 @@
 "use client";
 
-import { useCrudPage } from "@/hooks/use-crud-page";
-import { deleteClientCascade } from "@/lib/firestore";
+import { useApiCrudPage } from "@/hooks/use-api-crud-page";
 import { useUpload } from "@/hooks/use-upload";
 import { usePermissions } from "@/hooks/use-permissions";
 import { useTranslation } from "@/hooks/use-translation";
@@ -14,12 +13,10 @@ export default function ClientsPage() {
   const { isSuperAdmin } = usePermissions();
   const { t } = useTranslation();
   const { deleteFile } = useUpload({ basePath: "clients" });
-  const crud = useCrudPage<Client>({
-    collectionPath: "clients",
-    orderByField: "name",
-    orderDirection: "asc",
+  const crud = useApiCrudPage<Client>({
+    apiPath: "/api/clients",
+    queryKey: ["clients"],
     entityName: "client",
-    onDelete: (id) => deleteClientCascade(id),
     onCleanupFiles: async (client) => {
       if (client.logoUrl) await deleteFile(client.logoUrl);
     },
@@ -43,6 +40,7 @@ export default function ClientsPage() {
       addButtonLabel={t("clients.addButton")}
       entityName="client"
       deleteDescription={t("clients.deleteConfirm")}
+      getDeleteConfirmationWord={(client) => client.name}
       readOnly={!isSuperAdmin}
       {...crud}
       renderTable={(clients, onEdit, onDelete) => (

@@ -2,28 +2,19 @@ import { render as rtlRender, screen, waitFor } from "@testing-library/react";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
-function render(ui: React.ReactElement, options = {}) {
-  return rtlRender(<TooltipProvider>{ui}</TooltipProvider>, options);
+function render(ui: React.ReactElement) {
+  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return rtlRender(
+    <QueryClientProvider client={qc}>
+      <TooltipProvider>{ui}</TooltipProvider>
+    </QueryClientProvider>
+  );
 }
 
-// Mock Firebase
-vi.mock("firebase/app", () => ({
-  initializeApp: vi.fn(),
-  getApps: vi.fn(() => []),
-}));
-vi.mock("firebase/auth", () => ({ getAuth: vi.fn() }));
-vi.mock("firebase/firestore", () => ({
-  getFirestore: vi.fn(),
-  Timestamp: {
-    fromDate: (d: Date) => ({ toDate: () => d }),
-    now: () => ({ toDate: () => new Date() }),
-  },
-}));
-vi.mock("firebase/storage", () => ({ getStorage: vi.fn() }));
-
-vi.mock("@/lib/firestore", () => ({
-  addDocument: vi.fn(),
+vi.mock("@/lib/api-client", () => ({
+  apiFetch: vi.fn(),
 }));
 
 vi.mock("@/hooks/use-upload", () => ({
@@ -65,7 +56,9 @@ vi.mock("next/image", () => ({
 }));
 
 import { CreateEventDialog } from "./create-event-dialog";
-import { addDocument } from "@/lib/firestore";
+import { apiFetch } from "@/lib/api-client";
+
+const mockApiFetch = vi.mocked(apiFetch);
 
 const defaultProps = {
   open: true,
@@ -74,9 +67,20 @@ const defaultProps = {
   onEventCreated: vi.fn(),
 };
 
+/** Mock apiFetch to handle both next-code query and POST calls */
+function setupApiFetchMock(postResult: unknown = { eventCode: "2026001" }) {
+  mockApiFetch.mockImplementation((path: string) => {
+    if (path === "/api/events/next-code") {
+      return Promise.resolve({ nextEventCode: "2026001" } as never);
+    }
+    return Promise.resolve(postResult as never);
+  });
+}
+
 describe("CreateEventDialog", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
+    setupApiFetchMock();
   });
 
   it("renders dialog with title and EventForm when open", () => {
@@ -99,17 +103,29 @@ describe("CreateEventDialog", () => {
 
     render(<CreateEventDialog {...defaultProps} onOpenChange={onOpenChange} />);
 
+    // Wait for form to stabilize after next-code query resolves
+    await waitFor(() => {
+      expect(screen.getByLabelText(/event code/i)).toHaveValue("2026001");
+    });
+
     const cancelButton = screen.getByRole("button", { name: /cancel/i });
     await user.click(cancelButton);
 
     expect(onOpenChange).toHaveBeenCalledWith(false);
   });
 
-  it("calls addDocument and onEventCreated on successful submit", async () => {
+  it("prefills eventCode from next-code API", async () => {
+    render(<CreateEventDialog {...defaultProps} />);
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(/event code/i)).toHaveValue("2026001");
+    });
+  });
+
+  it("calls apiFetch and onEventCreated on successful submit", async () => {
     const user = userEvent.setup();
     const onEventCreated = vi.fn();
     const onOpenChange = vi.fn();
-    vi.mocked(addDocument).mockResolvedValue("new-event-id");
 
     render(
       <CreateEventDialog
@@ -119,7 +135,11 @@ describe("CreateEventDialog", () => {
       />,
     );
 
-    // Fill in required fields
+    // Wait for eventCode to be prefilled
+    await waitFor(() => {
+      expect(screen.getByLabelText(/event code/i)).toHaveValue("2026001");
+    });
+
     await user.type(screen.getByLabelText(/name/i), "My New Event");
     await user.type(screen.getByLabelText(/start date/i), "2026-06-15T09:00");
     await user.type(screen.getByLabelText(/end date/i), "2026-06-17T18:00");
@@ -128,27 +148,40 @@ describe("CreateEventDialog", () => {
     await user.click(submitButton);
 
     await waitFor(() => {
-      expect(addDocument).toHaveBeenCalledWith(
-        "clients/client-1/events",
+      expect(mockApiFetch).toHaveBeenCalledWith(
+        "/api/clients/client-1/events",
         expect.objectContaining({
-          clientId: "client-1",
-          name: "My New Event",
+          method: "POST",
+          body: expect.objectContaining({
+            clientId: "client-1",
+            eventCode: "2026001",
+            name: "My New Event",
+          }),
         }),
       );
     });
 
     await waitFor(() => {
-      expect(onEventCreated).toHaveBeenCalledWith("new-event-id", "My New Event");
+      expect(onEventCreated).toHaveBeenCalledWith("2026001", "My New Event");
     });
 
     expect(onOpenChange).toHaveBeenCalledWith(false);
   });
 
-  it("shows error state when addDocument fails", async () => {
+  it("shows error state when apiFetch fails on submit", async () => {
     const user = userEvent.setup();
-    vi.mocked(addDocument).mockRejectedValue(new Error("Firestore error"));
+    mockApiFetch.mockImplementation((path: string) => {
+      if (path === "/api/events/next-code") {
+        return Promise.resolve({ nextEventCode: "2026001" } as never);
+      }
+      return Promise.reject(new Error("API error"));
+    });
 
     render(<CreateEventDialog {...defaultProps} />);
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(/event code/i)).toHaveValue("2026001");
+    });
 
     await user.type(screen.getByLabelText(/name/i), "Failing Event");
     await user.type(screen.getByLabelText(/start date/i), "2026-06-15T09:00");
@@ -165,8 +198,6 @@ describe("CreateEventDialog", () => {
   it("passes correct storagePath to EventForm", () => {
     render(<CreateEventDialog {...defaultProps} clientId="client-42" />);
 
-    // The form renders — storagePath is internal, but we verify the form is
-    // present and functional for the given clientId
     expect(screen.getByLabelText(/name/i)).toBeInTheDocument();
   });
 });

@@ -1,96 +1,86 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { renderHook, act } from "@testing-library/react";
+import { renderHook, act, waitFor } from "@testing-library/react";
 
-// Mock dependencies
-vi.mock("@/hooks/use-auth", () => ({
-  useAuth: vi.fn(() => ({
-    user: { uid: "caller-uid", getToken: vi.fn().mockResolvedValue("mock-token") },
-    loading: false,
-  })),
-}));
-
-vi.mock("@/hooks/use-collection", () => ({
-  useCollection: vi.fn(),
+// Mock API client
+const mockApiFetch = vi.fn();
+vi.mock("@/lib/api-client", () => ({
+  apiFetch: (...args: unknown[]) => mockApiFetch(...args),
+  ApiError: class ApiError extends Error {
+    constructor(message: string, public status: number) {
+      super(message);
+    }
+  },
 }));
 
 import { useAdminManagement } from "./use-admin-management";
-import * as collectionHook from "@/hooks/use-collection";
-
-// Mock fetch globally
-const mockFetch = vi.fn();
-global.fetch = mockFetch;
+import { QueryWrapper } from "@/test/query-wrapper";
 
 describe("useAdminManagement", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
-    vi.mocked(collectionHook.useCollection).mockReturnValue({
-      data: [
-        { id: "user-1", email: "admin1@test.com", role: "clientAdmin", clientIds: ["c1"] },
-        { id: "user-2", email: "admin2@test.com", role: "eventAdmin", clientIds: ["c1"], eventIds: ["e1"] },
-      ] as any,
-      loading: false,
-      error: null,
-    });
+    vi.resetAllMocks();
+    mockApiFetch.mockResolvedValue([
+      { id: "user-1", email: "admin1@test.com", role: "clientAdmin", clientIds: ["c1"] },
+      { id: "user-2", email: "admin2@test.com", role: "eventAdmin", clientIds: ["c1"], eventCodes: ["e1"] },
+    ]);
   });
 
-  it("returns list of admins from userPermissions collection", () => {
-    const { result } = renderHook(() => useAdminManagement());
+  it("returns list of admins from API", async () => {
+    const { result } = renderHook(() => useAdminManagement(), { wrapper: QueryWrapper });
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
 
     expect(result.current.admins).toHaveLength(2);
     expect(result.current.admins[0].email).toBe("admin1@test.com");
     expect(result.current.admins[1].email).toBe("admin2@test.com");
   });
 
-  it("returns loading state from useCollection", () => {
-    vi.mocked(collectionHook.useCollection).mockReturnValue({
-      data: [],
-      loading: true,
-      error: null,
-    });
-
-    const { result } = renderHook(() => useAdminManagement());
+  it("returns loading state", () => {
+    const { result } = renderHook(() => useAdminManagement(), { wrapper: QueryWrapper });
     expect(result.current.loading).toBe(true);
   });
 
-  it("addAdmin calls /api/set-user-role with correct body", async () => {
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      json: () => Promise.resolve({ success: true, userId: "new-user" }),
-    });
+  it("fetches from /api/admin/users", async () => {
+    const { result } = renderHook(() => useAdminManagement(), { wrapper: QueryWrapper });
 
-    const { result } = renderHook(() => useAdminManagement());
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    expect(mockApiFetch).toHaveBeenCalledWith("/api/admin/users");
+  });
+
+  it("addAdmin calls /api/set-user-role via apiFetch", async () => {
+    mockApiFetch.mockResolvedValueOnce([]);  // initial fetch
+    mockApiFetch.mockResolvedValueOnce({ success: true, userId: "new-user" }); // addAdmin
+    mockApiFetch.mockResolvedValueOnce([]); // refetch after invalidation
+
+    const { result } = renderHook(() => useAdminManagement(), { wrapper: QueryWrapper });
+    await waitFor(() => expect(result.current.loading).toBe(false));
 
     await act(async () => {
       await result.current.addAdmin({
         email: "new@test.com",
         role: "eventAdmin",
         clientIds: ["c1"],
-        eventIds: ["e1"],
+        eventCodes: ["e1"],
       });
     });
 
-    expect(mockFetch).toHaveBeenCalledWith("/api/set-user-role", {
+    expect(mockApiFetch).toHaveBeenCalledWith("/api/set-user-role", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: "Bearer mock-token",
-      },
-      body: JSON.stringify({
+      body: {
         email: "new@test.com",
         role: "eventAdmin",
         clientIds: ["c1"],
-        eventIds: ["e1"],
-      }),
+        eventCodes: ["e1"],
+      },
     });
   });
 
   it("addAdmin throws on API error", async () => {
-    mockFetch.mockResolvedValueOnce({
-      ok: false,
-      json: () => Promise.resolve({ error: "User not found" }),
-    });
+    mockApiFetch.mockResolvedValueOnce([]);  // initial fetch
+    mockApiFetch.mockRejectedValueOnce(new Error("User not found")); // addAdmin fails
 
-    const { result } = renderHook(() => useAdminManagement());
+    const { result } = renderHook(() => useAdminManagement(), { wrapper: QueryWrapper });
+    await waitFor(() => expect(result.current.loading).toBe(false));
 
     await expect(
       act(async () => {
@@ -103,50 +93,35 @@ describe("useAdminManagement", () => {
     ).rejects.toThrow("User not found");
   });
 
-  it("removeAdmin calls /api/remove-user-role with correct body", async () => {
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      json: () => Promise.resolve({ success: true }),
-    });
+  it("removeAdmin calls /api/remove-user-role via apiFetch", async () => {
+    mockApiFetch.mockResolvedValueOnce([]);  // initial fetch
+    mockApiFetch.mockResolvedValueOnce({ success: true }); // removeAdmin
+    mockApiFetch.mockResolvedValueOnce([]); // refetch after invalidation
 
-    const { result } = renderHook(() => useAdminManagement());
+    const { result } = renderHook(() => useAdminManagement(), { wrapper: QueryWrapper });
+    await waitFor(() => expect(result.current.loading).toBe(false));
 
     await act(async () => {
       await result.current.removeAdmin("user-1");
     });
 
-    expect(mockFetch).toHaveBeenCalledWith("/api/remove-user-role", {
+    expect(mockApiFetch).toHaveBeenCalledWith("/api/remove-user-role", {
       method: "DELETE",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: "Bearer mock-token",
-      },
-      body: JSON.stringify({ userId: "user-1" }),
+      body: { userId: "user-1" },
     });
   });
 
   it("removeAdmin throws on API error", async () => {
-    mockFetch.mockResolvedValueOnce({
-      ok: false,
-      json: () => Promise.resolve({ error: "Cannot remove superadmin" }),
-    });
+    mockApiFetch.mockResolvedValueOnce([]);  // initial fetch
+    mockApiFetch.mockRejectedValueOnce(new Error("Cannot remove superadmin")); // removeAdmin fails
 
-    const { result } = renderHook(() => useAdminManagement());
+    const { result } = renderHook(() => useAdminManagement(), { wrapper: QueryWrapper });
+    await waitFor(() => expect(result.current.loading).toBe(false));
 
     await expect(
       act(async () => {
         await result.current.removeAdmin("sa-1");
       })
     ).rejects.toThrow("Cannot remove superadmin");
-  });
-
-  it("reads from userPermissions collection with email ordering", () => {
-    renderHook(() => useAdminManagement());
-
-    expect(collectionHook.useCollection).toHaveBeenCalledWith({
-      path: "userPermissions",
-      orderByField: "email",
-      orderDirection: "asc",
-    });
   });
 });

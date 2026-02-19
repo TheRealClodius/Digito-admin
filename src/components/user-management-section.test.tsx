@@ -1,46 +1,34 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { vi, describe, it, expect, beforeEach } from "vitest";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
-// Mock Firebase modules
-vi.mock("firebase/app", () => ({
-  initializeApp: vi.fn(),
-  getApps: vi.fn(() => []),
-}));
-vi.mock("firebase/auth", () => ({ getAuth: vi.fn() }));
-vi.mock("firebase/firestore", () => ({
-  getFirestore: vi.fn(),
-  Timestamp: {
-    fromDate: (d: Date) => ({ toDate: () => d }),
-    now: () => ({ toDate: () => new Date() }),
-  },
-}));
-vi.mock("firebase/storage", () => ({ getStorage: vi.fn() }));
-
-vi.mock("@/hooks/use-auth", () => ({
-  useAuth: vi.fn(() => ({
-    user: { getToken: vi.fn().mockResolvedValue("mock-token") },
-    loading: false,
-  })),
+vi.mock("@/hooks/use-api-collection", () => ({
+  useApiCollection: vi.fn(),
 }));
 
-vi.mock("@/hooks/use-collection", () => ({
-  useCollection: vi.fn(),
+vi.mock("@/lib/api-client", () => ({
+  apiFetch: vi.fn(),
 }));
 
 import { UserManagementSection } from "./user-management-section";
-import * as collectionHook from "@/hooks/use-collection";
+import * as apiCollectionHook from "@/hooks/use-api-collection";
+import * as apiClient from "@/lib/api-client";
 
-const mockFetch = vi.fn();
-global.fetch = mockFetch;
+const mockApiFetch = vi.mocked(apiClient.apiFetch);
+
+function QueryWrapper({ children }: { children: React.ReactNode }) {
+  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return <QueryClientProvider client={qc}>{children}</QueryClientProvider>;
+}
 
 describe("UserManagementSection", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
   });
 
   it("shows active users with Deactivate button", () => {
-    vi.mocked(collectionHook.useCollection).mockReturnValue({
+    vi.mocked(apiCollectionHook.useApiCollection).mockReturnValue({
       data: [
         { id: "user-1", email: "alice@test.com", firstName: "Alice", lastName: "Smith", isActive: true },
       ] as any,
@@ -49,7 +37,9 @@ describe("UserManagementSection", () => {
     });
 
     render(
-      <UserManagementSection clientId="c1" eventId="e1" />
+      <QueryWrapper>
+        <UserManagementSection eventCode="e1" />
+      </QueryWrapper>
     );
 
     expect(screen.getByText("alice@test.com")).toBeInTheDocument();
@@ -58,7 +48,7 @@ describe("UserManagementSection", () => {
   });
 
   it("shows deactivated users with Reactivate button", () => {
-    vi.mocked(collectionHook.useCollection).mockReturnValue({
+    vi.mocked(apiCollectionHook.useApiCollection).mockReturnValue({
       data: [
         { id: "user-2", email: "bob@test.com", firstName: "Bob", lastName: "Jones", isActive: false },
       ] as any,
@@ -67,7 +57,9 @@ describe("UserManagementSection", () => {
     });
 
     render(
-      <UserManagementSection clientId="c1" eventId="e1" />
+      <QueryWrapper>
+        <UserManagementSection eventCode="e1" />
+      </QueryWrapper>
     );
 
     expect(screen.getByText("bob@test.com")).toBeInTheDocument();
@@ -76,7 +68,7 @@ describe("UserManagementSection", () => {
   });
 
   it("shows Delete button for all users", () => {
-    vi.mocked(collectionHook.useCollection).mockReturnValue({
+    vi.mocked(apiCollectionHook.useApiCollection).mockReturnValue({
       data: [
         { id: "user-1", email: "alice@test.com", firstName: "Alice", lastName: "Smith", isActive: true },
       ] as any,
@@ -85,7 +77,9 @@ describe("UserManagementSection", () => {
     });
 
     render(
-      <UserManagementSection clientId="c1" eventId="e1" />
+      <QueryWrapper>
+        <UserManagementSection eventCode="e1" />
+      </QueryWrapper>
     );
 
     expect(screen.getByRole("button", { name: /delete/i })).toBeInTheDocument();
@@ -93,20 +87,19 @@ describe("UserManagementSection", () => {
 
   it("calls deactivate API when deactivate is confirmed", async () => {
     const user = userEvent.setup();
-    vi.mocked(collectionHook.useCollection).mockReturnValue({
+    vi.mocked(apiCollectionHook.useApiCollection).mockReturnValue({
       data: [
         { id: "user-1", email: "alice@test.com", firstName: "Alice", lastName: "Smith", isActive: true },
       ] as any,
       loading: false,
       error: null,
     });
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      json: () => Promise.resolve({ success: true }),
-    });
+    mockApiFetch.mockResolvedValueOnce({});
 
     render(
-      <UserManagementSection clientId="c1" eventId="e1" />
+      <QueryWrapper>
+        <UserManagementSection eventCode="e1" />
+      </QueryWrapper>
     );
 
     await user.click(screen.getByRole("button", { name: /deactivate/i }));
@@ -118,11 +111,11 @@ describe("UserManagementSection", () => {
     await user.click(screen.getByRole("button", { name: /confirm|yes|deactivate/i }));
 
     await waitFor(() => {
-      expect(mockFetch).toHaveBeenCalledWith(
-        "/api/event-users/deactivate",
+      expect(mockApiFetch).toHaveBeenCalledWith(
+        "/api/events/e1/users/user-1",
         expect.objectContaining({
-          method: "POST",
-          body: JSON.stringify({ clientId: "c1", eventId: "e1", userId: "user-1" }),
+          method: "PUT",
+          body: { isActive: false },
         })
       );
     });
@@ -130,20 +123,19 @@ describe("UserManagementSection", () => {
 
   it("calls delete API when delete is confirmed", async () => {
     const user = userEvent.setup();
-    vi.mocked(collectionHook.useCollection).mockReturnValue({
+    vi.mocked(apiCollectionHook.useApiCollection).mockReturnValue({
       data: [
         { id: "user-1", email: "alice@test.com", firstName: "Alice", lastName: "Smith", isActive: true },
       ] as any,
       loading: false,
       error: null,
     });
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      json: () => Promise.resolve({ success: true }),
-    });
+    mockApiFetch.mockResolvedValueOnce({});
 
     render(
-      <UserManagementSection clientId="c1" eventId="e1" />
+      <QueryWrapper>
+        <UserManagementSection eventCode="e1" />
+      </QueryWrapper>
     );
 
     await user.click(screen.getByRole("button", { name: /delete/i }));
@@ -155,39 +147,40 @@ describe("UserManagementSection", () => {
     await user.click(screen.getByRole("button", { name: /confirm|yes|delete/i }));
 
     await waitFor(() => {
-      expect(mockFetch).toHaveBeenCalledWith(
-        "/api/event-users/delete",
-        expect.objectContaining({
-          method: "POST",
-          body: JSON.stringify({ clientId: "c1", eventId: "e1", userId: "user-1" }),
-        })
+      expect(mockApiFetch).toHaveBeenCalledWith(
+        "/api/events/e1/users/user-1",
+        expect.objectContaining({ method: "DELETE" })
       );
     });
   });
 
   it("shows empty state when no users exist", () => {
-    vi.mocked(collectionHook.useCollection).mockReturnValue({
+    vi.mocked(apiCollectionHook.useApiCollection).mockReturnValue({
       data: [],
       loading: false,
       error: null,
     });
 
     render(
-      <UserManagementSection clientId="c1" eventId="e1" />
+      <QueryWrapper>
+        <UserManagementSection eventCode="e1" />
+      </QueryWrapper>
     );
 
     expect(screen.getByText(/no users have signed up/i)).toBeInTheDocument();
   });
 
   it("shows loading state", () => {
-    vi.mocked(collectionHook.useCollection).mockReturnValue({
+    vi.mocked(apiCollectionHook.useApiCollection).mockReturnValue({
       data: [],
       loading: true,
       error: null,
     });
 
     render(
-      <UserManagementSection clientId="c1" eventId="e1" />
+      <QueryWrapper>
+        <UserManagementSection eventCode="e1" />
+      </QueryWrapper>
     );
 
     expect(screen.getByText(/loading/i)).toBeInTheDocument();

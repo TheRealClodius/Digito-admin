@@ -1,13 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { where, documentId } from "firebase/firestore";
 import { ChevronDown, Option, Plus } from "lucide-react";
 import { useEventContext } from "@/hooks/use-event-context";
-import { useCollection } from "@/hooks/use-collection";
+import { useApiCollection } from "@/hooks/use-api-collection";
 import { usePermissions } from "@/hooks/use-permissions";
 import { useTranslation } from "@/hooks/use-translation";
-import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -34,44 +32,24 @@ export function ContextSelector() {
   const canCreateEvent = isSuperAdmin || isClientAdmin;
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
 
-  // Non-superadmins: scope the clients query to their assigned clientIds
-  // so Firestore security rules allow the list query.
-  const clientConstraints = useMemo(() => {
-    if (isSuperAdmin || !permissions?.clientIds?.length) return [];
-    return [where(documentId(), "in", permissions.clientIds)];
-  }, [isSuperAdmin, permissions?.clientIds]);
-
-  const clientConstraintsKey = useMemo(() => {
-    if (isSuperAdmin || !permissions?.clientIds?.length) return "";
-    return permissions.clientIds.join(",");
-  }, [isSuperAdmin, permissions?.clientIds]);
-
-  const { data: allClients } = useCollection<Client & { id: string }>({
-    path: "clients",
-    orderByField: "name",
-    orderDirection: "asc",
-    constraints: clientConstraints,
-    constraintsKey: clientConstraintsKey,
+  // API routes filter by permissions server-side
+  const { data: clients } = useApiCollection<Client & { id: string }>({
+    apiPath: "/api/clients",
+    queryKey: ["clients"],
   });
 
-  const { data: allEvents } = useCollection<Event & { id: string }>({
-    path: selectedClientId
-      ? `clients/${selectedClientId}/events`
+  const { data: allEvents } = useApiCollection<Event & { id: string; eventCode: string }>({
+    apiPath: selectedClientId
+      ? `/api/clients/${selectedClientId}/events`
       : "",
-    orderByField: "name",
-    orderDirection: "asc",
+    queryKey: ["clients", selectedClientId ?? "", "events"],
+    enabled: !!selectedClientId,
   });
-
-  // Filter clients by permissions scope (null clientIds = full access)
-  const clients = useMemo(() => {
-    if (!permissions?.clientIds) return allClients;
-    return allClients.filter((c) => permissions.clientIds!.includes(c.id));
-  }, [allClients, permissions?.clientIds]);
 
   // Filter events for eventAdmins (null eventCodes = full access)
   const events = useMemo(() => {
     if (!permissions?.eventCodes) return allEvents;
-    return allEvents.filter((e) => permissions.eventCodes!.includes(e.id));
+    return allEvents.filter((e) => permissions.eventCodes!.includes(e.eventCode));
   }, [allEvents, permissions?.eventCodes]);
 
   // Auto-select first available client for non-SuperAdmins
@@ -142,8 +120,8 @@ export function ContextSelector() {
               <DropdownMenuSeparator />
               {events.map((event) => (
                 <DropdownMenuItem
-                  key={event.id}
-                  onClick={() => setSelectedEvent(event.id, event.name)}
+                  key={event.eventCode}
+                  onClick={() => setSelectedEvent(event.eventCode, event.name)}
                 >
                   {event.name}
                 </DropdownMenuItem>
@@ -169,7 +147,7 @@ export function ContextSelector() {
               open={createDialogOpen}
               onOpenChange={setCreateDialogOpen}
               clientId={selectedClientId}
-              onEventCreated={(id, name) => setSelectedEvent(id, name)}
+              onEventCreated={(eventCode, name) => setSelectedEvent(eventCode, name)}
             />
           )}
         </div>

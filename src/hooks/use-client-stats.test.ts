@@ -1,37 +1,35 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook } from "@testing-library/react";
-import { Timestamp } from "firebase/firestore";
 import { useClientStats } from "./use-client-stats";
 import type { Event } from "@/types/event";
 
-// Mock useCollection hook
-vi.mock("@/hooks/use-collection", () => ({
-  useCollection: vi.fn(),
+vi.mock("@/hooks/use-api-collection", () => ({
+  useApiCollection: vi.fn(),
 }));
 
-import * as collectionHook from "@/hooks/use-collection";
+import * as apiCollectionHook from "@/hooks/use-api-collection";
 
-// Helper to create mock events
+// Helper to create mock events with ISO date strings (as returned by the API)
 function createMockEvent(overrides: Partial<Event> = {}): Event & { id: string } {
   return {
     id: "event-1",
     clientId: "client-1",
     name: "Test Event",
-    startDate: Timestamp.fromDate(new Date("2026-01-01")),
-    endDate: Timestamp.fromDate(new Date("2026-01-10")),
+    startDate: "2026-01-01T00:00:00.000Z",
+    endDate: "2026-01-10T00:00:00.000Z",
     isActive: true,
-    createdAt: Timestamp.now(),
+    createdAt: new Date().toISOString(),
     ...overrides,
-  };
+  } as Event & { id: string };
 }
 
 describe("useClientStats", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
   });
 
   it("returns zero counts when client has no events", () => {
-    vi.mocked(collectionHook.useCollection).mockReturnValue({
+    vi.mocked(apiCollectionHook.useApiCollection).mockReturnValue({
       data: [],
       loading: false,
       error: null,
@@ -53,8 +51,8 @@ describe("useClientStats", () => {
       createMockEvent({ id: "event-3" }),
     ];
 
-    vi.mocked(collectionHook.useCollection).mockReturnValue({
-      data: events,
+    vi.mocked(apiCollectionHook.useApiCollection).mockReturnValue({
+      data: events as any,
       loading: false,
       error: null,
     });
@@ -69,18 +67,18 @@ describe("useClientStats", () => {
     const events = [
       createMockEvent({
         id: "upcoming-1",
-        startDate: Timestamp.fromDate(new Date("2026-02-01")),
-        endDate: Timestamp.fromDate(new Date("2026-02-10")),
+        startDate: "2026-02-01T00:00:00.000Z",
+        endDate: "2026-02-10T00:00:00.000Z",
       }),
       createMockEvent({
         id: "upcoming-2",
-        startDate: Timestamp.fromDate(new Date("2026-03-01")),
-        endDate: Timestamp.fromDate(new Date("2026-03-10")),
+        startDate: "2026-03-01T00:00:00.000Z",
+        endDate: "2026-03-10T00:00:00.000Z",
       }),
     ];
 
-    vi.mocked(collectionHook.useCollection).mockReturnValue({
-      data: events,
+    vi.mocked(apiCollectionHook.useApiCollection).mockReturnValue({
+      data: events as any,
       loading: false,
       error: null,
     });
@@ -97,18 +95,18 @@ describe("useClientStats", () => {
     const events = [
       createMockEvent({
         id: "ongoing-1",
-        startDate: Timestamp.fromDate(new Date("2026-01-01")),
-        endDate: Timestamp.fromDate(new Date("2026-01-10")),
+        startDate: "2026-01-01T00:00:00.000Z",
+        endDate: "2026-01-10T00:00:00.000Z",
       }),
       createMockEvent({
         id: "ongoing-2",
-        startDate: Timestamp.fromDate(new Date("2026-01-03")),
-        endDate: Timestamp.fromDate(new Date("2026-01-15")),
+        startDate: "2026-01-03T00:00:00.000Z",
+        endDate: "2026-01-15T00:00:00.000Z",
       }),
     ];
 
-    vi.mocked(collectionHook.useCollection).mockReturnValue({
-      data: events,
+    vi.mocked(apiCollectionHook.useApiCollection).mockReturnValue({
+      data: events as any,
       loading: false,
       error: null,
     });
@@ -125,18 +123,18 @@ describe("useClientStats", () => {
     const events = [
       createMockEvent({
         id: "past-1",
-        startDate: Timestamp.fromDate(new Date("2025-12-01")),
-        endDate: Timestamp.fromDate(new Date("2025-12-10")),
+        startDate: "2025-12-01T00:00:00.000Z",
+        endDate: "2025-12-10T00:00:00.000Z",
       }),
       createMockEvent({
         id: "past-2",
-        startDate: Timestamp.fromDate(new Date("2026-01-01")),
-        endDate: Timestamp.fromDate(new Date("2026-01-15")),
+        startDate: "2026-01-01T00:00:00.000Z",
+        endDate: "2026-01-15T00:00:00.000Z",
       }),
     ];
 
-    vi.mocked(collectionHook.useCollection).mockReturnValue({
-      data: events,
+    vi.mocked(apiCollectionHook.useApiCollection).mockReturnValue({
+      data: events as any,
       loading: false,
       error: null,
     });
@@ -151,28 +149,25 @@ describe("useClientStats", () => {
   it("correctly categorizes mixed event statuses", () => {
     const now = new Date("2026-01-15");
     const events = [
-      // Past event
       createMockEvent({
         id: "past",
-        startDate: Timestamp.fromDate(new Date("2025-12-01")),
-        endDate: Timestamp.fromDate(new Date("2025-12-10")),
+        startDate: "2025-12-01T00:00:00.000Z",
+        endDate: "2025-12-10T00:00:00.000Z",
       }),
-      // Ongoing/active event
       createMockEvent({
         id: "active",
-        startDate: Timestamp.fromDate(new Date("2026-01-10")),
-        endDate: Timestamp.fromDate(new Date("2026-01-20")),
+        startDate: "2026-01-10T00:00:00.000Z",
+        endDate: "2026-01-20T00:00:00.000Z",
       }),
-      // Upcoming event
       createMockEvent({
         id: "upcoming",
-        startDate: Timestamp.fromDate(new Date("2026-02-01")),
-        endDate: Timestamp.fromDate(new Date("2026-02-10")),
+        startDate: "2026-02-01T00:00:00.000Z",
+        endDate: "2026-02-10T00:00:00.000Z",
       }),
     ];
 
-    vi.mocked(collectionHook.useCollection).mockReturnValue({
-      data: events,
+    vi.mocked(apiCollectionHook.useApiCollection).mockReturnValue({
+      data: events as any,
       loading: false,
       error: null,
     });
@@ -186,8 +181,8 @@ describe("useClientStats", () => {
   });
 
   it("handles loading state", () => {
-    vi.mocked(collectionHook.useCollection).mockReturnValue({
-      data: null,
+    vi.mocked(apiCollectionHook.useApiCollection).mockReturnValue({
+      data: [],
       loading: true,
       error: null,
     });
@@ -199,9 +194,9 @@ describe("useClientStats", () => {
   });
 
   it("handles errors", () => {
-    const error = new Error("Firestore error");
-    vi.mocked(collectionHook.useCollection).mockReturnValue({
-      data: null,
+    const error = new Error("API error");
+    vi.mocked(apiCollectionHook.useApiCollection).mockReturnValue({
+      data: [],
       loading: false,
       error,
     });
@@ -213,25 +208,22 @@ describe("useClientStats", () => {
   });
 
   it("uses default current date when now parameter is not provided", () => {
-    // Create an event that is definitely past (year 2020)
     const events = [
       createMockEvent({
         id: "old-event",
-        startDate: Timestamp.fromDate(new Date("2020-01-01")),
-        endDate: Timestamp.fromDate(new Date("2020-01-10")),
+        startDate: "2020-01-01T00:00:00.000Z",
+        endDate: "2020-01-10T00:00:00.000Z",
       }),
     ];
 
-    vi.mocked(collectionHook.useCollection).mockReturnValue({
-      data: events,
+    vi.mocked(apiCollectionHook.useApiCollection).mockReturnValue({
+      data: events as any,
       loading: false,
       error: null,
     });
 
-    // Don't pass 'now' parameter - should use current date
     const { result } = renderHook(() => useClientStats("client-1"));
 
-    // Event from 2020 should be categorized as past
     expect(result.current.stats.pastEvents).toBe(1);
     expect(result.current.stats.activeEvents).toBe(0);
     expect(result.current.stats.upcomingEvents).toBe(0);

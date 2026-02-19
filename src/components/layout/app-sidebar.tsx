@@ -55,7 +55,7 @@ interface AppSidebarProps {
 
 export function AppSidebar({ collapsed = false, onToggleCollapse }: AppSidebarProps) {
   const pathname = usePathname();
-  const { selectedEventId, selectedEventName } = useEventContext();
+  const { selectedEventCode, selectedEventName } = useEventContext();
   const { role } = usePermissions();
   const { t } = useTranslation();
 
@@ -129,7 +129,7 @@ export function AppSidebar({ collapsed = false, onToggleCollapse }: AppSidebarPr
           </div>
 
           {/* Event nav THIRD (when event selected) */}
-          {selectedEventId && (
+          {selectedEventCode && (
             <>
               <Separator className="my-3" />
               <p className="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -137,7 +137,7 @@ export function AppSidebar({ collapsed = false, onToggleCollapse }: AppSidebarPr
               </p>
               <nav className="flex flex-col gap-1">
                 {eventNav.map((item) => {
-                  const href = `/events/${selectedEventId}${item.href}`;
+                  const href = `/events/${selectedEventCode}${item.href}`;
                   const isActive =
                     item.href === ""
                       ? pathname === href

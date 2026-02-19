@@ -1,5 +1,3 @@
-import { Timestamp } from "firebase/firestore";
-
 export type StandSize = "small" | "medium" | "large" | "custom";
 
 export interface Stand {
@@ -10,7 +8,7 @@ export interface Stand {
   size?: StandSize | null;
   brandId?: string | null;
   imageUrl?: string | null;
-  createdAt: Timestamp;
+  createdAt: Date | string;
 }
 
 export type StandFormData = Omit<Stand, "id" | "createdAt">;

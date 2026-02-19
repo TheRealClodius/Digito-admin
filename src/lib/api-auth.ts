@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
+import { AdminGetUserCommand } from '@aws-sdk/client-cognito-identity-provider';
 import { verifyCognitoToken } from './cognito';
+import { getCognitoAdminClient, getUserPoolId } from './cognito-admin';
 import { getAdminUsersCollection } from './mongodb-collections';
 import type { AdminUser } from '@/types/admin-user';
 import type { UserRole, UserPermissions } from '@/types/permissions';
@@ -42,9 +44,31 @@ export async function requireAuth(
   }
 
   const cognitoSub = payload.sub;
-  const email =
-    (payload as Record<string, unknown>).email as string | undefined ||
-    payload.username;
+  let email: string | undefined;
+
+  // Access tokens may have email as a custom claim, or username may be the email
+  if (typeof (payload as Record<string, unknown>).email === 'string') {
+    email = ((payload as Record<string, unknown>).email as string).toLowerCase();
+  } else if (typeof payload.username === 'string' && payload.username.includes('@')) {
+    email = payload.username.toLowerCase();
+  } else if (typeof payload.username === 'string' && payload.username) {
+    // Username is a UUID or federated identity (e.g. Google OAuth) — fetch email from Cognito
+    try {
+      const client = getCognitoAdminClient();
+      const userData = await client.send(
+        new AdminGetUserCommand({
+          UserPoolId: getUserPoolId(),
+          Username: payload.username,
+        })
+      );
+      const emailAttr = userData.UserAttributes?.find((a) => a.Name === 'email');
+      if (emailAttr?.Value) {
+        email = emailAttr.Value.toLowerCase();
+      }
+    } catch {
+      // Could not fetch email from Cognito — proceed without email fallback
+    }
+  }
 
   // Look up admin user in MongoDB by cognitoSub, fallback by email
   const adminUser = await findAdminUser(cognitoSub, email);

@@ -146,6 +146,7 @@
     "description": "Manage your client organizations",
     "addButton": "New Client",
     "deleteConfirm": "Are you sure you want to delete this client? This action cannot be undone and will also remove all events under this client.",
+    "deleteTypeConfirm": "Type <strong>{{name}}</strong> to confirm deletion:",
     "countLabel": "{{count}} client(s)",
     "noClientsFound": "No clients found",
     "created": "Created",
@@ -183,7 +184,10 @@
     "editDescription": "Update the event details below.",
     "newDescription": "Fill in the details to create a new event.",
     "deleteTitle": "Delete Event",
-    "deleteConfirm": "Are you sure you want to delete this event? This action cannot be undone and will remove all data (brands, sessions, etc.) under this event."
+    "deleteConfirm": "Are you sure you want to delete this event? This action cannot be undone and will remove all data (brands, sessions, etc.) under this event.",
+    "eventCode": "Event Code",
+    "eventCodePlaceholder": "e.g. 2026001",
+    "eventCodeHint": "Unique identifier (yyyyXXX format)"
   },
   "eventOverview": {
     "title": "Event Overview",
@@ -303,7 +307,8 @@
     "deleteConfirm": "Are you sure? This action cannot be undone.",
     "entityDeleted": "{{entity}} deleted",
     "failedToSave": "Failed to save {{entity}}",
-    "failedToDelete": "Failed to delete {{entity}}"
+    "failedToDelete": "Failed to delete {{entity}}",
+    "deleteTypeConfirm": "Type <strong>{{name}}</strong> to confirm:"
   },
   "validation": {
     "nameRequired": "Name is required",
@@ -311,7 +316,8 @@
     "startDateRequired": "Start date is required",
     "endDateRequired": "End date is required",
     "startTimeRequired": "Start time is required",
-    "endTimeRequired": "End time is required"
+    "endTimeRequired": "End time is required",
+    "eventCodeRequired": "Event code is required"
   },
   "errorBoundary": {
     "title": "Something went wrong",

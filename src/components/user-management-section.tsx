@@ -3,8 +3,9 @@
 import { useState } from "react";
 import { UserX, UserCheck, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { useAuth } from "@/hooks/use-auth";
-import { useCollection } from "@/hooks/use-collection";
+import { useQueryClient } from "@tanstack/react-query";
+import { useApiCollection } from "@/hooks/use-api-collection";
+import { apiFetch } from "@/lib/api-client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -25,43 +26,31 @@ interface EventUser {
 }
 
 interface UserManagementSectionProps {
-  clientId: string;
-  eventId: string;
+  eventCode: string;
 }
 
 type UserAction = { type: "deactivate" | "delete"; userId: string; email: string };
 
-export function UserManagementSection({ clientId, eventId }: UserManagementSectionProps) {
-  const { user: authUser } = useAuth();
-  const { data: users, loading } = useCollection<EventUser & { id: string }>({
-    path: `clients/${clientId}/events/${eventId}/users`,
-    orderByField: "email",
-    orderDirection: "asc",
+export function UserManagementSection({ eventCode }: UserManagementSectionProps) {
+  const queryClient = useQueryClient();
+  const apiPath = `/api/events/${eventCode}/users`;
+  const queryKey = ["events", eventCode, "users"];
+
+  const { data: users, loading } = useApiCollection<EventUser>({
+    apiPath,
+    queryKey,
   });
 
   const [pendingAction, setPendingAction] = useState<UserAction | null>(null);
 
-  async function getToken() {
-    if (!authUser) throw new Error("Not authenticated");
-    return authUser.getToken();
-  }
-
   async function handleDeactivate(userId: string) {
     try {
-      const token = await getToken();
-      const res = await fetch("/api/event-users/deactivate", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ clientId, eventId, userId }),
+      await apiFetch(`${apiPath}/${userId}`, {
+        method: "PUT",
+        body: { isActive: false },
       });
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || "Failed to deactivate user");
-      }
       toast.success("User deactivated");
+      await queryClient.invalidateQueries({ queryKey });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to deactivate user");
     }
@@ -69,25 +58,12 @@ export function UserManagementSection({ clientId, eventId }: UserManagementSecti
 
   async function handleReactivate(userId: string, email: string) {
     try {
-      const token = await getToken();
-      const res = await fetch("/api/event-users/reactivate", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          clientId,
-          eventId,
-          userId,
-          whitelistData: { email, accessTier: "regular" },
-        }),
+      await apiFetch(`${apiPath}/${userId}`, {
+        method: "PUT",
+        body: { isActive: true, whitelistData: { email, accessTier: "regular" } },
       });
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || "Failed to reactivate user");
-      }
       toast.success("User reactivated");
+      await queryClient.invalidateQueries({ queryKey });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to reactivate user");
     }
@@ -95,20 +71,9 @@ export function UserManagementSection({ clientId, eventId }: UserManagementSecti
 
   async function handleDelete(userId: string) {
     try {
-      const token = await getToken();
-      const res = await fetch("/api/event-users/delete", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ clientId, eventId, userId }),
-      });
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || "Failed to delete user");
-      }
+      await apiFetch(`${apiPath}/${userId}`, { method: "DELETE" });
       toast.success("User deleted permanently");
+      await queryClient.invalidateQueries({ queryKey });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to delete user");
     }
@@ -116,15 +81,13 @@ export function UserManagementSection({ clientId, eventId }: UserManagementSecti
 
   async function handleConfirmAction() {
     if (!pendingAction) return;
-    const { type, userId, email } = pendingAction;
+    const { type, userId } = pendingAction;
     setPendingAction(null);
     if (type === "deactivate") {
       await handleDeactivate(userId);
     } else if (type === "delete") {
       await handleDelete(userId);
     }
-    // reactivate is handled directly (no confirmation needed per UX convention)
-    void email; // used in deactivate
   }
 
   return (

@@ -1,76 +1,23 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
-import { useAuth } from "@/hooks/use-auth";
+import { useCallback } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { useApiCollection } from "@/hooks/use-api-collection";
 import type { FeedbackEntry } from "@/types/feedback";
 
-export function useFeedback(clientId: string, eventId: string) {
-  const { user } = useAuth();
-  const userRef = useRef(user);
-  userRef.current = user;
+export function useFeedback(eventCode: string) {
+  const queryKey = ["events", eventCode, "feedback"];
+  const queryClient = useQueryClient();
 
-  const [data, setData] = useState<FeedbackEntry[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [refreshKey, setRefreshKey] = useState(0);
+  const { data, loading, error } = useApiCollection<FeedbackEntry>({
+    apiPath: `/api/events/${eventCode}/feedback`,
+    queryKey,
+    enabled: !!eventCode,
+  });
 
   const refresh = useCallback(() => {
-    setRefreshKey((k) => k + 1);
-  }, []);
+    queryClient.invalidateQueries({ queryKey });
+  }, [queryClient, queryKey]);
 
-  const isAuthenticated = !!user;
-
-  useEffect(() => {
-    if (!clientId || !eventId) {
-      setData([]);
-      setLoading(false);
-      setError(null);
-      return;
-    }
-
-    // Wait for auth to be ready before fetching
-    if (!userRef.current) {
-      setLoading(true);
-      return;
-    }
-
-    let cancelled = false;
-    setLoading(true);
-    setError(null);
-
-    (async () => {
-      try {
-        const token = await userRef.current!.getToken();
-        const res = await fetch(
-          `/api/feedback?clientId=${encodeURIComponent(clientId)}&eventId=${encodeURIComponent(eventId)}`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
-
-        if (cancelled) return;
-
-        if (!res.ok) {
-          const body = await res.json();
-          setError(body.error || "Failed to load feedback");
-          setData([]);
-        } else {
-          const entries: FeedbackEntry[] = await res.json();
-          setData(entries);
-        }
-      } catch (err) {
-        if (cancelled) return;
-        setError(err instanceof Error ? err.message : "Failed to load feedback");
-        setData([]);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [clientId, eventId, refreshKey, isAuthenticated]);
-
-  return { data, loading, error, refresh };
+  return { data, loading, error: error?.message ?? null, refresh };
 }

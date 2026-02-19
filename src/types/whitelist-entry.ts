@@ -1,5 +1,3 @@
-import { Timestamp } from "firebase/firestore";
-
 export type WhitelistAccessTier = "regular" | "premium" | "vip" | "staff";
 
 export interface WhitelistEntry {
@@ -8,7 +6,7 @@ export interface WhitelistEntry {
   accessTier: WhitelistAccessTier;
   company?: string | null;
   lockedFields?: string[];
-  addedAt: Timestamp;
+  addedAt: Date | string;
 }
 
 export type WhitelistEntryFormData = Omit<WhitelistEntry, "id" | "addedAt">;

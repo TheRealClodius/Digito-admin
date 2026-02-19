@@ -146,6 +146,7 @@
     "description": "Gestisci le tue organizzazioni clienti",
     "addButton": "Nuovo Cliente",
     "deleteConfirm": "Sei sicuro di voler eliminare questo cliente? Questa azione non può essere annullata e rimuoverà anche tutti gli eventi associati.",
+    "deleteTypeConfirm": "Digita <strong>{{name}}</strong> per confermare l'eliminazione:",
     "countLabel": "{{count}} cliente/i",
     "noClientsFound": "Nessun cliente trovato",
     "created": "Creato",
@@ -183,7 +184,10 @@
     "editDescription": "Aggiorna i dettagli dell'evento.",
     "newDescription": "Compila i dettagli per creare un nuovo evento.",
     "deleteTitle": "Elimina Evento",
-    "deleteConfirm": "Sei sicuro? Questa azione non può essere annullata e rimuoverà tutti i dati (brand, sessioni, ecc.) di questo evento."
+    "deleteConfirm": "Sei sicuro? Questa azione non può essere annullata e rimuoverà tutti i dati (brand, sessioni, ecc.) di questo evento.",
+    "eventCode": "Codice Evento",
+    "eventCodePlaceholder": "es. 2026001",
+    "eventCodeHint": "Identificativo unico (formato yyyyXXX)"
   },
   "eventOverview": {
     "title": "Panoramica Evento",
@@ -303,7 +307,8 @@
     "deleteConfirm": "Sei sicuro? Questa azione non può essere annullata.",
     "entityDeleted": "{{entity}} eliminato",
     "failedToSave": "Impossibile salvare {{entity}}",
-    "failedToDelete": "Impossibile eliminare {{entity}}"
+    "failedToDelete": "Impossibile eliminare {{entity}}",
+    "deleteTypeConfirm": "Digita <strong>{{name}}</strong> per confermare:"
   },
   "validation": {
     "nameRequired": "Il nome è obbligatorio",
@@ -311,7 +316,8 @@
     "startDateRequired": "La data di inizio è obbligatoria",
     "endDateRequired": "La data di fine è obbligatoria",
     "startTimeRequired": "L'ora di inizio è obbligatoria",
-    "endTimeRequired": "L'ora di fine è obbligatoria"
+    "endTimeRequired": "L'ora di fine è obbligatoria",
+    "eventCodeRequired": "Il codice evento è obbligatorio"
   },
   "errorBoundary": {
     "title": "Qualcosa è andato storto",

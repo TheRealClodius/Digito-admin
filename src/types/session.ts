@@ -1,12 +1,10 @@
-import { Timestamp } from "firebase/firestore";
-
 export type SessionType = "talk" | "workshop" | "panel" | "networking" | "other";
 export interface Session {
   id: string;
   title: string;
   description?: string | null;
-  startTime: Timestamp;
-  endTime: Timestamp;
+  startTime: Date | string;
+  endTime: Date | string;
   location?: string | null;
   type: SessionType;
   speakerName?: string | null;
@@ -16,7 +14,7 @@ export interface Session {
   requiresAccess: boolean;
   accessTier?: string | null;
   imageUrl?: string | null;
-  createdAt: Timestamp;
+  createdAt: Date | string;
 }
 
 export type SessionFormData = Omit<Session, "id" | "createdAt">;

@@ -41,7 +41,7 @@ describe("AppSidebar - Role-based navigation", () => {
     vi.clearAllMocks();
     vi.mocked(eventContextHook.useEventContext).mockReturnValue({
       selectedClientId: null,
-      selectedEventId: null,
+      selectedEventCode: null,
       selectedClientName: null,
       selectedEventName: null,
       setSelectedClient: vi.fn(),
@@ -125,7 +125,7 @@ describe("AppSidebar - Role-based navigation", () => {
     });
     vi.mocked(eventContextHook.useEventContext).mockReturnValue({
       selectedClientId: "client-1",
-      selectedEventId: "event-1",
+      selectedEventCode: "event-1",
       selectedClientName: "Client 1",
       selectedEventName: "Event 1",
       setSelectedClient: vi.fn(),
@@ -189,7 +189,7 @@ describe("AppSidebar - Navigation order", () => {
     });
     vi.mocked(eventContextHook.useEventContext).mockReturnValue({
       selectedClientId: null,
-      selectedEventId: null,
+      selectedEventCode: null,
       selectedClientName: null,
       selectedEventName: null,
       setSelectedClient: vi.fn(),
@@ -228,7 +228,7 @@ describe("AppSidebar - Navigation order", () => {
     });
     vi.mocked(eventContextHook.useEventContext).mockReturnValue({
       selectedClientId: "client-1",
-      selectedEventId: "event-1",
+      selectedEventCode: "event-1",
       selectedClientName: "Client 1",
       selectedEventName: "Event 1",
       setSelectedClient: vi.fn(),
@@ -261,7 +261,7 @@ describe("AppSidebar - Navigation order", () => {
     });
     vi.mocked(eventContextHook.useEventContext).mockReturnValue({
       selectedClientId: "client-1",
-      selectedEventId: "event-1",
+      selectedEventCode: "event-1",
       selectedClientName: "Client 1",
       selectedEventName: "Summer Conference 2025",
       setSelectedClient: vi.fn(),
@@ -288,7 +288,7 @@ describe("AppSidebar - Navigation order", () => {
     });
     vi.mocked(eventContextHook.useEventContext).mockReturnValue({
       selectedClientId: "client-1",
-      selectedEventId: "event-1",
+      selectedEventCode: "event-1",
       selectedClientName: "Client 1",
       selectedEventName: null,
       setSelectedClient: vi.fn(),

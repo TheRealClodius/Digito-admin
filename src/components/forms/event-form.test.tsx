@@ -102,6 +102,22 @@ describe("EventForm", () => {
 
   // ---- Renders expected fields ----
 
+  it("renders the Event Code field when creating", () => {
+    render(<EventForm {...defaultProps} />);
+
+    expect(screen.getByLabelText(/event code/i)).toBeInTheDocument();
+  });
+
+  it("renders the Event Code field as readonly when editing", () => {
+    render(
+      <EventForm {...defaultProps} defaultValues={{ name: "Edit Me", eventCode: "2026001" }} />,
+    );
+
+    const eventCodeField = screen.getByLabelText(/event code/i);
+    expect(eventCodeField).toBeInTheDocument();
+    expect(eventCodeField).toHaveAttribute("readonly");
+  });
+
   it("renders the Name field", () => {
     render(<EventForm {...defaultProps} />);
 
@@ -181,7 +197,7 @@ describe("EventForm", () => {
 
   // ---- Submit disabled when name is empty ----
 
-  it("submit button is disabled when the name field is empty", () => {
+  it("submit button is disabled when the name or eventCode field is empty", () => {
     render(<EventForm {...defaultProps} />);
 
     const submitButton = screen.getByRole("button", {
@@ -211,7 +227,8 @@ describe("EventForm", () => {
     const user = userEvent.setup();
     render(<EventForm {...defaultProps} />);
 
-    // Fill in name so it passes that validation
+    // Fill in eventCode and name so they pass validation
+    await user.type(screen.getByLabelText(/event code/i), "2026001");
     const nameField = screen.getByLabelText(/name/i);
     await user.type(nameField, "My Event");
 
@@ -247,6 +264,7 @@ describe("EventForm", () => {
         {...defaultProps}
         onSubmit={onSubmit}
         defaultValues={{
+          eventCode: "2026001",
           name: "Pre-filled Event",
           startDate: new Date("2026-06-15T09:00:00"),
           endDate: new Date("2026-06-17T18:00:00"),
@@ -329,6 +347,7 @@ describe("EventForm", () => {
 
     render(<EventForm {...defaultProps} onSubmit={onSubmit} />);
 
+    await user.type(screen.getByLabelText(/event code/i), "2026001");
     await user.type(screen.getByLabelText(/name/i), "New Event");
     await user.type(screen.getByLabelText(/start date/i), "2026-06-15T09:00");
     await user.type(screen.getByLabelText(/end date/i), "2026-06-17T18:00");
@@ -337,7 +356,7 @@ describe("EventForm", () => {
 
     await waitFor(() => {
       expect(onSubmit).toHaveBeenCalledWith(
-        expect.objectContaining({ isActive: true }),
+        expect.objectContaining({ isActive: true, eventCode: "2026001" }),
       );
     });
   });

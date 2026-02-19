@@ -16,7 +16,7 @@ describe("EventContext", () => {
     const { result } = renderHook(() => useEventContext(), { wrapper });
 
     expect(result.current.selectedClientId).toBeNull();
-    expect(result.current.selectedEventId).toBeNull();
+    expect(result.current.selectedEventCode).toBeNull();
     expect(result.current.selectedClientName).toBeNull();
     expect(result.current.selectedEventName).toBeNull();
   });
@@ -34,12 +34,12 @@ describe("EventContext", () => {
   it("loads event from sessionStorage on mount", () => {
     sessionStorage.setItem("selectedClientId", "client123");
     sessionStorage.setItem("selectedClientName", "Test Client");
-    sessionStorage.setItem("selectedEventId", "event456");
+    sessionStorage.setItem("selectedEventCode", "event456");
     sessionStorage.setItem("selectedEventName", "Test Event");
 
     const { result } = renderHook(() => useEventContext(), { wrapper });
 
-    expect(result.current.selectedEventId).toBe("event456");
+    expect(result.current.selectedEventCode).toBe("event456");
     expect(result.current.selectedEventName).toBe("Test Event");
   });
 
@@ -62,7 +62,7 @@ describe("EventContext", () => {
       result.current.setSelectedEvent("event456", "Test Event");
     });
 
-    expect(sessionStorage.getItem("selectedEventId")).toBe("event456");
+    expect(sessionStorage.getItem("selectedEventCode")).toBe("event456");
     expect(sessionStorage.getItem("selectedEventName")).toBe("Test Event");
   });
 
@@ -78,9 +78,9 @@ describe("EventContext", () => {
       result.current.setSelectedClient("client2", "Client 2");
     });
 
-    expect(result.current.selectedEventId).toBeNull();
+    expect(result.current.selectedEventCode).toBeNull();
     expect(result.current.selectedEventName).toBeNull();
-    expect(sessionStorage.getItem("selectedEventId")).toBeNull();
+    expect(sessionStorage.getItem("selectedEventCode")).toBeNull();
   });
 
   it("clears all selections and sessionStorage", () => {
@@ -96,9 +96,9 @@ describe("EventContext", () => {
     });
 
     expect(result.current.selectedClientId).toBeNull();
-    expect(result.current.selectedEventId).toBeNull();
+    expect(result.current.selectedEventCode).toBeNull();
     expect(sessionStorage.getItem("selectedClientId")).toBeNull();
-    expect(sessionStorage.getItem("selectedEventId")).toBeNull();
+    expect(sessionStorage.getItem("selectedEventCode")).toBeNull();
   });
 
   it("throws when useEventContext is used outside provider", () => {

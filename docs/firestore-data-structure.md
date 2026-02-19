@@ -1,6 +1,13 @@
-# Firestore Data Structure — Digito Admin
+# Data Structure — Digito Admin
 
-This document describes the exact data structure for all Firestore collections, derived from `firestore.rules`, type definitions, application code, and verified against production data (2026-02-17).
+> **Phase 2 Migration (2026-02-19)**: All admin dashboard data operations have been migrated from Firestore to MongoDB Atlas. The admin dashboard now uses:
+> - **MongoDB (goodgest-admin)**: `clients`, `clientEvents`, `adminUsers` collections
+> - **MongoDB (per-event databases by eventCode)**: `brands`, `sessions`, `happenings`, `whitelist`, `users`, `posts`, `feedback`, `stands`, `participants`
+> - **API Routes**: All data flows through `/api/*` routes with server-side auth (`requireRole`, `requireEventAccess`)
+> - **Client hooks**: `useApiCollection`, `useApiDocument`, `useApiCrudPage` (React Query) replace `useCollection`, `useDocument`, `useCrudPage` (Firestore)
+> - Firestore is still used for: language preferences (`language-context.tsx`), mobile app data (unchanged)
+
+This document describes the data structure, originally derived from Firestore. The MongoDB schema mirrors this structure with `_id: ObjectId` instead of Firestore document IDs.
 
 ---
 

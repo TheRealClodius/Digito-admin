@@ -20,8 +20,8 @@ export interface ClientDocument {
 }
 
 /**
- * Client-Event mapping document in MongoDB (clientEvents collection)
- * Maps which events belong to which clients
+ * Client-Event document in MongoDB (clientEvents collection)
+ * Stores full event metadata in the master database
  */
 export interface ClientEventDocument {
   _id: ObjectId;
@@ -29,12 +29,22 @@ export interface ClientEventDocument {
   clientId: ObjectId;
   /** Event code (MongoDB database name, e.g., "2025089") */
   eventCode: string;
-  /** Cached display name for the event */
-  eventName: string;
+  /** Event display name */
+  name: string;
+  description: string | null;
+  venue: string | null;
+  startDate: Date;
+  endDate: Date;
+  logoUrl: string | null;
+  bannerUrl: string | null;
+  websiteUrl: string | null;
+  instagramUrl: string | null;
+  chatPrompt: string | null;
+  imageUrls: string[] | null;
   /** Whether this event is currently active */
   isActive: boolean;
-  /** When this mapping was created */
   createdAt: Date;
+  updatedAt: Date;
 }
 
 /**
@@ -56,19 +66,39 @@ export interface UpdateClientInput {
 }
 
 /**
- * Input type for creating a client-event mapping
+ * Input type for creating a client-event
  */
 export interface CreateClientEventInput {
   clientId: ObjectId;
   eventCode: string;
-  eventName: string;
+  name: string;
+  description?: string | null;
+  venue?: string | null;
+  startDate: Date;
+  endDate: Date;
+  logoUrl?: string | null;
+  bannerUrl?: string | null;
+  websiteUrl?: string | null;
+  instagramUrl?: string | null;
+  chatPrompt?: string | null;
+  imageUrls?: string[] | null;
   isActive: boolean;
 }
 
 /**
- * Input type for updating a client-event mapping
+ * Input type for updating a client-event
  */
 export interface UpdateClientEventInput {
-  eventName?: string;
+  name?: string;
+  description?: string | null;
+  venue?: string | null;
+  startDate?: Date;
+  endDate?: Date;
+  logoUrl?: string | null;
+  bannerUrl?: string | null;
+  websiteUrl?: string | null;
+  instagramUrl?: string | null;
+  chatPrompt?: string | null;
+  imageUrls?: string[] | null;
   isActive?: boolean;
 }

@@ -6,8 +6,8 @@ vi.mock("@/hooks/use-event-context", () => ({
   useEventContext: vi.fn(),
 }));
 
-vi.mock("@/hooks/use-collection", () => ({
-  useCollection: vi.fn(),
+vi.mock("@/hooks/use-api-collection", () => ({
+  useApiCollection: vi.fn(),
 }));
 
 vi.mock("@/hooks/use-permissions", () => ({
@@ -25,7 +25,7 @@ vi.mock("./create-event-dialog", () => ({
 
 import { ContextSelector } from "./context-selector";
 import * as eventContextHook from "@/hooks/use-event-context";
-import * as collectionHook from "@/hooks/use-collection";
+import * as apiCollectionHook from "@/hooks/use-api-collection";
 import * as permissionsHook from "@/hooks/use-permissions";
 import type { UserPermissions } from "@/types/permissions";
 
@@ -36,8 +36,8 @@ const allClients = [
 ];
 
 const allEvents = [
-  { id: "event-1", name: "Event One" },
-  { id: "event-2", name: "Event Two" },
+  { id: "event-1", eventCode: "event-1", name: "Event One" },
+  { id: "event-2", eventCode: "event-2", name: "Event Two" },
 ];
 
 function makeSuperAdminPerms(): UserPermissions {
@@ -46,7 +46,7 @@ function makeSuperAdminPerms(): UserPermissions {
     email: "sa@test.com",
     role: "superadmin",
     clientIds: null,
-    eventIds: null,
+    eventCodes: null,
     createdAt: new Date(),
     updatedAt: new Date(),
     createdBy: "sa-1",
@@ -62,7 +62,7 @@ function makeClientAdminPerms(
     email: "ca@test.com",
     role: "clientAdmin",
     clientIds,
-    eventIds: null,
+    eventCodes: null,
     createdAt: new Date(),
     updatedAt: new Date(),
     createdBy: "sa-1",
@@ -72,14 +72,14 @@ function makeClientAdminPerms(
 
 function makeEventAdminPerms(
   clientIds: string[] = ["client-1"],
-  eventIds: string[] = ["event-1"]
+  eventCodes: string[] = ["event-1"]
 ): UserPermissions {
   return {
     userId: "ea-1",
     email: "ea@test.com",
     role: "eventAdmin",
     clientIds,
-    eventIds,
+    eventCodes,
     createdAt: new Date(),
     updatedAt: new Date(),
     createdBy: "sa-1",
@@ -92,7 +92,7 @@ describe("ContextSelector - Permission-based filtering", () => {
     vi.clearAllMocks();
     vi.mocked(eventContextHook.useEventContext).mockReturnValue({
       selectedClientId: null,
-      selectedEventId: null,
+      selectedEventCode: null,
       selectedClientName: null,
       selectedEventName: null,
       setSelectedClient: vi.fn(),
@@ -110,7 +110,7 @@ describe("ContextSelector - Permission-based filtering", () => {
       isClientAdmin: false,
       isEventAdmin: false,
     });
-    vi.mocked(collectionHook.useCollection).mockReturnValue({
+    vi.mocked(apiCollectionHook.useApiCollection).mockReturnValue({
       data: allClients as any,
       loading: false,
       error: null,
@@ -119,62 +119,6 @@ describe("ContextSelector - Permission-based filtering", () => {
     render(<ContextSelector />);
 
     expect(screen.getByText("Select Client")).toBeInTheDocument();
-  });
-
-  it("superadmin queries clients without constraints", () => {
-    vi.mocked(permissionsHook.usePermissions).mockReturnValue({
-      role: "superadmin",
-      permissions: makeSuperAdminPerms(),
-      loading: false,
-      isSuperAdmin: true,
-      isClientAdmin: false,
-      isEventAdmin: false,
-    });
-    vi.mocked(collectionHook.useCollection).mockReturnValue({
-      data: allClients as any,
-      loading: false,
-      error: null,
-    });
-
-    render(<ContextSelector />);
-
-    // First useCollection call is for clients
-    const clientsCall = vi.mocked(collectionHook.useCollection).mock.calls[0][0];
-    expect(clientsCall.path).toBe("clients");
-    expect(clientsCall.constraints ?? []).toHaveLength(0);
-  });
-
-  it("clientAdmin queries clients with documentId constraint scoped to their clientIds", () => {
-    vi.mocked(eventContextHook.useEventContext).mockReturnValue({
-      selectedClientId: "client-1",
-      selectedEventId: null,
-      selectedClientName: "Client Alpha",
-      selectedEventName: null,
-      setSelectedClient: vi.fn(),
-      setSelectedEvent: vi.fn(),
-      clearSelection: vi.fn(),
-    });
-    vi.mocked(permissionsHook.usePermissions).mockReturnValue({
-      role: "clientAdmin",
-      permissions: makeClientAdminPerms(["client-1", "client-2"]),
-      loading: false,
-      isSuperAdmin: false,
-      isClientAdmin: true,
-      isEventAdmin: false,
-    });
-    vi.mocked(collectionHook.useCollection).mockReturnValue({
-      data: allClients as any,
-      loading: false,
-      error: null,
-    });
-
-    render(<ContextSelector />);
-
-    // First useCollection call is for clients — should have constraints
-    const clientsCall = vi.mocked(collectionHook.useCollection).mock.calls[0][0];
-    expect(clientsCall.path).toBe("clients");
-    expect(clientsCall.constraints).toHaveLength(1);
-    expect(clientsCall.constraintsKey).toBe("client-1,client-2");
   });
 
   it("superadmin sees both client and event dropdowns when client is selected", () => {
@@ -188,14 +132,14 @@ describe("ContextSelector - Permission-based filtering", () => {
     });
     vi.mocked(eventContextHook.useEventContext).mockReturnValue({
       selectedClientId: "client-1",
-      selectedEventId: null,
+      selectedEventCode: null,
       selectedClientName: "Client Alpha",
       selectedEventName: null,
       setSelectedClient: vi.fn(),
       setSelectedEvent: vi.fn(),
       clearSelection: vi.fn(),
     });
-    vi.mocked(collectionHook.useCollection).mockReturnValue({
+    vi.mocked(apiCollectionHook.useApiCollection).mockReturnValue({
       data: allEvents as any,
       loading: false,
       error: null,
@@ -216,7 +160,7 @@ describe("ContextSelector - Permission-based filtering", () => {
       isClientAdmin: false,
       isEventAdmin: false,
     });
-    vi.mocked(collectionHook.useCollection).mockReturnValue({
+    vi.mocked(apiCollectionHook.useApiCollection).mockReturnValue({
       data: allClients as any,
       loading: false,
       error: null,
@@ -238,7 +182,7 @@ describe("ContextSelector - Role-based dropdown visibility", () => {
     const setSelectedClient = vi.fn();
     vi.mocked(eventContextHook.useEventContext).mockReturnValue({
       selectedClientId: "client-1",
-      selectedEventId: null,
+      selectedEventCode: null,
       selectedClientName: "Client Alpha",
       selectedEventName: null,
       setSelectedClient,
@@ -253,7 +197,7 @@ describe("ContextSelector - Role-based dropdown visibility", () => {
       isClientAdmin: true,
       isEventAdmin: false,
     });
-    vi.mocked(collectionHook.useCollection).mockReturnValue({
+    vi.mocked(apiCollectionHook.useApiCollection).mockReturnValue({
       data: allEvents as any,
       loading: false,
       error: null,
@@ -271,7 +215,7 @@ describe("ContextSelector - Role-based dropdown visibility", () => {
     const setSelectedClient = vi.fn();
     vi.mocked(eventContextHook.useEventContext).mockReturnValue({
       selectedClientId: "client-1",
-      selectedEventId: null,
+      selectedEventCode: null,
       selectedClientName: "Client Alpha",
       selectedEventName: null,
       setSelectedClient,
@@ -286,7 +230,7 @@ describe("ContextSelector - Role-based dropdown visibility", () => {
       isClientAdmin: false,
       isEventAdmin: true,
     });
-    vi.mocked(collectionHook.useCollection).mockReturnValue({
+    vi.mocked(apiCollectionHook.useApiCollection).mockReturnValue({
       data: allEvents as any,
       loading: false,
       error: null,
@@ -302,7 +246,7 @@ describe("ContextSelector - Role-based dropdown visibility", () => {
     const setSelectedClient = vi.fn();
     vi.mocked(eventContextHook.useEventContext).mockReturnValue({
       selectedClientId: null,
-      selectedEventId: null,
+      selectedEventCode: null,
       selectedClientName: null,
       selectedEventName: null,
       setSelectedClient,
@@ -317,7 +261,7 @@ describe("ContextSelector - Role-based dropdown visibility", () => {
       isClientAdmin: true,
       isEventAdmin: false,
     });
-    vi.mocked(collectionHook.useCollection).mockReturnValue({
+    vi.mocked(apiCollectionHook.useApiCollection).mockReturnValue({
       data: allClients as any,
       loading: false,
       error: null,
@@ -333,7 +277,7 @@ describe("ContextSelector - Role-based dropdown visibility", () => {
     const setSelectedClient = vi.fn();
     vi.mocked(eventContextHook.useEventContext).mockReturnValue({
       selectedClientId: null,
-      selectedEventId: null,
+      selectedEventCode: null,
       selectedClientName: null,
       selectedEventName: null,
       setSelectedClient,
@@ -348,7 +292,7 @@ describe("ContextSelector - Role-based dropdown visibility", () => {
       isClientAdmin: false,
       isEventAdmin: true,
     });
-    vi.mocked(collectionHook.useCollection).mockReturnValue({
+    vi.mocked(apiCollectionHook.useApiCollection).mockReturnValue({
       data: allClients as any,
       loading: false,
       error: null,
@@ -363,7 +307,7 @@ describe("ContextSelector - Role-based dropdown visibility", () => {
     const setSelectedClient = vi.fn();
     vi.mocked(eventContextHook.useEventContext).mockReturnValue({
       selectedClientId: "client-1",
-      selectedEventId: null,
+      selectedEventCode: null,
       selectedClientName: "Client Alpha",
       selectedEventName: null,
       setSelectedClient,
@@ -378,7 +322,7 @@ describe("ContextSelector - Role-based dropdown visibility", () => {
       isClientAdmin: true,
       isEventAdmin: false,
     });
-    vi.mocked(collectionHook.useCollection).mockReturnValue({
+    vi.mocked(apiCollectionHook.useApiCollection).mockReturnValue({
       data: allEvents as any,
       loading: false,
       error: null,
@@ -393,7 +337,7 @@ describe("ContextSelector - Role-based dropdown visibility", () => {
     const setSelectedClient = vi.fn();
     vi.mocked(eventContextHook.useEventContext).mockReturnValue({
       selectedClientId: null,
-      selectedEventId: null,
+      selectedEventCode: null,
       selectedClientName: null,
       selectedEventName: null,
       setSelectedClient,
@@ -408,7 +352,7 @@ describe("ContextSelector - Role-based dropdown visibility", () => {
       isClientAdmin: false,
       isEventAdmin: false,
     });
-    vi.mocked(collectionHook.useCollection).mockReturnValue({
+    vi.mocked(apiCollectionHook.useApiCollection).mockReturnValue({
       data: allClients as any,
       loading: false,
       error: null,
@@ -436,14 +380,14 @@ describe("ContextSelector - Visual hierarchy", () => {
     });
     vi.mocked(eventContextHook.useEventContext).mockReturnValue({
       selectedClientId: null,
-      selectedEventId: null,
+      selectedEventCode: null,
       selectedClientName: null,
       selectedEventName: null,
       setSelectedClient: vi.fn(),
       setSelectedEvent: vi.fn(),
       clearSelection: vi.fn(),
     });
-    vi.mocked(collectionHook.useCollection).mockReturnValue({
+    vi.mocked(apiCollectionHook.useApiCollection).mockReturnValue({
       data: allClients as any,
       loading: false,
       error: null,
@@ -466,14 +410,14 @@ describe("ContextSelector - Visual hierarchy", () => {
     });
     vi.mocked(eventContextHook.useEventContext).mockReturnValue({
       selectedClientId: "client-1",
-      selectedEventId: null,
+      selectedEventCode: null,
       selectedClientName: "Client Alpha",
       selectedEventName: null,
       setSelectedClient: vi.fn(),
       setSelectedEvent: vi.fn(),
       clearSelection: vi.fn(),
     });
-    vi.mocked(collectionHook.useCollection).mockReturnValue({
+    vi.mocked(apiCollectionHook.useApiCollection).mockReturnValue({
       data: allEvents as any,
       loading: false,
       error: null,
@@ -496,14 +440,14 @@ describe("ContextSelector - Visual hierarchy", () => {
     });
     vi.mocked(eventContextHook.useEventContext).mockReturnValue({
       selectedClientId: "client-1",
-      selectedEventId: null,
+      selectedEventCode: null,
       selectedClientName: "Client Alpha",
       selectedEventName: null,
       setSelectedClient: vi.fn(),
       setSelectedEvent: vi.fn(),
       clearSelection: vi.fn(),
     });
-    vi.mocked(collectionHook.useCollection).mockReturnValue({
+    vi.mocked(apiCollectionHook.useApiCollection).mockReturnValue({
       data: allEvents as any,
       loading: false,
       error: null,
@@ -529,14 +473,14 @@ describe("ContextSelector - Visual hierarchy", () => {
     });
     vi.mocked(eventContextHook.useEventContext).mockReturnValue({
       selectedClientId: "client-1",
-      selectedEventId: null,
+      selectedEventCode: null,
       selectedClientName: "Client Alpha",
       selectedEventName: null,
       setSelectedClient: vi.fn(),
       setSelectedEvent: vi.fn(),
       clearSelection: vi.fn(),
     });
-    vi.mocked(collectionHook.useCollection).mockReturnValue({
+    vi.mocked(apiCollectionHook.useApiCollection).mockReturnValue({
       data: allEvents as any,
       loading: false,
       error: null,
@@ -562,14 +506,14 @@ describe("ContextSelector - Visual hierarchy", () => {
     });
     vi.mocked(eventContextHook.useEventContext).mockReturnValue({
       selectedClientId: "client-1",
-      selectedEventId: null,
+      selectedEventCode: null,
       selectedClientName: "Client Alpha",
       selectedEventName: null,
       setSelectedClient: vi.fn(),
       setSelectedEvent: vi.fn(),
       clearSelection: vi.fn(),
     });
-    vi.mocked(collectionHook.useCollection).mockReturnValue({
+    vi.mocked(apiCollectionHook.useApiCollection).mockReturnValue({
       data: allEvents as any,
       loading: false,
       error: null,
@@ -591,14 +535,14 @@ describe("ContextSelector - Visual hierarchy", () => {
     });
     vi.mocked(eventContextHook.useEventContext).mockReturnValue({
       selectedClientId: "client-1",
-      selectedEventId: null,
+      selectedEventCode: null,
       selectedClientName: "Client Alpha",
       selectedEventName: null,
       setSelectedClient: vi.fn(),
       setSelectedEvent: vi.fn(),
       clearSelection: vi.fn(),
     });
-    vi.mocked(collectionHook.useCollection).mockReturnValue({
+    vi.mocked(apiCollectionHook.useApiCollection).mockReturnValue({
       data: allEvents as any,
       loading: false,
       error: null,
@@ -620,14 +564,14 @@ describe("ContextSelector - Visual hierarchy", () => {
     });
     vi.mocked(eventContextHook.useEventContext).mockReturnValue({
       selectedClientId: "client-1",
-      selectedEventId: null,
+      selectedEventCode: null,
       selectedClientName: "Client Alpha",
       selectedEventName: null,
       setSelectedClient: vi.fn(),
       setSelectedEvent: vi.fn(),
       clearSelection: vi.fn(),
     });
-    vi.mocked(collectionHook.useCollection).mockReturnValue({
+    vi.mocked(apiCollectionHook.useApiCollection).mockReturnValue({
       data: allEvents as any,
       loading: false,
       error: null,
@@ -658,14 +602,14 @@ describe("ContextSelector - Create new event action", () => {
     });
     vi.mocked(eventContextHook.useEventContext).mockReturnValue({
       selectedClientId: "client-1",
-      selectedEventId: null,
+      selectedEventCode: null,
       selectedClientName: "Client Alpha",
       selectedEventName: null,
       setSelectedClient: vi.fn(),
       setSelectedEvent: vi.fn(),
       clearSelection: vi.fn(),
     });
-    vi.mocked(collectionHook.useCollection).mockReturnValue({
+    vi.mocked(apiCollectionHook.useApiCollection).mockReturnValue({
       data: allEvents as any,
       loading: false,
       error: null,
@@ -688,14 +632,14 @@ describe("ContextSelector - Create new event action", () => {
     });
     vi.mocked(eventContextHook.useEventContext).mockReturnValue({
       selectedClientId: "client-1",
-      selectedEventId: null,
+      selectedEventCode: null,
       selectedClientName: "Client Alpha",
       selectedEventName: null,
       setSelectedClient: vi.fn(),
       setSelectedEvent: vi.fn(),
       clearSelection: vi.fn(),
     });
-    vi.mocked(collectionHook.useCollection).mockReturnValue({
+    vi.mocked(apiCollectionHook.useApiCollection).mockReturnValue({
       data: allEvents as any,
       loading: false,
       error: null,
@@ -717,14 +661,14 @@ describe("ContextSelector - Create new event action", () => {
     });
     vi.mocked(eventContextHook.useEventContext).mockReturnValue({
       selectedClientId: "client-1",
-      selectedEventId: null,
+      selectedEventCode: null,
       selectedClientName: "Client Alpha",
       selectedEventName: null,
       setSelectedClient: vi.fn(),
       setSelectedEvent: vi.fn(),
       clearSelection: vi.fn(),
     });
-    vi.mocked(collectionHook.useCollection).mockReturnValue({
+    vi.mocked(apiCollectionHook.useApiCollection).mockReturnValue({
       data: allEvents as any,
       loading: false,
       error: null,
@@ -747,14 +691,14 @@ describe("ContextSelector - Create new event action", () => {
     });
     vi.mocked(eventContextHook.useEventContext).mockReturnValue({
       selectedClientId: null,
-      selectedEventId: null,
+      selectedEventCode: null,
       selectedClientName: null,
       selectedEventName: null,
       setSelectedClient: vi.fn(),
       setSelectedEvent: vi.fn(),
       clearSelection: vi.fn(),
     });
-    vi.mocked(collectionHook.useCollection).mockReturnValue({
+    vi.mocked(apiCollectionHook.useApiCollection).mockReturnValue({
       data: allClients as any,
       loading: false,
       error: null,
@@ -778,14 +722,14 @@ describe("ContextSelector - Create new event action", () => {
     });
     vi.mocked(eventContextHook.useEventContext).mockReturnValue({
       selectedClientId: "client-1",
-      selectedEventId: null,
+      selectedEventCode: null,
       selectedClientName: "Client Alpha",
       selectedEventName: null,
       setSelectedClient: vi.fn(),
       setSelectedEvent: vi.fn(),
       clearSelection: vi.fn(),
     });
-    vi.mocked(collectionHook.useCollection).mockReturnValue({
+    vi.mocked(apiCollectionHook.useApiCollection).mockReturnValue({
       data: allEvents as any,
       loading: false,
       error: null,
@@ -812,14 +756,14 @@ describe("ContextSelector - Create new event action", () => {
     });
     vi.mocked(eventContextHook.useEventContext).mockReturnValue({
       selectedClientId: "client-1",
-      selectedEventId: null,
+      selectedEventCode: null,
       selectedClientName: "Client Alpha",
       selectedEventName: null,
       setSelectedClient: vi.fn(),
       setSelectedEvent: vi.fn(),
       clearSelection: vi.fn(),
     });
-    vi.mocked(collectionHook.useCollection).mockReturnValue({
+    vi.mocked(apiCollectionHook.useApiCollection).mockReturnValue({
       data: allEvents as any,
       loading: false,
       error: null,

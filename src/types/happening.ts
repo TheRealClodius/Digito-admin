@@ -1,13 +1,11 @@
-import { Timestamp } from "firebase/firestore";
-
 export type HappeningType = "demo" | "performance" | "launch" | "networking" | "reception" | "other";
 
 export interface Happening {
   id: string;
   title: string;
   description?: string | null;
-  startTime: Timestamp;
-  endTime: Timestamp;
+  startTime: Date | string;
+  endTime: Date | string;
   location?: string | null;
   type: HappeningType;
   hostName?: string | null;
@@ -17,7 +15,7 @@ export interface Happening {
   isHighlighted: boolean;
   requiresAccess: boolean;
   accessTier?: string | null;
-  createdAt: Timestamp;
+  createdAt: Date | string;
 }
 
 export type HappeningFormData = Omit<Happening, "id" | "createdAt">;

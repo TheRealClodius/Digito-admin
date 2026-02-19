@@ -2,12 +2,19 @@
 
 import { useState } from "react";
 import { Plus } from "lucide-react";
-import { Timestamp } from "firebase/firestore";
 import { toast } from "sonner";
 
 import { useValidatedParams } from "@/hooks/use-validated-params";
 import { usePermissions } from "@/hooks/use-permissions";
 import { useTranslation } from "@/hooks/use-translation";
+import { apiFetch } from "@/lib/api-client";
+import { useApiCollection } from "@/hooks/use-api-collection";
+import { useUpload } from "@/hooks/use-upload";
+import { toDate } from "@/lib/timestamps";
+import { ErrorBanner } from "@/components/error-banner";
+import { EventsTable } from "@/components/tables/events-table";
+import { EventForm } from "@/components/forms/event-form";
+import type { Event } from "@/types/event";
 
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -28,15 +35,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-
-import { useCollection } from "@/hooks/use-collection";
-import { addDocument, updateDocument, deleteEventCascade } from "@/lib/firestore";
-import { useUpload } from "@/hooks/use-upload";
-import { toDate } from "@/lib/timestamps";
-import { ErrorBanner } from "@/components/error-banner";
-import { EventsTable } from "@/components/tables/events-table";
-import { EventForm } from "@/components/forms/event-form";
-import type { Event } from "@/types/event";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function EventsPage({
   params,
@@ -46,13 +45,15 @@ export default function EventsPage({
   const { clientId } = useValidatedParams(params);
   const { isEventAdmin } = usePermissions();
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
   const readOnly = isEventAdmin;
-  const collectionPath = `clients/${clientId}/events`;
 
-  const { data: events, loading, error } = useCollection<Event>({
-    path: collectionPath,
-    orderByField: "startDate",
-    orderDirection: "desc",
+  const apiPath = `/api/clients/${clientId}/events`;
+  const queryKey = ["clients", clientId, "events"];
+
+  const { data: events, loading, error } = useApiCollection<Event>({
+    apiPath,
+    queryKey,
   });
 
   const { deleteFile } = useUpload({ basePath: "" });
@@ -77,19 +78,27 @@ export default function EventsPage({
   async function handleSubmit(data: Record<string, unknown>) {
     setSubmitStatus("saving");
     try {
-      // Convert date fields to Firestore Timestamps
-      const firestoreData = {
+      // Convert dates to ISO strings for the API
+      const apiData = {
         ...data,
-        startDate: data.startDate instanceof Date ? Timestamp.fromDate(data.startDate) : data.startDate,
-        endDate: data.endDate instanceof Date ? Timestamp.fromDate(data.endDate) : data.endDate,
+        clientId,
+        startDate: data.startDate instanceof Date ? data.startDate.toISOString() : data.startDate,
+        endDate: data.endDate instanceof Date ? data.endDate.toISOString() : data.endDate,
       };
 
       if (editingEvent) {
-        await updateDocument(collectionPath, editingEvent.id, firestoreData);
+        await apiFetch(`${apiPath}/${editingEvent.eventCode}`, {
+          method: "PUT",
+          body: apiData,
+        });
       } else {
-        await addDocument(collectionPath, firestoreData);
+        await apiFetch(apiPath, {
+          method: "POST",
+          body: apiData,
+        });
       }
       setSubmitStatus("success");
+      await queryClient.invalidateQueries({ queryKey });
     } catch (err) {
       setSubmitStatus("error");
       toast.error(t("crud.failedToSave", { entity: "event" }));
@@ -98,9 +107,15 @@ export default function EventsPage({
   }
 
   async function handleToggleActive(eventId: string, isActive: boolean) {
+    const event = events.find((e) => e.id === eventId);
+    if (!event) return;
     try {
-      await updateDocument(collectionPath, eventId, { isActive });
+      await apiFetch(`${apiPath}/${event.eventCode}`, {
+        method: "PUT",
+        body: { isActive },
+      });
       toast.success(isActive ? t("events.activated") : t("events.deactivated"));
+      await queryClient.invalidateQueries({ queryKey });
     } catch (err) {
       toast.error(t("events.failedToUpdateStatus"));
       console.error(err);
@@ -115,9 +130,10 @@ export default function EventsPage({
       if (event) {
         const urls = [event.logoUrl, event.bannerUrl].filter(Boolean) as string[];
         await Promise.all(urls.map((url) => deleteFile(url).catch(() => {})));
+        await apiFetch(`${apiPath}/${event.eventCode}`, { method: "DELETE" });
       }
-      await deleteEventCascade(collectionPath, deletingEventId);
       toast.success(t("events.deleted"));
+      await queryClient.invalidateQueries({ queryKey });
     } catch (err) {
       toast.error(t("events.failedToDelete"));
       console.error(err);
@@ -176,6 +192,7 @@ export default function EventsPage({
               defaultValues={
                 editingEvent
                   ? {
+                      eventCode: editingEvent.eventCode,
                       name: editingEvent.name,
                       description: editingEvent.description ?? null,
                       venue: editingEvent.venue ?? null,

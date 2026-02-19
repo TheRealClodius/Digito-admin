@@ -8,7 +8,7 @@ import { useTheme } from "@/contexts/theme-context";
 import { useTranslation } from "@/hooks/use-translation";
 import { usePermissions } from "@/hooks/use-permissions";
 import { useAdminManagement } from "@/hooks/use-admin-management";
-import { useCollection } from "@/hooks/use-collection";
+import { useApiCollection } from "@/hooks/use-api-collection";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
@@ -31,10 +31,9 @@ export default function SettingsPage() {
   const { isSuperAdmin } = usePermissions();
   const { admins, loading: adminsLoading, addAdmin, removeAdmin } = useAdminManagement();
 
-  const { data: clients } = useCollection<Client & { id: string }>({
-    path: "clients",
-    orderByField: "name",
-    orderDirection: "asc",
+  const { data: clients } = useApiCollection<Client & { id: string }>({
+    apiPath: "/api/clients",
+    queryKey: ["clients"],
   });
 
   const [sheetOpen, setSheetOpen] = useState(false);

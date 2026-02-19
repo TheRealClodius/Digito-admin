@@ -6,7 +6,7 @@ import * as themeContext from "@/contexts/theme-context";
 import * as authHook from "@/hooks/use-auth";
 import * as permissionsHook from "@/hooks/use-permissions";
 import * as adminManagementHook from "@/hooks/use-admin-management";
-import * as collectionHook from "@/hooks/use-collection";
+import * as apiCollectionHook from "@/hooks/use-api-collection";
 
 // Mock hooks
 vi.mock("@/hooks/use-auth", () => ({
@@ -25,8 +25,8 @@ vi.mock("@/hooks/use-admin-management", () => ({
   useAdminManagement: vi.fn(),
 }));
 
-vi.mock("@/hooks/use-collection", () => ({
-  useCollection: vi.fn(),
+vi.mock("@/hooks/use-api-collection", () => ({
+  useApiCollection: vi.fn(),
 }));
 
 function setupMocks(overrides?: {
@@ -82,7 +82,7 @@ function setupMocks(overrides?: {
     removeAdmin: vi.fn(),
   });
 
-  vi.mocked(collectionHook.useCollection).mockReturnValue({
+  vi.mocked(apiCollectionHook.useApiCollection).mockReturnValue({
     data: [
       { id: "c1", name: "Client Alpha" },
       { id: "c2", name: "Client Beta" },

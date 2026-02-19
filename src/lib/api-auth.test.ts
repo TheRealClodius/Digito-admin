@@ -5,6 +5,7 @@ import { ObjectId } from 'mongodb';
 
 const mockVerify = vi.fn();
 const mockFindOne = vi.fn();
+const mockAdminGetUserSend = vi.fn();
 
 vi.mock('./cognito', () => ({
   verifyCognitoToken: (...args: unknown[]) => mockVerify(...args),
@@ -14,6 +15,11 @@ vi.mock('./mongodb-collections', () => ({
   getAdminUsersCollection: vi.fn(async () => ({
     findOne: mockFindOne,
   })),
+}));
+
+vi.mock('./cognito-admin', () => ({
+  getCognitoAdminClient: () => ({ send: mockAdminGetUserSend }),
+  getUserPoolId: () => 'us-east-1_test',
 }));
 
 function createRequest(token?: string) {
@@ -89,6 +95,31 @@ describe('api-auth', () => {
         role: 'superadmin',
         isSuperAdmin: true,
       });
+    });
+
+    it('resolves email from Cognito when username is not an email (Google OAuth)', async () => {
+      mockVerify.mockResolvedValueOnce({ sub: 'sub-google', username: 'google_123456' });
+      mockAdminGetUserSend.mockResolvedValueOnce({
+        UserAttributes: [{ Name: 'email', Value: 'admin@example.com' }],
+      });
+      mockFindOne
+        .mockResolvedValueOnce(null) // cognitoSub lookup fails
+        .mockResolvedValueOnce(mockAdminUser); // email lookup succeeds
+
+      const result = await requireAuth(createRequest('valid-token'));
+      expect(result).not.toBeInstanceOf(Response);
+      expect(mockFindOne).toHaveBeenCalledTimes(2);
+      expect(mockFindOne).toHaveBeenNthCalledWith(2, { email: 'admin@example.com' });
+    });
+
+    it('returns 403 when Cognito email lookup fails for federated user', async () => {
+      mockVerify.mockResolvedValueOnce({ sub: 'sub-google', username: 'google_123456' });
+      mockAdminGetUserSend.mockRejectedValueOnce(new Error('Cognito error'));
+      mockFindOne.mockResolvedValue(null); // cognitoSub lookup fails, no email fallback
+
+      const result = await requireAuth(createRequest('valid-token'));
+      expect(result).toBeInstanceOf(Response);
+      expect((result as Response).status).toBe(403);
     });
 
     it('falls back to email lookup when cognitoSub not found', async () => {

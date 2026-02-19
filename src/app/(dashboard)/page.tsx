@@ -4,7 +4,7 @@ import { usePermissions } from "@/hooks/use-permissions";
 import { useTranslation } from "@/hooks/use-translation";
 import { useAggregateStats } from "@/hooks/use-aggregate-stats";
 import { StatsCard } from "@/components/stats-card";
-import { Users, Building2, Calendar, CheckCircle } from "lucide-react";
+import { Building2, Calendar, CheckCircle } from "lucide-react";
 
 export default function DashboardHome() {
   const { isSuperAdmin, role } = usePermissions();
@@ -59,12 +59,6 @@ export default function DashboardHome() {
           title={t("dashboard.activeEvents")}
           value={stats.activeEvents}
           icon={CheckCircle}
-          loading={loading}
-        />
-        <StatsCard
-          title={t("dashboard.totalParticipants")}
-          value={stats.totalParticipants}
-          icon={Users}
           loading={loading}
         />
       </div>

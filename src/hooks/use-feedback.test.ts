@@ -1,40 +1,44 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { renderHook, act, waitFor } from "@testing-library/react";
+import { renderHook, act } from "@testing-library/react";
+import React from "react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
-const mockGetIdToken = vi.fn().mockResolvedValue("mock-token");
-vi.mock("@/hooks/use-auth", () => ({
-  useAuth: () => ({
-    user: { getToken: mockGetIdToken },
-  }),
+vi.mock("@/hooks/use-api-collection", () => ({
+  useApiCollection: vi.fn(),
 }));
 
-// Mock fetch globally
-const mockFetch = vi.fn();
-vi.stubGlobal("fetch", mockFetch);
-
 import { useFeedback } from "./use-feedback";
+import * as apiCollectionHook from "@/hooks/use-api-collection";
+
+function createWrapper() {
+  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return function Wrapper({ children }: { children: React.ReactNode }) {
+    return React.createElement(QueryClientProvider, { client: qc }, children);
+  };
+}
 
 describe("useFeedback", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
   });
 
-  it("returns initial loading state", () => {
-    mockFetch.mockResolvedValue({
-      ok: true,
-      json: () => Promise.resolve([]),
+  it("returns loading state from useApiCollection", () => {
+    vi.mocked(apiCollectionHook.useApiCollection).mockReturnValue({
+      data: [],
+      loading: true,
+      error: null,
     });
 
-    const { result } = renderHook(() =>
-      useFeedback("client-1", "event-1")
-    );
+    const { result } = renderHook(() => useFeedback("event-1"), {
+      wrapper: createWrapper(),
+    });
 
     expect(result.current.loading).toBe(true);
     expect(result.current.data).toEqual([]);
     expect(result.current.error).toBeNull();
   });
 
-  it("fetches feedback and returns data", async () => {
+  it("returns feedback data from useApiCollection", () => {
     const mockData = [
       {
         id: "fb-1",
@@ -48,157 +52,81 @@ describe("useFeedback", () => {
       },
     ];
 
-    mockFetch.mockResolvedValue({
-      ok: true,
-      json: () => Promise.resolve(mockData),
+    vi.mocked(apiCollectionHook.useApiCollection).mockReturnValue({
+      data: mockData as any,
+      loading: false,
+      error: null,
     });
 
-    const { result } = renderHook(() =>
-      useFeedback("client-1", "event-1")
-    );
-
-    await waitFor(() => {
-      expect(result.current.loading).toBe(false);
+    const { result } = renderHook(() => useFeedback("event-1"), {
+      wrapper: createWrapper(),
     });
 
+    expect(result.current.loading).toBe(false);
     expect(result.current.data).toEqual(mockData);
     expect(result.current.error).toBeNull();
-    expect(mockFetch).toHaveBeenCalledWith(
-      "/api/feedback?clientId=client-1&eventId=event-1",
-      {
-        headers: { Authorization: "Bearer mock-token" },
-      }
+  });
+
+  it("passes correct apiPath and queryKey to useApiCollection", () => {
+    vi.mocked(apiCollectionHook.useApiCollection).mockReturnValue({
+      data: [],
+      loading: false,
+      error: null,
+    });
+
+    renderHook(() => useFeedback("event-1"), {
+      wrapper: createWrapper(),
+    });
+
+    expect(apiCollectionHook.useApiCollection).toHaveBeenCalledWith({
+      apiPath: "/api/events/event-1/feedback",
+      queryKey: ["events", "event-1", "feedback"],
+      enabled: true,
+    });
+  });
+
+  it("disables fetch when eventCode is empty", () => {
+    vi.mocked(apiCollectionHook.useApiCollection).mockReturnValue({
+      data: [],
+      loading: false,
+      error: null,
+    });
+
+    renderHook(() => useFeedback(""), {
+      wrapper: createWrapper(),
+    });
+
+    expect(apiCollectionHook.useApiCollection).toHaveBeenCalledWith(
+      expect.objectContaining({ enabled: false })
     );
   });
 
-  it("sets error when fetch fails with non-ok response", async () => {
-    mockFetch.mockResolvedValue({
-      ok: false,
-      json: () =>
-        Promise.resolve({ error: "Only super admins can view feedback" }),
+  it("returns error message as string", () => {
+    vi.mocked(apiCollectionHook.useApiCollection).mockReturnValue({
+      data: [],
+      loading: false,
+      error: new Error("Failed to load feedback"),
     });
 
-    const { result } = renderHook(() =>
-      useFeedback("client-1", "event-1")
-    );
-
-    await waitFor(() => {
-      expect(result.current.loading).toBe(false);
+    const { result } = renderHook(() => useFeedback("event-1"), {
+      wrapper: createWrapper(),
     });
 
-    expect(result.current.error).toBe(
-      "Only super admins can view feedback"
-    );
+    expect(result.current.error).toBe("Failed to load feedback");
     expect(result.current.data).toEqual([]);
   });
 
-  it("sets error when fetch throws", async () => {
-    mockFetch.mockRejectedValue(new Error("Network error"));
-
-    const { result } = renderHook(() =>
-      useFeedback("client-1", "event-1")
-    );
-
-    await waitFor(() => {
-      expect(result.current.loading).toBe(false);
+  it("provides a refresh function", () => {
+    vi.mocked(apiCollectionHook.useApiCollection).mockReturnValue({
+      data: [],
+      loading: false,
+      error: null,
     });
 
-    expect(result.current.error).toBe("Network error");
-    expect(result.current.data).toEqual([]);
-  });
-
-  it("does not fetch when clientId is empty", async () => {
-    const { result } = renderHook(() => useFeedback("", "event-1"));
-
-    await waitFor(() => {
-      expect(result.current.loading).toBe(false);
+    const { result } = renderHook(() => useFeedback("event-1"), {
+      wrapper: createWrapper(),
     });
 
-    expect(mockFetch).not.toHaveBeenCalled();
-    expect(result.current.data).toEqual([]);
-  });
-
-  it("does not fetch when eventId is empty", async () => {
-    const { result } = renderHook(() => useFeedback("client-1", ""));
-
-    await waitFor(() => {
-      expect(result.current.loading).toBe(false);
-    });
-
-    expect(mockFetch).not.toHaveBeenCalled();
-    expect(result.current.data).toEqual([]);
-  });
-
-  it("refetches when refresh is called", async () => {
-    mockFetch.mockResolvedValue({
-      ok: true,
-      json: () => Promise.resolve([]),
-    });
-
-    const { result } = renderHook(() =>
-      useFeedback("client-1", "event-1")
-    );
-
-    await waitFor(() => {
-      expect(result.current.loading).toBe(false);
-    });
-
-    expect(mockFetch).toHaveBeenCalledTimes(1);
-
-    mockFetch.mockResolvedValue({
-      ok: true,
-      json: () =>
-        Promise.resolve([
-          {
-            id: "fb-new",
-            feedbackText: "New feedback",
-            timestamp: "2026-02-08T10:00:00+00:00",
-            chatSessionId: "chat-2",
-            userId: "user-1",
-            userName: "Alice",
-            userEmail: "alice@test.com",
-            userCompany: "Acme",
-          },
-        ]),
-    });
-
-    await act(async () => {
-      result.current.refresh();
-    });
-
-    await waitFor(() => {
-      expect(result.current.data).toHaveLength(1);
-    });
-
-    expect(mockFetch).toHaveBeenCalledTimes(2);
-  });
-
-  it("refetches when clientId or eventId changes", async () => {
-    mockFetch.mockResolvedValue({
-      ok: true,
-      json: () => Promise.resolve([]),
-    });
-
-    const { result, rerender } = renderHook(
-      ({ clientId, eventId }) => useFeedback(clientId, eventId),
-      { initialProps: { clientId: "client-1", eventId: "event-1" } }
-    );
-
-    await waitFor(() => {
-      expect(result.current.loading).toBe(false);
-    });
-
-    expect(mockFetch).toHaveBeenCalledTimes(1);
-
-    rerender({ clientId: "client-1", eventId: "event-2" });
-
-    await waitFor(() => {
-      expect(mockFetch).toHaveBeenCalledTimes(2);
-    });
-
-    expect(mockFetch).toHaveBeenLastCalledWith(
-      "/api/feedback?clientId=client-1&eventId=event-2",
-      { headers: { Authorization: "Bearer mock-token" } }
-    );
+    expect(typeof result.current.refresh).toBe("function");
   });
 });

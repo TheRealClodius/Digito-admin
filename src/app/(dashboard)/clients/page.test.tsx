@@ -1,47 +1,30 @@
-import { render as rtlRender, screen, within } from "@testing-library/react";
+import { render as rtlRender, screen, within, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import React from "react";
 
-// Mock Firebase modules before any imports
+// Mock Firebase modules (still needed for transitive imports like useUpload)
 vi.mock("firebase/app", () => ({
   initializeApp: vi.fn(),
   getApps: vi.fn(() => []),
 }));
 vi.mock("firebase/auth", () => ({ getAuth: vi.fn() }));
-vi.mock("firebase/firestore", () => ({
-  getFirestore: vi.fn(),
-  Timestamp: {
-    fromDate: (d: Date) => ({ toDate: () => d }),
-    now: () => ({ toDate: () => new Date() }),
-  },
-}));
+vi.mock("firebase/firestore", () => ({ getFirestore: vi.fn() }));
 vi.mock("firebase/storage", () => ({ getStorage: vi.fn() }));
 
-import { TooltipProvider } from "@/components/ui/tooltip";
-
-// Wrap render to include TooltipProvider
-function render(ui: React.ReactElement, options = {}) {
-  return rtlRender(<TooltipProvider>{ui}</TooltipProvider>, options);
-}
+// Mock API client
+const mockApiFetch = vi.fn();
+vi.mock("@/lib/api-client", () => ({
+  apiFetch: (...args: unknown[]) => mockApiFetch(...args),
+  ApiError: class ApiError extends Error {
+    constructor(message: string, public status: number) {
+      super(message);
+    }
+  },
+}));
 
 vi.mock("@/hooks/use-permissions", () => ({
   usePermissions: vi.fn(),
-}));
-
-const mockAddDocument = vi.fn(() => Promise.resolve());
-const mockUpdateDocument = vi.fn(() => Promise.resolve());
-const mockDeleteDocument = vi.fn(() => Promise.resolve());
-const mockDeleteClientCascade = vi.fn(() => Promise.resolve());
-
-vi.mock("@/lib/firestore", () => ({
-  addDocument: (...args: unknown[]) => mockAddDocument(...args),
-  updateDocument: (...args: unknown[]) => mockUpdateDocument(...args),
-  deleteDocument: (...args: unknown[]) => mockDeleteDocument(...args),
-  deleteClientCascade: (...args: unknown[]) => mockDeleteClientCascade(...args),
-}));
-
-vi.mock("@/hooks/use-collection", () => ({
-  useCollection: vi.fn(),
 }));
 
 vi.mock("@/hooks/use-upload", () => ({
@@ -79,9 +62,18 @@ vi.mock("@/contexts/ai-suggestion-context", () => ({
   })),
 }));
 
+vi.mock("@/hooks/use-client-stats", () => ({
+  useClientStats: () => ({
+    stats: { totalEvents: 2, activeEvents: 1, upcomingEvents: 0, pastEvents: 1 },
+    loading: false,
+    error: null,
+  }),
+}));
+
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { QueryWrapper } from "@/test/query-wrapper";
 import ClientsPage from "./page";
 import * as permissionsHook from "@/hooks/use-permissions";
-import * as useCollectionHook from "@/hooks/use-collection";
 
 const sampleClients = [
   {
@@ -89,18 +81,26 @@ const sampleClients = [
     name: "Acme Corp",
     description: "Enterprise client",
     logoUrl: null,
-    createdAt: { toDate: () => new Date("2025-01-15T00:00:00Z") },
+    createdAt: "2025-01-15T00:00:00.000Z",
   },
   {
     id: "c2",
     name: "Globex Inc",
     description: null,
     logoUrl: null,
-    createdAt: { toDate: () => new Date("2025-03-20T00:00:00Z") },
+    createdAt: "2025-03-20T00:00:00.000Z",
   },
 ];
 
-function setupMocks(overrides?: { clients?: typeof sampleClients; loading?: boolean }) {
+function render(ui: React.ReactElement) {
+  return rtlRender(
+    <QueryWrapper>
+      <TooltipProvider>{ui}</TooltipProvider>
+    </QueryWrapper>
+  );
+}
+
+function setupSuperadmin() {
   vi.mocked(permissionsHook.usePermissions).mockReturnValue({
     role: "superadmin",
     permissions: null,
@@ -109,59 +109,60 @@ function setupMocks(overrides?: { clients?: typeof sampleClients; loading?: bool
     isClientAdmin: false,
     isEventAdmin: false,
   });
+}
 
-  vi.mocked(useCollectionHook.useCollection).mockReturnValue({
-    data: overrides?.clients ?? sampleClients,
-    loading: overrides?.loading ?? false,
-    error: null,
-  } as ReturnType<typeof useCollectionHook.useCollection>);
+function setupNonSuperadmin() {
+  vi.mocked(permissionsHook.usePermissions).mockReturnValue({
+    role: "clientAdmin",
+    permissions: null,
+    loading: false,
+    isSuperAdmin: false,
+    isClientAdmin: true,
+    isEventAdmin: false,
+  });
 }
 
 describe("ClientsPage", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
+    mockApiFetch.mockResolvedValue(sampleClients);
   });
 
   // ----- Rendering -----
 
-  it("renders the clients page title", () => {
-    setupMocks();
+  it("renders the clients page title", async () => {
+    setupSuperadmin();
     render(<ClientsPage />);
-    expect(screen.getByText("Clients")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText("Clients")).toBeInTheDocument();
+    });
   });
 
-  it("renders client rows in the table", () => {
-    setupMocks();
+  it("renders client rows in the table", async () => {
+    setupSuperadmin();
     render(<ClientsPage />);
-    expect(screen.getByText("Acme Corp")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText("Acme Corp")).toBeInTheDocument();
+    });
     expect(screen.getByText("Globex Inc")).toBeInTheDocument();
   });
 
-  it("shows Add Client button for superadmin", () => {
-    setupMocks();
+  it("shows Add Client button for superadmin", async () => {
+    setupSuperadmin();
     render(<ClientsPage />);
-    expect(screen.getByRole("button", { name: /new client/i })).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /new client/i })).toBeInTheDocument();
+    });
   });
 
   // ----- Access control -----
 
-  it("shows unauthorized message for non-superadmin", () => {
-    vi.mocked(permissionsHook.usePermissions).mockReturnValue({
-      role: "clientAdmin",
-      permissions: null,
-      loading: false,
-      isSuperAdmin: false,
-      isClientAdmin: true,
-      isEventAdmin: false,
-    });
-    vi.mocked(useCollectionHook.useCollection).mockReturnValue({
-      data: [],
-      loading: false,
-      error: null,
-    } as ReturnType<typeof useCollectionHook.useCollection>);
-
+  it("shows unauthorized message for non-superadmin", async () => {
+    setupNonSuperadmin();
     render(<ClientsPage />);
-    expect(screen.getByText(/access denied/i)).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText(/access denied/i)).toBeInTheDocument();
+    });
     expect(screen.queryByText("Acme Corp")).not.toBeInTheDocument();
   });
 
@@ -169,8 +170,12 @@ describe("ClientsPage", () => {
 
   it("opens edit sheet when clicking Edit on a client row", async () => {
     const user = userEvent.setup();
-    setupMocks();
+    setupSuperadmin();
     render(<ClientsPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Acme Corp")).toBeInTheDocument();
+    });
 
     const acmeRow = screen.getByText("Acme Corp").closest("tr")!;
     const editButton = within(acmeRow).getByRole("button", { name: /edit/i });
@@ -181,8 +186,12 @@ describe("ClientsPage", () => {
 
   it("pre-fills form with client name when editing", async () => {
     const user = userEvent.setup();
-    setupMocks();
+    setupSuperadmin();
     render(<ClientsPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Acme Corp")).toBeInTheDocument();
+    });
 
     const acmeRow = screen.getByText("Acme Corp").closest("tr")!;
     const editButton = within(acmeRow).getByRole("button", { name: /edit/i });
@@ -193,8 +202,12 @@ describe("ClientsPage", () => {
 
   it("pre-fills form with client description when editing", async () => {
     const user = userEvent.setup();
-    setupMocks();
+    setupSuperadmin();
     render(<ClientsPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Acme Corp")).toBeInTheDocument();
+    });
 
     const acmeRow = screen.getByText("Acme Corp").closest("tr")!;
     const editButton = within(acmeRow).getByRole("button", { name: /edit/i });
@@ -203,10 +216,14 @@ describe("ClientsPage", () => {
     expect(screen.getByDisplayValue("Enterprise client")).toBeInTheDocument();
   });
 
-  it("calls updateDocument when saving an edited client", async () => {
+  it("calls apiFetch with PUT when saving an edited client", async () => {
     const user = userEvent.setup();
-    setupMocks();
+    setupSuperadmin();
     render(<ClientsPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Acme Corp")).toBeInTheDocument();
+    });
 
     // Open edit sheet
     const acmeRow = screen.getByText("Acme Corp").closest("tr")!;
@@ -219,26 +236,34 @@ describe("ClientsPage", () => {
     await user.type(nameInput, "Acme Corp Updated");
 
     // Submit
+    mockApiFetch.mockResolvedValueOnce({ id: "c1", name: "Acme Corp Updated" });
     const saveButton = screen.getByRole("button", { name: /save/i });
     await user.click(saveButton);
 
-    expect(mockUpdateDocument).toHaveBeenCalledWith(
-      "clients",
-      "c1",
-      expect.objectContaining({ name: "Acme Corp Updated" }),
-    );
+    await waitFor(() => {
+      expect(mockApiFetch).toHaveBeenCalledWith(
+        "/api/clients/c1",
+        expect.objectContaining({
+          method: "PUT",
+          body: expect.objectContaining({ name: "Acme Corp Updated" }),
+        })
+      );
+    });
   });
 
   // ----- Create flow -----
 
   it("opens create sheet when clicking Add button", async () => {
     const user = userEvent.setup();
-    setupMocks();
+    setupSuperadmin();
     render(<ClientsPage />);
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /new client/i })).toBeInTheDocument();
+    });
 
     await user.click(screen.getByRole("button", { name: /new client/i }));
 
-    // Sheet title uses heading role
     expect(screen.getByRole("heading", { name: /new client/i })).toBeInTheDocument();
   });
 
@@ -246,13 +271,73 @@ describe("ClientsPage", () => {
 
   it("shows delete confirmation when clicking Delete on a client row", async () => {
     const user = userEvent.setup();
-    setupMocks();
+    setupSuperadmin();
     render(<ClientsPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Acme Corp")).toBeInTheDocument();
+    });
 
     const acmeRow = screen.getByText("Acme Corp").closest("tr")!;
     const deleteButton = within(acmeRow).getByRole("button", { name: /delete/i });
     await user.click(deleteButton);
 
     expect(screen.getByText(/delete client/i)).toBeInTheDocument();
+  });
+
+  it("disables delete action button until client name is typed correctly", async () => {
+    const user = userEvent.setup();
+    setupSuperadmin();
+    render(<ClientsPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Acme Corp")).toBeInTheDocument();
+    });
+
+    const acmeRow = screen.getByText("Acme Corp").closest("tr")!;
+    const deleteButton = within(acmeRow).getByRole("button", { name: /delete/i });
+    await user.click(deleteButton);
+
+    // The delete action button should be disabled initially
+    const dialogButtons = screen.getAllByRole("button", { name: /delete/i });
+    const actionButton = dialogButtons.find(btn => btn.closest("[role='alertdialog']"));
+    expect(actionButton).toBeDisabled();
+
+    // Type the wrong text — still disabled
+    const confirmInput = screen.getByPlaceholderText("Acme Corp");
+    await user.type(confirmInput, "wrong");
+    expect(actionButton).toBeDisabled();
+
+    // Clear and type the correct client name
+    await user.clear(confirmInput);
+    await user.type(confirmInput, "Acme Corp");
+    expect(actionButton).toBeEnabled();
+  });
+
+  it("resets confirmation input when delete dialog is dismissed", async () => {
+    const user = userEvent.setup();
+    setupSuperadmin();
+    render(<ClientsPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Acme Corp")).toBeInTheDocument();
+    });
+
+    const acmeRow = screen.getByText("Acme Corp").closest("tr")!;
+    const deleteButton = within(acmeRow).getByRole("button", { name: /delete/i });
+    await user.click(deleteButton);
+
+    // Type something in the confirmation input
+    const confirmInput = screen.getByPlaceholderText("Acme Corp");
+    await user.type(confirmInput, "something");
+
+    // Cancel the dialog
+    const cancelButton = screen.getByRole("button", { name: /cancel/i });
+    await user.click(cancelButton);
+
+    // Re-open the dialog — input should be empty
+    await user.click(deleteButton);
+    const newConfirmInput = screen.getByPlaceholderText("Acme Corp");
+    expect(newConfirmInput).toHaveValue("");
   });
 });
