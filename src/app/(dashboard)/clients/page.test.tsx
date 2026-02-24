@@ -3,15 +3,6 @@ import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import React from "react";
 
-// Mock Firebase modules (still needed for transitive imports like useUpload)
-vi.mock("firebase/app", () => ({
-  initializeApp: vi.fn(),
-  getApps: vi.fn(() => []),
-}));
-vi.mock("firebase/auth", () => ({ getAuth: vi.fn() }));
-vi.mock("firebase/firestore", () => ({ getFirestore: vi.fn() }));
-vi.mock("firebase/storage", () => ({ getStorage: vi.fn() }));
-
 // Mock API client
 const mockApiFetch = vi.fn();
 vi.mock("@/lib/api-client", () => ({

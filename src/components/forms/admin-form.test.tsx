@@ -2,21 +2,6 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { vi } from "vitest";
 
-// Mock Firebase modules
-vi.mock("firebase/app", () => ({
-  initializeApp: vi.fn(),
-  getApps: vi.fn(() => []),
-}));
-vi.mock("firebase/auth", () => ({ getAuth: vi.fn() }));
-vi.mock("firebase/firestore", () => ({
-  getFirestore: vi.fn(),
-  Timestamp: {
-    fromDate: (d: Date) => ({ toDate: () => d }),
-    now: () => ({ toDate: () => new Date() }),
-  },
-}));
-vi.mock("firebase/storage", () => ({ getStorage: vi.fn() }));
-
 import { AdminForm } from "./admin-form";
 
 const mockClients = [

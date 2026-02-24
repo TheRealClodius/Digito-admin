@@ -2,7 +2,7 @@
  * MongoDB Schema Types
  *
  * Types representing the actual MongoDB document structures in the goodgest-admin database
- * These differ from the client-facing types (which use string ids and Firebase Timestamps)
+ * These differ from the client-facing types (which use string ids and Date/string dates)
  */
 
 import { ObjectId } from 'mongodb';

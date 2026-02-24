@@ -2,42 +2,47 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook, act } from "@testing-library/react";
 import { useUpload } from "./use-upload";
 
-const mockUploadTask = {
-  on: vi.fn(),
-  snapshot: { ref: { fullPath: "test/file.png" } },
+// Mock apiFetch
+const mockApiFetch = vi.fn();
+vi.mock("@/lib/api-client", () => ({
+  apiFetch: (...args: unknown[]) => mockApiFetch(...args),
+}));
+
+// Mock XMLHttpRequest for upload progress tracking
+let mockXhrInstance: {
+  open: ReturnType<typeof vi.fn>;
+  send: ReturnType<typeof vi.fn>;
+  setRequestHeader: ReturnType<typeof vi.fn>;
+  upload: { onprogress: ((e: { loaded: number; total: number }) => void) | null };
+  onload: (() => void) | null;
+  onerror: ((e: unknown) => void) | null;
+  status: number;
 };
 
-const mockGetDownloadURL = vi.fn();
-const mockDeleteObject = vi.fn();
-const mockGetIdToken = vi.fn().mockResolvedValue("fresh-token");
+beforeEach(() => {
+  mockXhrInstance = {
+    open: vi.fn(),
+    send: vi.fn(),
+    setRequestHeader: vi.fn(),
+    upload: { onprogress: null },
+    onload: null,
+    onerror: null,
+    status: 200,
+  };
 
-vi.mock("firebase/app", () => ({
-  initializeApp: vi.fn(),
-  getApps: vi.fn(() => []),
-}));
-
-vi.mock("firebase/auth", () => ({
-  getAuth: vi.fn(),
-}));
-
-vi.mock("firebase/firestore", () => ({
-  getFirestore: vi.fn(),
-}));
-
-vi.mock("firebase/storage", () => ({
-  getStorage: vi.fn(),
-  ref: vi.fn((_storage, path) => ({ fullPath: path })),
-  uploadBytesResumable: vi.fn(() => mockUploadTask),
-  getDownloadURL: (...args: unknown[]) => mockGetDownloadURL(...args),
-  deleteObject: (...args: unknown[]) => mockDeleteObject(...args),
-}));
-
-vi.mock("@/lib/firebase", () => ({
-  getStorageInstance: vi.fn(),
-  getAuthInstance: vi.fn(() => ({
-    currentUser: { getIdToken: mockGetIdToken },
-  })),
-}));
+  vi.stubGlobal("XMLHttpRequest", class {
+    open = mockXhrInstance.open;
+    send = mockXhrInstance.send;
+    setRequestHeader = mockXhrInstance.setRequestHeader;
+    upload = mockXhrInstance.upload;
+    get onload() { return mockXhrInstance.onload; }
+    set onload(fn) { mockXhrInstance.onload = fn; }
+    get onerror() { return mockXhrInstance.onerror; }
+    set onerror(fn) { mockXhrInstance.onerror = fn; }
+    get status() { return mockXhrInstance.status; }
+    set status(v) { mockXhrInstance.status = v; }
+  });
+});
 
 describe("useUpload", () => {
   beforeEach(() => {
@@ -54,16 +59,19 @@ describe("useUpload", () => {
     expect(typeof result.current.deleteFile).toBe("function");
   });
 
-  it("calls uploadBytesResumable and resolves with download URL", async () => {
-    const downloadUrl = "https://storage.example.com/test/file.png";
-    mockGetDownloadURL.mockResolvedValue(downloadUrl);
+  it("uploads file via presigned URL and returns public URL", async () => {
+    const publicUrl = "https://pub-test.r2.dev/test/path/123-file.png";
+    mockApiFetch.mockResolvedValue({
+      presignedUrl: "https://presigned.example.com/upload",
+      publicUrl,
+      key: "test/path/123-file.png",
+    });
 
-    // Make upload task simulate success
-    mockUploadTask.on.mockImplementation(
-      (_event: string, _progress: unknown, _error: unknown, complete: () => void) => {
-        complete();
-      }
-    );
+    // Simulate successful XHR upload
+    mockXhrInstance.send.mockImplementation(() => {
+      mockXhrInstance.status = 200;
+      mockXhrInstance.onload?.();
+    });
 
     const { result } = renderHook(() => useUpload({ basePath: "test/path" }));
 
@@ -72,25 +80,33 @@ describe("useUpload", () => {
       url = await result.current.upload(new File(["data"], "test.png"));
     });
 
-    expect(url).toBe(downloadUrl);
+    expect(url).toBe(publicUrl);
     expect(result.current.uploading).toBe(false);
+
+    // Verify apiFetch was called with correct params
+    expect(mockApiFetch).toHaveBeenCalledWith("/api/upload", {
+      method: "POST",
+      body: {
+        filename: "test.png",
+        contentType: "",
+        basePath: "test/path",
+      },
+    });
   });
 
   it("tracks upload progress", async () => {
-    mockGetDownloadURL.mockResolvedValue("https://example.com/file.png");
+    mockApiFetch.mockResolvedValue({
+      presignedUrl: "https://presigned.example.com/upload",
+      publicUrl: "https://pub-test.r2.dev/file.png",
+      key: "file.png",
+    });
 
-    mockUploadTask.on.mockImplementation(
-      (
-        _event: string,
-        onProgress: (snapshot: { bytesTransferred: number; totalBytes: number }) => void,
-        _error: unknown,
-        complete: () => void,
-      ) => {
-        // Simulate progress
-        onProgress({ bytesTransferred: 50, totalBytes: 100 });
-        complete();
-      }
-    );
+    mockXhrInstance.send.mockImplementation(() => {
+      // Simulate progress
+      mockXhrInstance.upload.onprogress?.({ loaded: 50, total: 100 });
+      mockXhrInstance.status = 200;
+      mockXhrInstance.onload?.();
+    });
 
     const { result } = renderHook(() => useUpload({ basePath: "test/path" }));
 
@@ -102,14 +118,16 @@ describe("useUpload", () => {
     expect(result.current.progress).toBe(100);
   });
 
-  it("handles upload errors", async () => {
-    const uploadError = new Error("Upload failed");
+  it("handles upload errors from XHR", async () => {
+    mockApiFetch.mockResolvedValue({
+      presignedUrl: "https://presigned.example.com/upload",
+      publicUrl: "https://pub-test.r2.dev/file.png",
+      key: "file.png",
+    });
 
-    mockUploadTask.on.mockImplementation(
-      (_event: string, _progress: unknown, onError: (err: Error) => void) => {
-        onError(uploadError);
-      }
-    );
+    mockXhrInstance.send.mockImplementation(() => {
+      mockXhrInstance.onerror?.(new Error("Network error"));
+    });
 
     const { result } = renderHook(() => useUpload({ basePath: "test/path" }));
 
@@ -120,100 +138,96 @@ describe("useUpload", () => {
     });
 
     expect(result.current.uploading).toBe(false);
-    expect(result.current.error).toBe(uploadError);
+    expect(result.current.error).toBeTruthy();
   });
 
-  it("deleteFile calls deleteObject", async () => {
-    mockDeleteObject.mockResolvedValue(undefined);
+  it("handles presigned URL request failure", async () => {
+    mockApiFetch.mockRejectedValue(new Error("API error"));
 
     const { result } = renderHook(() => useUpload({ basePath: "test/path" }));
 
     await act(async () => {
-      await result.current.deleteFile("https://storage.example.com/test/file.png");
+      await expect(
+        result.current.upload(new File(["data"], "test.png"))
+      ).rejects.toThrow("API error");
     });
 
-    expect(mockDeleteObject).toHaveBeenCalledWith(
-      expect.objectContaining({ fullPath: "https://storage.example.com/test/file.png" })
+    expect(result.current.uploading).toBe(false);
+    expect(result.current.error?.message).toBe("API error");
+  });
+
+  it("deleteFile calls DELETE API", async () => {
+    mockApiFetch.mockResolvedValue(null);
+
+    const { result } = renderHook(() => useUpload({ basePath: "test/path" }));
+
+    await act(async () => {
+      await result.current.deleteFile("https://pub-test.r2.dev/test/path/123-file.png");
+    });
+
+    expect(mockApiFetch).toHaveBeenCalledWith(
+      expect.stringContaining("/api/upload?key="),
+      { method: "DELETE" }
     );
   });
 
-  it("refreshes auth token before deleting", async () => {
-    mockDeleteObject.mockResolvedValue(undefined);
-
-    const { result } = renderHook(() => useUpload({ basePath: "test/path" }));
-
-    await act(async () => {
-      await result.current.deleteFile("https://storage.example.com/test/file.png");
-    });
-
-    expect(mockGetIdToken).toHaveBeenCalledWith(true);
-  });
-
   it("deleteFile swallows errors silently", async () => {
-    mockDeleteObject.mockRejectedValue(new Error("Not found"));
+    mockApiFetch.mockRejectedValue(new Error("Not found"));
 
     const { result } = renderHook(() => useUpload({ basePath: "test/path" }));
 
     // Should not throw
     await act(async () => {
-      await result.current.deleteFile("https://storage.example.com/nonexistent.png");
+      await result.current.deleteFile("https://pub-test.r2.dev/nonexistent.png");
     });
   });
 
-  it("sanitizes filenames", async () => {
-    const { uploadBytesResumable } = await import("firebase/storage");
-    mockGetDownloadURL.mockResolvedValue("https://example.com/file.png");
-    mockUploadTask.on.mockImplementation(
-      (_event: string, _progress: unknown, _error: unknown, complete: () => void) => {
-        complete();
-      }
-    );
+  it("uses custom filename when provided", async () => {
+    mockApiFetch.mockResolvedValue({
+      presignedUrl: "https://presigned.example.com/upload",
+      publicUrl: "https://pub-test.r2.dev/file.png",
+      key: "file.png",
+    });
+
+    mockXhrInstance.send.mockImplementation(() => {
+      mockXhrInstance.status = 200;
+      mockXhrInstance.onload?.();
+    });
 
     const { result } = renderHook(() => useUpload({ basePath: "test/path" }));
 
     await act(async () => {
-      await result.current.upload(new File(["data"], "my file (1).png"));
+      await result.current.upload(new File(["data"], "original.png"), "custom-name.png");
     });
 
-    // uploadBytesResumable should have been called with a ref that has sanitized path
-    expect(uploadBytesResumable).toHaveBeenCalled();
+    expect(mockApiFetch).toHaveBeenCalledWith("/api/upload", {
+      method: "POST",
+      body: expect.objectContaining({
+        filename: "custom-name.png",
+      }),
+    });
   });
 
-  it("refreshes auth token before uploading", async () => {
-    mockGetDownloadURL.mockResolvedValue("https://example.com/file.png");
-    mockUploadTask.on.mockImplementation(
-      (_event: string, _progress: unknown, _error: unknown, complete: () => void) => {
-        complete();
-      }
-    );
+  it("handles non-200 XHR status as error", async () => {
+    mockApiFetch.mockResolvedValue({
+      presignedUrl: "https://presigned.example.com/upload",
+      publicUrl: "https://pub-test.r2.dev/file.png",
+      key: "file.png",
+    });
+
+    mockXhrInstance.send.mockImplementation(() => {
+      mockXhrInstance.status = 403;
+      mockXhrInstance.onload?.();
+    });
 
     const { result } = renderHook(() => useUpload({ basePath: "test/path" }));
 
     await act(async () => {
-      await result.current.upload(new File(["data"], "test.png"));
+      await expect(
+        result.current.upload(new File(["data"], "test.png"))
+      ).rejects.toThrow();
     });
 
-    expect(mockGetIdToken).toHaveBeenCalledWith(true);
-  });
-
-  it("proceeds without token refresh when no user is signed in", async () => {
-    const { getAuthInstance } = await import("@/lib/firebase");
-    (getAuthInstance as ReturnType<typeof vi.fn>).mockReturnValueOnce({ currentUser: null });
-
-    mockGetDownloadURL.mockResolvedValue("https://example.com/file.png");
-    mockUploadTask.on.mockImplementation(
-      (_event: string, _progress: unknown, _error: unknown, complete: () => void) => {
-        complete();
-      }
-    );
-
-    const { result } = renderHook(() => useUpload({ basePath: "test/path" }));
-
-    mockGetIdToken.mockClear();
-    await act(async () => {
-      await result.current.upload(new File(["data"], "test.png"));
-    });
-
-    expect(mockGetIdToken).not.toHaveBeenCalled();
+    expect(result.current.uploading).toBe(false);
   });
 });

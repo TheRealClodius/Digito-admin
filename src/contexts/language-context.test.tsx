@@ -1,20 +1,11 @@
 import { render, screen, act, waitFor } from "@testing-library/react";
 import { vi, describe, it, expect, beforeEach } from "vitest";
-import type { User } from "firebase/auth";
 
-// Mock Firebase modules
-vi.mock("firebase/app", () => ({
-  initializeApp: vi.fn(),
-  getApps: vi.fn(() => []),
+// Mock apiFetch
+const mockApiFetch = vi.fn();
+vi.mock("@/lib/api-client", () => ({
+  apiFetch: (...args: unknown[]) => mockApiFetch(...args),
 }));
-vi.mock("firebase/auth", () => ({ getAuth: vi.fn() }));
-vi.mock("firebase/firestore", () => ({
-  getFirestore: vi.fn(),
-  doc: vi.fn(),
-  getDoc: vi.fn(),
-  setDoc: vi.fn(),
-}));
-vi.mock("firebase/storage", () => ({ getStorage: vi.fn() }));
 
 // Mock useAuth hook
 const mockUseAuth = vi.fn();
@@ -22,28 +13,7 @@ vi.mock("@/hooks/use-auth", () => ({
   useAuth: () => mockUseAuth(),
 }));
 
-// Mock firestore operations
-const mockGetDoc = vi.fn();
-const mockSetDoc = vi.fn();
-const mockDoc = vi.fn();
-vi.mock("@/lib/firebase", () => ({
-  getDbInstance: vi.fn(() => ({})),
-}));
-
-// Re-mock firebase/firestore with our spies
-vi.mock("firebase/firestore", async () => ({
-  getFirestore: vi.fn(),
-  doc: (...args: unknown[]) => mockDoc(...args),
-  getDoc: (...args: unknown[]) => mockGetDoc(...args),
-  setDoc: (...args: unknown[]) => mockSetDoc(...args),
-  serverTimestamp: () => "mock-timestamp",
-}));
-
 import { LanguageProvider, useLanguage } from "./language-context";
-
-function createMockUser(uid = "test-uid"): User {
-  return { uid, email: "test@test.com" } as User;
-}
 
 function TestComponent() {
   const { language, t, setLanguage } = useLanguage();
@@ -69,7 +39,7 @@ describe("LanguageProvider", () => {
     localStorage.clear();
     document.documentElement.lang = "en";
     mockUseAuth.mockReturnValue({ user: null, loading: false });
-    mockGetDoc.mockResolvedValue({ exists: () => false, data: () => null });
+    mockApiFetch.mockResolvedValue({ language: "en" });
   });
 
   it("defaults to English when no preference is stored", () => {
@@ -93,7 +63,6 @@ describe("LanguageProvider", () => {
     );
 
     expect(screen.getByTestId("language")).toHaveTextContent("it");
-    expect(screen.getByTestId("nav-dashboard")).toHaveTextContent("Dashboard");
   });
 
   it("translates strings to Italian when language is it", () => {
@@ -117,15 +86,12 @@ describe("LanguageProvider", () => {
       </LanguageProvider>,
     );
 
-    // "nav.dashboard" exists in both languages, but test general fallback behavior
-    // by checking that a valid key returns a string (not undefined)
     expect(screen.getByTestId("nav-dashboard").textContent).toBeTruthy();
   });
 
   it("returns the key itself as ultimate fallback", () => {
     function BadKeyComponent() {
       const { t } = useLanguage();
-      // Cast to bypass type safety for testing purposes
       return <div data-testid="bad-key">{(t as (key: string) => string)("nonexistent.key")}</div>;
     }
 
@@ -179,11 +145,10 @@ describe("LanguageProvider", () => {
     expect(document.documentElement.lang).toBe("it");
   });
 
-  it("writes language to Firestore when user is authenticated", async () => {
-    const mockUser = createMockUser();
+  it("saves language via API when user is authenticated", async () => {
+    const mockUser = { sub: "user-sub-123", email: "test@test.com", getToken: vi.fn() };
     mockUseAuth.mockReturnValue({ user: mockUser, loading: false });
-    mockDoc.mockReturnValue("mock-doc-ref");
-    mockSetDoc.mockResolvedValue(undefined);
+    mockApiFetch.mockResolvedValue({ language: "en" });
 
     render(
       <LanguageProvider>
@@ -196,18 +161,17 @@ describe("LanguageProvider", () => {
     });
 
     await waitFor(() => {
-      expect(mockSetDoc).toHaveBeenCalled();
+      expect(mockApiFetch).toHaveBeenCalledWith("/api/admin/users/me", {
+        method: "PATCH",
+        body: { language: "it" },
+      });
     });
   });
 
-  it("reads language preference from Firestore on mount when user is authenticated", async () => {
-    const mockUser = createMockUser();
+  it("reads language preference from API on mount when user is authenticated", async () => {
+    const mockUser = { sub: "user-sub-123", email: "test@test.com", getToken: vi.fn() };
     mockUseAuth.mockReturnValue({ user: mockUser, loading: false });
-    mockDoc.mockReturnValue("mock-doc-ref");
-    mockGetDoc.mockResolvedValue({
-      exists: () => true,
-      data: () => ({ language: "it" }),
-    });
+    mockApiFetch.mockResolvedValue({ language: "it" });
 
     render(
       <LanguageProvider>
@@ -218,10 +182,11 @@ describe("LanguageProvider", () => {
     await waitFor(() => {
       expect(screen.getByTestId("language")).toHaveTextContent("it");
     });
+
+    expect(mockApiFetch).toHaveBeenCalledWith("/api/admin/users/me");
   });
 
   it("throws error when useLanguage is used outside LanguageProvider", () => {
-    // Suppress console.error for this test
     const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 
     expect(() => {

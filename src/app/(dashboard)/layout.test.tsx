@@ -1,15 +1,6 @@
 import { render } from "@testing-library/react";
 import { vi } from "vitest";
 
-// Mock Firebase modules
-vi.mock("firebase/app", () => ({
-  initializeApp: vi.fn(),
-  getApps: vi.fn(() => []),
-}));
-vi.mock("firebase/auth", () => ({ getAuth: vi.fn() }));
-vi.mock("firebase/firestore", () => ({ getFirestore: vi.fn() }));
-vi.mock("firebase/storage", () => ({ getStorage: vi.fn() }));
-
 // Mock next/navigation
 const mockPush = vi.fn();
 vi.mock("next/navigation", () => ({

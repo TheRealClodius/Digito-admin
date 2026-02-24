@@ -2,15 +2,6 @@ import { render, screen } from "@testing-library/react";
 import { FeedbackTable } from "./feedback-table";
 import type { FeedbackEntry } from "@/types/feedback";
 
-// Mock Firebase to prevent initialization errors
-vi.mock("firebase/app", () => ({
-  initializeApp: vi.fn(),
-  getApps: vi.fn(() => []),
-}));
-vi.mock("firebase/auth", () => ({ getAuth: vi.fn() }));
-vi.mock("firebase/firestore", () => ({ getFirestore: vi.fn() }));
-vi.mock("firebase/storage", () => ({ getStorage: vi.fn() }));
-
 // ResizeObserver mock required by Radix UI primitives in jsdom
 beforeAll(() => {
   global.ResizeObserver = class {

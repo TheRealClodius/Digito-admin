@@ -1,12 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from "firebase/storage";
-import { getStorageInstance, getAuthInstance } from "@/lib/firebase";
+import { apiFetch } from "@/lib/api-client";
 import { sanitizeFilename } from "@/lib/validation";
 
 interface UseUploadOptions {
   basePath: string;
+}
+
+interface PresignedResponse {
+  presignedUrl: string;
+  publicUrl: string;
+  key: string;
 }
 
 export function useUpload({ basePath }: UseUploadOptions) {
@@ -15,52 +20,70 @@ export function useUpload({ basePath }: UseUploadOptions) {
   const [error, setError] = useState<Error | null>(null);
 
   async function upload(file: File, filename?: string): Promise<string> {
-    const name = sanitizeFilename(filename || file.name);
-    const storageRef = ref(getStorageInstance(), `${basePath}/${name}`);
+    const name = filename || file.name;
 
     setUploading(true);
     setProgress(0);
     setError(null);
 
-    // Force token refresh to ensure valid custom claims for storage rules
-    const user = getAuthInstance().currentUser;
-    if (user) {
-      await user.getIdToken(true);
+    try {
+      // 1. Get presigned URL from our API
+      const { presignedUrl, publicUrl } = await apiFetch<PresignedResponse>("/api/upload", {
+        method: "POST",
+        body: {
+          filename: name,
+          contentType: file.type,
+          basePath,
+        },
+      });
+
+      // 2. Upload directly to R2 via presigned URL with progress tracking
+      await new Promise<void>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open("PUT", presignedUrl);
+        xhr.setRequestHeader("Content-Type", file.type);
+
+        xhr.upload.onprogress = (e) => {
+          if (e.total > 0) {
+            setProgress(Math.round((e.loaded / e.total) * 100));
+          }
+        };
+
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            resolve();
+          } else {
+            reject(new Error(`Upload failed with status ${xhr.status}`));
+          }
+        };
+
+        xhr.onerror = () => {
+          reject(new Error("Upload failed"));
+        };
+
+        xhr.send(file);
+      });
+
+      setUploading(false);
+      setProgress(100);
+      return publicUrl;
+    } catch (err) {
+      const uploadError = err instanceof Error ? err : new Error("Upload failed");
+      setError(uploadError);
+      setUploading(false);
+      throw uploadError;
     }
-
-    return new Promise((resolve, reject) => {
-      const uploadTask = uploadBytesResumable(storageRef, file);
-
-      uploadTask.on(
-        "state_changed",
-        (snapshot) => {
-          const pct = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-          setProgress(Math.round(pct));
-        },
-        (err) => {
-          setError(err);
-          setUploading(false);
-          reject(err);
-        },
-        async () => {
-          const url = await getDownloadURL(uploadTask.snapshot.ref);
-          setUploading(false);
-          setProgress(100);
-          resolve(url);
-        }
-      );
-    });
   }
 
   async function deleteFile(fileUrl: string) {
     try {
-      // Force token refresh to ensure valid custom claims for storage rules
-      const user = getAuthInstance().currentUser;
-      if (user) {
-        await user.getIdToken(true);
-      }
-      const fileRef = ref(getStorageInstance(), fileUrl);
-      await deleteObject(fileRef);
+      // Extract the key from the public URL
+      const url = new URL(fileUrl);
+      const key = url.pathname.startsWith("/") ? url.pathname.slice(1) : url.pathname;
+
+      await apiFetch(`/api/upload?key=${encodeURIComponent(key)}`, {
+        method: "DELETE",
+      });
     } catch (err) {
       // File may not exist, ignore
       console.error("Failed to delete file:", err);

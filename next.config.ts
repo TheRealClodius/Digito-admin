@@ -1,9 +1,14 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  serverExternalPackages: ["firebase-admin", "aws-jwt-verify", "mongodb"],
+  serverExternalPackages: ["aws-jwt-verify", "mongodb"],
   images: {
     remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "*.r2.dev",
+      },
+      // Legacy Firebase Storage URLs (existing event databases may still reference these)
       {
         protocol: "https",
         hostname: "firebasestorage.googleapis.com",
@@ -29,10 +34,10 @@ const nextConfig: NextConfig = {
               "default-src 'self'",
               "script-src 'self' 'unsafe-inline' https://apis.google.com https://accounts.google.com",
               "style-src 'self' 'unsafe-inline'",
-              "img-src 'self' data: blob: https://firebasestorage.googleapis.com https://storage.googleapis.com https://*.firebasestorage.app",
-              "connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://ipapi.co https://api.sunrise-sunset.org https://cognito-idp.eu-south-1.amazonaws.com https://cognito-identity.eu-south-1.amazonaws.com https://*.amazoncognito.com https://*.auth.eu-south-1.amazoncognito.com",
+              "img-src 'self' data: blob: https://*.r2.dev https://firebasestorage.googleapis.com https://storage.googleapis.com https://*.firebasestorage.app",
+              "connect-src 'self' https://*.r2.cloudflarestorage.com https://*.r2.dev https://ipapi.co https://api.sunrise-sunset.org https://cognito-idp.eu-south-1.amazonaws.com https://cognito-identity.eu-south-1.amazonaws.com https://*.amazoncognito.com https://*.auth.eu-south-1.amazoncognito.com",
               "font-src 'self'",
-              "frame-src https://accounts.google.com https://*.firebaseapp.com https://*.amazoncognito.com https://*.auth.eu-south-1.amazoncognito.com",
+              "frame-src https://accounts.google.com https://*.amazoncognito.com https://*.auth.eu-south-1.amazoncognito.com",
             ].join("; "),
           },
           {

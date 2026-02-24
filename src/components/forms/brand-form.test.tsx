@@ -8,21 +8,6 @@ function render(ui: React.ReactElement, options = {}) {
 import userEvent from "@testing-library/user-event";
 import { vi } from "vitest";
 
-// Mock Firebase modules before any imports that might trigger initialization
-vi.mock("firebase/app", () => ({
-  initializeApp: vi.fn(),
-  getApps: vi.fn(() => []),
-}));
-vi.mock("firebase/auth", () => ({ getAuth: vi.fn() }));
-vi.mock("firebase/firestore", () => ({
-  getFirestore: vi.fn(),
-  Timestamp: {
-    fromDate: (d: Date) => ({ toDate: () => d }),
-    now: () => ({ toDate: () => new Date() }),
-  },
-}));
-vi.mock("firebase/storage", () => ({ getStorage: vi.fn() }));
-
 // Mock WysiwygEditor to render a simple textarea in form tests
 vi.mock("@/components/wysiwyg-editor", () => ({
   WysiwygEditor: ({ label, id, value, onChange }: { label: string; id: string; value: string; onChange: (v: string) => void }) => (

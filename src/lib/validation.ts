@@ -55,6 +55,7 @@ const ALLOWED_IMAGE_HOSTS = [
   "firebasestorage.googleapis.com",
   "storage.googleapis.com",
   "digito-poc.firebasestorage.app",
+  // R2 public URLs use *.r2.dev subdomains — checked via endsWith below
 ];
 
 /**
@@ -72,14 +73,14 @@ export function isAllowedImageHost(url: string): boolean {
 
   try {
     const parsed = new URL(url);
-    return ALLOWED_IMAGE_HOSTS.some((host) => parsed.hostname === host);
+    return ALLOWED_IMAGE_HOSTS.some((host) => parsed.hostname === host) || parsed.hostname.endsWith(".r2.dev");
   } catch {
     return false;
   }
 }
 
 /**
- * Sanitizes a filename for safe use in Firebase Storage paths.
+ * Sanitizes a filename for safe use in storage paths (R2/S3).
  *
  * - Removes path traversal sequences (../, ..\)
  * - Replaces spaces with hyphens

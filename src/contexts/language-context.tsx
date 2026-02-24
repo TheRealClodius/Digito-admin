@@ -8,8 +8,7 @@ import {
   useCallback,
   type ReactNode,
 } from "react";
-import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
-import { getDbInstance } from "@/lib/firebase";
+import { apiFetch } from "@/lib/api-client";
 import { useAuth } from "@/hooks/use-auth";
 import type { Language, TranslationKey, InterpolationValues } from "@/i18n/types";
 import { DEFAULT_LANGUAGE } from "@/i18n/types";
@@ -65,23 +64,19 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     document.documentElement.lang = language;
   }, [language]);
 
-  // Read preference from Firestore when user becomes available
+  // Read preference from MongoDB via API when user becomes available
   useEffect(() => {
     if (!user) return;
 
     async function loadPreference() {
       try {
-        const docRef = doc(getDbInstance(), "users", user!.uid);
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-          const data = docSnap.data();
-          if (data.language === "it" || data.language === "en") {
-            setLanguageState(data.language);
-            localStorage.setItem("language", data.language);
-          }
+        const data = await apiFetch<{ language: Language }>("/api/admin/users/me");
+        if (data.language === "it" || data.language === "en") {
+          setLanguageState(data.language);
+          localStorage.setItem("language", data.language);
         }
       } catch {
-        // Firestore read failed — keep localStorage/default value
+        // API read failed — keep localStorage/default value
       }
     }
 
@@ -94,8 +89,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
       localStorage.setItem("language", lang);
 
       if (user) {
-        const docRef = doc(getDbInstance(), "users", user.uid);
-        setDoc(docRef, { language: lang, updatedAt: serverTimestamp() }, { merge: true }).catch(
+        apiFetch("/api/admin/users/me", { method: "PATCH", body: { language: lang } }).catch(
           () => {},
         );
       }
