@@ -8,8 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
-    "test:watch": "vitest",
-    "test:rules": "firebase emulators:exec --only firestore --project digito-rules-test 'npx vitest run src/test/firestore-rules.test.ts'"
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@aws-sdk/client-cognito-identity-provider": "^3.991.0",

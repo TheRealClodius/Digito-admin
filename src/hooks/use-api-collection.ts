@@ -16,7 +16,7 @@ interface UseApiCollectionOptions {
 
 /**
  * Hook to fetch a collection from an API route using React Query.
- * Drop-in replacement for the Firestore-based `useCollection`.
+ * API-based collection hook for fetching paginated data from REST endpoints.
  *
  * Returns `{ data, loading, error }` matching the same interface.
  */

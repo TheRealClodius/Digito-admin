@@ -48,7 +48,7 @@ describe("Contract validation — Brand", () => {
     expect(result.success, `Zod validation failed: ${JSON.stringify(result)}`).toBe(true);
   });
 
-  it("submitted data shape matches Flutter-expected Firestore contract", () => {
+  it("submitted data shape matches Flutter-expected data contract", () => {
     // Parse the complete example through Zod (mimics form submission)
     const parsed = brandSchema.parse(brandContract.examples.complete);
     // Every contract field should be present in the parsed output
@@ -105,7 +105,7 @@ describe("Contract validation — Post", () => {
   const zodFields = Object.keys(postSchema.shape);
 
   it("Zod schema covers every contract field", () => {
-    // createdAt is auto-injected by Firestore, not in the form schema
+    // createdAt is auto-injected by the backend, not in the form schema
     const formFields = contractFields.filter((f) => f !== "createdAt");
     for (const field of formFields) {
       expect(zodFields, `Admin schema missing contract field: ${field}`).toContain(field);
@@ -123,7 +123,7 @@ describe("Contract validation — Post", () => {
   });
 
   it("complete example passes Zod validation (without auto-injected fields)", () => {
-    // Remove fields auto-injected by Firestore (not in form schema)
+    // Remove fields auto-injected by the backend (not in form schema)
     const { createdAt, ...formData } = sessionContract.examples.complete as Record<string, unknown>;
     const result = postSchema.safeParse(postContract.examples.complete);
     expect(result.success, `Zod validation failed: ${JSON.stringify(result)}`).toBe(true);

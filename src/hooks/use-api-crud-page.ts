@@ -23,7 +23,7 @@ interface UseApiCrudPageOptions<T> {
 }
 
 /**
- * API-based CRUD hook — drop-in replacement for the Firestore-based `useCrudPage`.
+ * API-based CRUD hook for managing collections via REST endpoints.
  *
  * Features:
  * - Reads via `useApiCollection` (React Query)

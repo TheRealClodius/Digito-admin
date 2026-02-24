@@ -2,15 +2,15 @@
 
 import { use } from "react";
 import { notFound } from "next/navigation";
-import { isValidFirestoreId } from "@/lib/validation";
+import { isValidDocumentId } from "@/lib/validation";
 
 /**
- * Validates route param values as valid Firestore IDs.
+ * Validates route param values as valid document IDs.
  * Calls notFound() if any param is invalid.
  */
 export function validateParams(params: Record<string, string>): void {
   for (const value of Object.values(params)) {
-    if (!isValidFirestoreId(value)) {
+    if (!isValidDocumentId(value)) {
       notFound();
     }
   }

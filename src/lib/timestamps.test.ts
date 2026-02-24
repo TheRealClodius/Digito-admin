@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { toDate } from "./timestamps";
 
 describe("toDate", () => {
-  it("converts Firestore Timestamp objects (has .toDate method)", () => {
+  it("converts Timestamp objects (has .toDate method)", () => {
     const ts = { toDate: () => new Date("2024-01-15T10:00:00Z") };
     expect(toDate(ts)).toEqual(new Date("2024-01-15T10:00:00Z"));
   });

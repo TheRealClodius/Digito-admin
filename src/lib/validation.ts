@@ -1,45 +1,37 @@
 /**
- * Validates a Firestore document ID.
+ * Validates a route parameter / document ID.
  *
- * Firestore document IDs must meet these requirements:
+ * Requirements:
  * - Non-empty string
  * - No forward slashes (/)
  * - No whitespace
- * - Maximum 1500 bytes (we check character length as a proxy)
- * - Should not contain potentially dangerous characters
+ * - Maximum 1500 characters
+ * - Only alphanumeric, hyphen, underscore, and period
  *
  * @param id - The ID to validate
  * @returns true if the ID is valid, false otherwise
  */
-export function isValidFirestoreId(id: unknown): boolean {
-  // Check if it's a string
+export function isValidDocumentId(id: unknown): boolean {
   if (typeof id !== "string") {
     return false;
   }
 
-  // Check if it's empty
   if (id.length === 0) {
     return false;
   }
 
-  // Check maximum length (Firestore limit is 1500 bytes)
   if (id.length > 1500) {
     return false;
   }
 
-  // Check for forward slashes
   if (id.includes("/")) {
     return false;
   }
 
-  // Check for whitespace (space, tab, newline, etc.)
   if (/\s/.test(id)) {
     return false;
   }
 
-  // Check for potentially dangerous characters
-  // Allow alphanumeric, hyphen, underscore, and period
-  // Firestore actually allows more characters, but we're being conservative
   if (!/^[a-zA-Z0-9_.-]+$/.test(id)) {
     return false;
   }
@@ -48,19 +40,9 @@ export function isValidFirestoreId(id: unknown): boolean {
 }
 
 /**
- * Hostnames allowed by next.config.ts for next/image.
- * Keep in sync with the remotePatterns array in next.config.ts.
- */
-const ALLOWED_IMAGE_HOSTS = [
-  "firebasestorage.googleapis.com",
-  "storage.googleapis.com",
-  "digito-poc.firebasestorage.app",
-  // R2 public URLs use *.r2.dev subdomains — checked via endsWith below
-];
-
-/**
  * Checks whether a URL is safe to pass to next/image.
- * Returns true for configured remote hosts, blob: URLs, and relative paths.
+ * Returns true for configured remote hosts (R2), blob: URLs, and relative paths.
+ * Keep in sync with the remotePatterns array in next.config.ts.
  */
 export function isAllowedImageHost(url: string): boolean {
   if (!url) return false;
@@ -73,7 +55,7 @@ export function isAllowedImageHost(url: string): boolean {
 
   try {
     const parsed = new URL(url);
-    return ALLOWED_IMAGE_HOSTS.some((host) => parsed.hostname === host) || parsed.hostname.endsWith(".r2.dev");
+    return parsed.hostname.endsWith(".r2.dev");
   } catch {
     return false;
   }

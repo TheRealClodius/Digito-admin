@@ -16,7 +16,7 @@ Always create tests first, then implement. Every new feature, component, or util
 - Utility functions
 - Custom hooks
 - Form validation schemas
-- Firestore CRUD operations
+- MongoDB API routes and CRUD operations
 
 The workflow is:
 1. Write a failing test that describes the expected behavior
@@ -27,7 +27,6 @@ The workflow is:
 
 After implementing important code changes, take your time to document them for other coding agents to use as pick-and-go context in admin-dashboard.md. 
 Extract learnings for design-direction.md when there are stylistic changes that we can reuse and repeat in the future. 
-Update firestore-data-structure.md when you make changes to Firestore data structure. This doc (`docs/firestore-data-structure.md`) is the source of truth for all Firestore collections, fields, access rules, and known discrepancies — always read it before working with Firestore data.
 Keep your edits brief and with a clear but short explanation.
 
 ## Language support

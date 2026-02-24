@@ -8,19 +8,6 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "*.r2.dev",
       },
-      // Legacy Firebase Storage URLs (existing event databases may still reference these)
-      {
-        protocol: "https",
-        hostname: "firebasestorage.googleapis.com",
-      },
-      {
-        protocol: "https",
-        hostname: "storage.googleapis.com",
-      },
-      {
-        protocol: "https",
-        hostname: "digito-poc.firebasestorage.app",
-      },
     ],
   },
   async headers() {
@@ -34,7 +21,7 @@ const nextConfig: NextConfig = {
               "default-src 'self'",
               "script-src 'self' 'unsafe-inline' https://apis.google.com https://accounts.google.com",
               "style-src 'self' 'unsafe-inline'",
-              "img-src 'self' data: blob: https://*.r2.dev https://firebasestorage.googleapis.com https://storage.googleapis.com https://*.firebasestorage.app",
+              "img-src 'self' data: blob: https://*.r2.dev",
               "connect-src 'self' https://*.r2.cloudflarestorage.com https://*.r2.dev https://ipapi.co https://api.sunrise-sunset.org https://cognito-idp.eu-south-1.amazonaws.com https://cognito-identity.eu-south-1.amazonaws.com https://*.amazoncognito.com https://*.auth.eu-south-1.amazoncognito.com",
               "font-src 'self'",
               "frame-src https://accounts.google.com https://*.amazoncognito.com https://*.auth.eu-south-1.amazoncognito.com",

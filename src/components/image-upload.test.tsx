@@ -464,7 +464,7 @@ describe("ImageUpload", () => {
     });
 
     it("clears local preview after successful upload so value prop is displayed", async () => {
-      const downloadUrl = "https://firebasestorage.googleapis.com/v0/b/bucket/o/uploaded.png?alt=media";
+      const downloadUrl = "https://pub-test.r2.dev/uploaded.png";
       const uploadFn = vi.fn().mockResolvedValue(downloadUrl);
       const onChange = vi.fn();
 

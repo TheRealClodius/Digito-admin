@@ -14,7 +14,7 @@ interface UseApiDocumentOptions {
 
 /**
  * Hook to fetch a single document from an API route using React Query.
- * Drop-in replacement for the Firestore-based `useDocument`.
+ * API-based document hook for fetching a single resource from a REST endpoint.
  *
  * Returns `{ data, loading, error }` matching the same interface.
  */

@@ -6,7 +6,7 @@ import { EventsTable } from "./events-table";
 // Helpers
 // ---------------------------------------------------------------------------
 
-/** Create a Firestore-style Timestamp stub from a Date. */
+/** Create a Timestamp stub from a Date. */
 function ts(date: Date) {
   return { toDate: () => date };
 }

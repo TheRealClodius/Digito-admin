@@ -19,7 +19,7 @@ describe("ErrorBanner", () => {
   });
 
   it("displays permission-denied error details", () => {
-    render(<ErrorBanner error={new Error("FirebaseError: permission-denied")} />);
+    render(<ErrorBanner error={new Error("permission-denied")} />);
     expect(screen.getByText(/permission-denied/i)).toBeInTheDocument();
   });
 });
