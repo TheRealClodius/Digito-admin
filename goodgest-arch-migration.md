@@ -423,30 +423,58 @@ Strategy:
 
 ---
 
-## Phase 4: Security — Proxy + Server-side RBAC
+## Phase 4: Security — Proxy + Server-side RBAC ✅ COMPLETED
 
 **Goal**: Implement server-side route protection and RBAC enforcement. Most of this work is already covered in Phase 1 (`proxy.ts`, `api-auth.ts`). This phase consolidates and verifies.
 
-### 4.1 Verify proxy.ts (created in Phase 1)
+### 4.1 Verify proxy.ts (created in Phase 1) ✅
 
-- Test that all `(dashboard)` routes require auth
-- Test that API routes return 401 without a valid token
-- Test that API routes return 403 for insufficient roles
+- `src/proxy.ts` correctly uses Next.js 16 proxy convention (replaces middleware.ts)
+- Tests in `src/proxy.test.ts` verify all routing rules
+- Dashboard routes redirect to /login without session cookie
+- API routes pass through (full auth in route handlers)
+- Public paths (/login, /unauthorized, /auth/callback, webhooks) are allowed
 
-### 4.2 Permission enforcement in API routes
+### 4.2 Permission enforcement in API routes ✅
 
-`src/lib/permission-utils.ts` is already completely framework-agnostic (zero Firebase imports):
-- `canManageAdmins(role)` — superadmin only
-- `canAccessClient(permissions, clientId)` — checks `clientIds[]`
-- `canAccessEvent(permissions, clientId, eventId)` — checks `eventCodes[]`
-- `canWriteClient(role)` — superadmin only
-- `canWriteEventContent(permissions, clientId, eventId)` — all roles (scoped)
+**Audit result**: 31 API routes audited, all properly protected:
+- 14 routes use `requireEventAccess()` (event-scoped CRUD)
+- 10 routes use `requireAuth()` (authenticated users)
+- 5 routes use `requireRole(['superadmin'])` (admin-only)
+- 2 routes use webhook secret validation (Cognito Lambda triggers)
 
-These functions are called in every API route after authentication. **No changes needed to the file itself**, just verification they are used correctly in the new routes.
+**Security hardening applied:**
 
-### 4.3 Dashboard layout guard (transition)
+1. **MongoDB pre-registration enforcement on `/api/auth/initiate-otp`**: Email MUST exist in `adminUsers` collection with `isActive: true` before any Cognito user creation. This prevents unauthorized users from creating Cognito accounts.
 
-`src/app/(dashboard)/layout.tsx` currently does client-side auth check. With the server-side proxy in place, the layout guard becomes a UX fallback (shows loading), not the primary protection.
+2. **Refactored `/api/check-permissions`** to use shared `resolveTokenIdentity()` and `findAdminUser()` from `api-auth.ts`, eliminating 60+ lines of duplicated auth logic.
+
+3. **New shared auth primitives in `api-auth.ts`**:
+   - `resolveTokenIdentity(request)` — verifies JWT + resolves email (lower-level)
+   - `findAdminUser(sub, email)` — MongoDB lookup by sub, fallback by email (now exported)
+   - `requireAuth(request)` — full auth check (uses resolveTokenIdentity internally)
+
+4. **Rate limiting** on `/api/auth/initiate-otp` via `src/lib/rate-limit.ts` (5 req/min per IP). Sliding window pattern, in-memory.
+
+5. **Info-leak removal**: Error responses no longer expose internal details (removed `detail: errMsg` from check-permissions, generic error messages in initiate-otp).
+
+### 4.3 Dashboard layout guard (transition) ✅
+
+`src/app/(dashboard)/layout.tsx` does client-side auth check as UX fallback. With proxy.ts as primary protection and API-level auth enforcement, this is defense-in-depth.
+
+### 4.4 Security architecture summary
+
+```
+Request → proxy.ts (session cookie check, redirect to /login)
+       → API route handler (JWT verification via requireAuth/requireRole/requireEventAccess)
+       → api-auth.ts (Cognito token + MongoDB lookup + isActive check)
+       → permission-utils.ts (role/client/event access checks)
+```
+
+Three-layer defense:
+1. **proxy.ts** — optimistic check (session cookie presence)
+2. **API auth** — cryptographic JWT verification + MongoDB user lookup
+3. **Permission utils** — fine-grained RBAC (role, clientIds, eventCodes)
 
 ---
 

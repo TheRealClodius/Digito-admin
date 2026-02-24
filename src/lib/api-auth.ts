@@ -19,12 +19,23 @@ export interface VerifiedCaller {
 }
 
 /**
- * Extract and verify the Bearer token from a request.
- * Returns the VerifiedCaller on success, or a NextResponse error on failure.
+ * Resolved identity from a Cognito access token (sub + email).
+ * This is the first step of authentication — token verification + email resolution.
  */
-export async function requireAuth(
+export interface ResolvedIdentity {
+  sub: string;
+  email?: string;
+}
+
+/**
+ * Extract and verify the Bearer token from a request, resolving the caller's identity.
+ * Returns the ResolvedIdentity on success, or a NextResponse error on failure.
+ *
+ * This is a lower-level function used by both `requireAuth` and `checkPermissions`.
+ */
+export async function resolveTokenIdentity(
   request: Request
-): Promise<VerifiedCaller | NextResponse> {
+): Promise<ResolvedIdentity | NextResponse> {
   const authHeader = request.headers.get('Authorization');
 
   if (!authHeader?.startsWith('Bearer ')) {
@@ -43,7 +54,7 @@ export async function requireAuth(
     return NextResponse.json({ error: 'Invalid or expired token' }, { status: 401 });
   }
 
-  const cognitoSub = payload.sub;
+  const sub = payload.sub;
   let email: string | undefined;
 
   // Access tokens may have email as a custom claim, or username may be the email
@@ -70,8 +81,21 @@ export async function requireAuth(
     }
   }
 
+  return { sub, email };
+}
+
+/**
+ * Extract and verify the Bearer token from a request.
+ * Returns the VerifiedCaller on success, or a NextResponse error on failure.
+ */
+export async function requireAuth(
+  request: Request
+): Promise<VerifiedCaller | NextResponse> {
+  const identity = await resolveTokenIdentity(request);
+  if (identity instanceof NextResponse) return identity;
+
   // Look up admin user in MongoDB by cognitoSub, fallback by email
-  const adminUser = await findAdminUser(cognitoSub, email);
+  const adminUser = await findAdminUser(identity.sub, identity.email);
 
   if (!adminUser) {
     return NextResponse.json(
@@ -88,7 +112,7 @@ export async function requireAuth(
   }
 
   return {
-    sub: cognitoSub,
+    sub: identity.sub,
     email: adminUser.email,
     role: adminUser.role,
     isSuperAdmin: adminUser.role === 'superadmin',
@@ -162,7 +186,7 @@ export async function requireEventAccess(
 /**
  * Find an admin user in MongoDB by cognitoSub, fallback by email.
  */
-async function findAdminUser(
+export async function findAdminUser(
   cognitoSub: string,
   email?: string
 ): Promise<AdminUser | null> {

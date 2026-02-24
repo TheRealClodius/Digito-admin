@@ -35,7 +35,7 @@ export async function PATCH(request: Request) {
     { _id: auth.adminUser._id },
     {
       $set: {
-        language,
+        language: language as typeof VALID_LANGUAGES[number],
         updatedAt: new Date(),
         updatedBy: auth.sub,
       },

@@ -9,6 +9,11 @@ import {
   AdminCreateUserCommand,
   AdminSetUserPasswordCommand,
 } from '@aws-sdk/client-cognito-identity-provider';
+import { getAdminUsersCollection } from '@/lib/mongodb-collections';
+import { createRateLimiter } from '@/lib/rate-limit';
+
+// 5 requests per minute per IP — protects against brute-force email enumeration
+const otpRateLimiter = createRateLimiter({ windowMs: 60_000, maxRequests: 5 });
 
 /**
  * POST /api/auth/initiate-otp
@@ -17,10 +22,28 @@ import {
  * CUSTOM_AUTH (OTP) flow can proceed. Federated-only users (Google)
  * don't have a native record, so we create one on-the-fly.
  *
+ * SECURITY: The email MUST be pre-registered in MongoDB adminUsers
+ * (isActive: true) before any Cognito operation is performed.
+ * Users are always pre-registered by an operator.
+ *
+ * Rate-limited to 5 requests per minute per IP.
+ *
  * Body: { email: string }
  * Returns: { ok: true } or { error: string }
  */
 export async function POST(request: NextRequest) {
+  // Rate limiting by IP
+  const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+    || request.headers.get('x-real-ip')
+    || 'unknown';
+  const rateResult = otpRateLimiter.check(ip);
+  if (!rateResult.allowed) {
+    return NextResponse.json(
+      { error: 'Troppe richieste. Riprova tra qualche minuto.' },
+      { status: 429, headers: { 'Retry-After': String(Math.ceil((rateResult.retryAfterMs || 60_000) / 1000)) } }
+    );
+  }
+
   try {
     const { email } = await request.json();
 
@@ -29,6 +52,21 @@ export async function POST(request: NextRequest) {
     }
 
     const normalizedEmail = email.toLowerCase().trim();
+
+    // SECURITY CHECK: Verify user is pre-registered in MongoDB before touching Cognito
+    const collection = await getAdminUsersCollection();
+    const adminUser = await collection.findOne({
+      email: normalizedEmail,
+      isActive: true,
+    });
+
+    if (!adminUser) {
+      return NextResponse.json(
+        { error: 'Account non autorizzato. Contatta l\'amministratore per richiedere l\'accesso.' },
+        { status: 403 }
+      );
+    }
+
     const client = getCognitoAdminClient();
     const userPoolId = getUserPoolId();
 
@@ -62,7 +100,7 @@ export async function POST(request: NextRequest) {
           { Name: 'email_verified', Value: 'true' },
         ],
         TemporaryPassword: tempPassword,
-        MessageAction: 'SUPPRESS', // Don't send welcome email
+        MessageAction: 'SUPPRESS',
       })
     );
 
@@ -86,6 +124,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ ok: true });
     }
 
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json({ error: 'Errore interno' }, { status: 500 });
   }
 }

@@ -11,7 +11,7 @@ import { ObjectId } from 'mongodb';
  * Client document in MongoDB (clients collection)
  */
 export interface ClientDocument {
-  _id: ObjectId;
+  _id?: ObjectId;
   name: string;
   description: string | null;
   logoUrl: string | null;
@@ -24,7 +24,7 @@ export interface ClientDocument {
  * Stores full event metadata in the master database
  */
 export interface ClientEventDocument {
-  _id: ObjectId;
+  _id?: ObjectId;
   /** Reference to the client */
   clientId: ObjectId;
   /** Event code (MongoDB database name, e.g., "2025089") */

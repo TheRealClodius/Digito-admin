@@ -98,7 +98,7 @@ export default function SettingsPage() {
           </div>
           <div>
             <p className="text-sm font-medium">{t("settings.uid")}</p>
-            <p className="text-sm text-muted-foreground">{user?.uid}</p>
+            <p className="text-sm text-muted-foreground">{user?.sub}</p>
           </div>
         </CardContent>
       </Card>
