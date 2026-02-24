@@ -1,4 +1,4 @@
-# Digito Admin Dashboard — Development Guidelines
+# Digito Master Dashboard — Development Guidelines
 
 ## Package Management
 

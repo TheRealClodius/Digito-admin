@@ -4,8 +4,8 @@ import "./globals.css";
 import { Providers } from "./providers";
 
 export const metadata: Metadata = {
-  title: "Digito Admin",
-  description: "Admin dashboard for Digito event management",
+  title: "Digito Master",
+  description: "Master dashboard for Digito event management",
 };
 
 export default function RootLayout({

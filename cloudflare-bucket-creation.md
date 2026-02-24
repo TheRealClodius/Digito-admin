@@ -1,4 +1,4 @@
-# Creazione Bucket Cloudflare R2 per Digito Admin
+# Creazione Bucket Cloudflare R2 per Digito Master
 
 Questo bucket serve per lo storage dei file (loghi clienti, immagini eventi, brand, post, partecipanti) caricati dalla dashboard admin. Sostituisce Firebase Storage.
 

@@ -1,4 +1,4 @@
-# Digito Admin Dashboard — Implementation Plan
+# Digito Master Dashboard — Implementation Plan
 
 A Next.js web dashboard for managing all Digito client data, event assets, schedules, and user access. Built with shadcn/ui, backed by the same Firebase project (`digito-poc`) as the Flutter app.
 
@@ -716,10 +716,10 @@ service firebase.storage {
 
 ## 9. Project Structure
 
-The dashboard lives in its own repo (`digito-admin`), separate from the Flutter app.
+The dashboard lives in its own repo (`digito-master-next`), separate from the Flutter app.
 
 ```
-digito-admin/
+digito-master-next/
 ├── .env.local                       # Firebase config (not committed)
 ├── .firebaserc                      # Firebase project alias
 ├── firebase.json                    # Hosting config

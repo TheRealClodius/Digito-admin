@@ -1,4 +1,4 @@
-# Digito Admin Dashboard — Security & Performance TODO
+# Digito Master Dashboard — Security & Performance TODO
 
 > Generated from the security & performance audit of Feb 2026.
 > Each task is scoped so an AI agent (or developer) can pick it up independently.

@@ -73,7 +73,7 @@
     "eventCreated": "Event created successfully"
   },
   "login": {
-    "title": "Digito Admin",
+    "title": "Digito Master",
     "subtitle": "Create and manage your enterprise events end to end",
     "signInWithGoogle": "Sign in with Google",
     "signingIn": "Signing in...",
@@ -96,7 +96,7 @@
     "backToLogin": "Back to Login"
   },
   "dashboard": {
-    "welcome": "Welcome to Digito Admin",
+    "welcome": "Welcome to Digito Master",
     "selectPrompt": "Select a client and event from the sidebar to get started.",
     "title": "Dashboard",
     "navigatePrompt": "Navigate to a section from the sidebar to manage event content.",

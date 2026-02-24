@@ -15,7 +15,7 @@ import postContract from "./contract-fixtures/post.contract.json";
  * that the admin schema doesn't know about, these tests will fail.
  *
  * Fixture files live in: digito-1/test/contract/fixtures/*.contract.json
- * Symlinked to: Digito-admin/src/test/contract-fixtures/
+ * Symlinked to: digito-master-next/src/test/contract-fixtures/
  */
 describe("Contract validation — Brand", () => {
   const contractFields = Object.keys(brandContract.fields);

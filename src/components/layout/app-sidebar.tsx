@@ -83,7 +83,7 @@ export function AppSidebar({ collapsed = false, onToggleCollapse }: AppSidebarPr
       <div className="flex h-14 shrink-0 items-center px-4">
         <Link href="/" className="flex items-center gap-2 font-semibold">
           <Image src="/digito-logo.svg" alt="Digito" width={24} height={24} />
-          <span>Digito Admin</span>
+          <span>Digito Master</span>
         </Link>
         <Button
           variant="ghost"

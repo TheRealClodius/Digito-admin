@@ -1,4 +1,4 @@
-# Digito Admin Dashboard
+# Digito Master Dashboard
 
 A Next.js web dashboard for managing Digito event data, including clients, events, exhibitor stands, sessions, happenings, participants, and user whitelists. Built with Next.js 16, shadcn/ui, and Firebase, sharing the same `digito-poc` Firebase project as the Flutter mobile app.
 
@@ -117,7 +117,7 @@ npm run test:rules
 ## Project Structure
 
 ```
-digito-admin/
+digito-master-next/
 ├── src/
 │   ├── actions/              # Next.js Server Actions
 │   │   └── ai.ts            # Gemini AI text improvement

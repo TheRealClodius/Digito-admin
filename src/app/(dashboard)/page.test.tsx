@@ -61,7 +61,7 @@ describe("DashboardHome - Access Control", () => {
 
     render(<DashboardHome />);
 
-    expect(screen.getByText("Welcome to Digito Admin")).toBeInTheDocument();
+    expect(screen.getByText("Welcome to Digito Master")).toBeInTheDocument();
     expect(screen.getByText("Select a client and event from the sidebar to get started.")).toBeInTheDocument();
     expect(screen.queryByText("Access Denied")).not.toBeInTheDocument();
   });
@@ -78,7 +78,7 @@ describe("DashboardHome - Access Control", () => {
 
     render(<DashboardHome />);
 
-    expect(screen.getByText("Welcome to Digito Admin")).toBeInTheDocument();
+    expect(screen.getByText("Welcome to Digito Master")).toBeInTheDocument();
     expect(screen.queryByText("Access Denied")).not.toBeInTheDocument();
   });
 

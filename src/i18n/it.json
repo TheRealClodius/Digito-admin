@@ -73,7 +73,7 @@
     "eventCreated": "Evento creato con successo"
   },
   "login": {
-    "title": "Digito Admin",
+    "title": "Digito Master",
     "subtitle": "Crea e gestisci i tuoi eventi aziendali",
     "signInWithGoogle": "Accedi con Google",
     "signingIn": "Accesso in corso...",
@@ -96,7 +96,7 @@
     "backToLogin": "Torna al Login"
   },
   "dashboard": {
-    "welcome": "Benvenuto su Digito Admin",
+    "welcome": "Benvenuto su Digito Master",
     "selectPrompt": "Seleziona un cliente e un evento dalla barra laterale per iniziare.",
     "title": "Dashboard",
     "navigatePrompt": "Naviga in una sezione dalla barra laterale per gestire i contenuti dell'evento.",
