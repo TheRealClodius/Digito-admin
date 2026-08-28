@@ -14,13 +14,17 @@
 
 import { Db, MongoClient } from 'mongodb';
 
-// Validate environment variables
-if (!process.env.MONGODB_URI) {
-  throw new Error('Missing required environment variable: MONGODB_URI');
-}
+function getMongoDbConfig() {
+  const uri = process.env.MONGODB_URI;
+  if (!uri) {
+    throw new Error('Missing required environment variable: MONGODB_URI');
+  }
 
-const MONGODB_URI = process.env.MONGODB_URI;
-const MONGODB_ADMIN_DB_NAME = process.env.MONGODB_ADMIN_DB_NAME || 'goodgest-admin';
+  return {
+    uri,
+    adminDbName: process.env.MONGODB_ADMIN_DB_NAME || 'goodgest-admin',
+  };
+}
 
 // Connection pool options optimized for serverless (Next.js)
 const options = {
@@ -48,8 +52,9 @@ async function getMongoClient(): Promise<MongoClient> {
     return cachedClientPromise;
   }
 
-  // Create new connection
-  cachedClientPromise = MongoClient.connect(MONGODB_URI, options).then((client) => {
+  // Create new connection (env validated here, not at module load — Next.js evaluates API routes during build)
+  const { uri } = getMongoDbConfig();
+  cachedClientPromise = MongoClient.connect(uri, options).then((client) => {
     cachedClient = client;
     console.log('[MongoDB] Connected to cluster');
     return client;
@@ -64,7 +69,8 @@ async function getMongoClient(): Promise<MongoClient> {
  */
 export async function getAdminDb(): Promise<Db> {
   const client = await getMongoClient();
-  return client.db(MONGODB_ADMIN_DB_NAME);
+  const { adminDbName } = getMongoDbConfig();
+  return client.db(adminDbName);
 }
 
 /**

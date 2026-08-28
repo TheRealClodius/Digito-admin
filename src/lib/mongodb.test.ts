@@ -171,13 +171,13 @@ describe('MongoDB Connection Layer', () => {
   });
 
   describe('environment validation', () => {
-    it('should throw error if MONGODB_URI is not set', async () => {
+    it('should throw error if MONGODB_URI is not set when connecting', async () => {
       delete process.env.MONGODB_URI;
 
-      await expect(async () => {
-        // This should throw during module load
-        await import('./mongodb');
-      }).rejects.toThrow('Missing required environment variable: MONGODB_URI');
+      const { getAdminDb } = await import('./mongodb');
+      await expect(getAdminDb()).rejects.toThrow(
+        'Missing required environment variable: MONGODB_URI'
+      );
     });
   });
 
