@@ -34,6 +34,6 @@ Keep your edits brief and with a clear but short explanation.
 
 When planning any feature, plan i18n integration also. 
 
-## Team wiki (kb skill)
+## Team wiki (wiki skill)
 
-Shared product, architecture, decisions and ops knowledge lives in the Digito wiki ([TheRealClodius/digito-wiki](https://github.com/TheRealClodius/digito-wiki)). Use the `kb` skill at `.claude/skills/kb/SKILL.md`: read the wiki live at the start of tasks that touch product behaviour, cross-repo architecture or ops, and write back durable knowledge (decisions, how things work, procedures) straight to the wiki's `main`. Never write plans, in-progress state or secrets there. This repo keeps its own branch and PR workflow.
+Shared product, architecture, decisions and ops knowledge lives in the Digito wiki ([TheRealClodius/digito-wiki](https://github.com/TheRealClodius/digito-wiki)). Use the `wiki` skill at `.claude/skills/wiki/SKILL.md`: read the wiki live at the start of tasks that touch product behaviour, cross-repo architecture or ops, and write back durable knowledge (decisions, how things work, procedures) straight to the wiki's `main`. Never write plans, in-progress state or secrets there. This repo keeps its own branch and PR workflow.
