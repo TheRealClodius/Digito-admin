@@ -10,8 +10,17 @@ The wiki is the git repo `TheRealClodius/digito-wiki`; pages are markdown under 
 ## Read first (no permission needed)
 
 1. Entry point: `gh api repos/TheRealClodius/digito-wiki/contents/content/index.md -H "Accept: application/vnd.github.raw"`
-2. Read only the relevant pages with the same call and their path. List a folder: `gh api repos/TheRealClodius/digito-wiki/contents/content/<folder> --jq '.[].path'`
-3. For many pages, shallow clone to a temp dir: `git clone --depth 1 https://github.com/TheRealClodius/digito-wiki.git "$(mktemp -d)/digito-wiki"`
+2. If you know the page, read it with the same call and its path. List a folder (always keep the `--jq`, or you get raw JSON): `gh api repos/TheRealClodius/digito-wiki/contents/content/<folder> --jq '.[].path'`
+3. If you don't know which page holds it, or need more than three pages, shallow clone to a temp dir and grep: `d="$(mktemp -d)/digito-wiki" && git clone -q --depth 1 https://github.com/TheRealClodius/digito-wiki.git "$d" && grep -ril '<term>' "$d/content"`
+
+Link paths: a wikilink `[[engineering/auth|Auth]]` is the file `content/engineering/auth.md`; a link that already starts with `content/` is that path plus `.md`. Some folder pages are `_index.md`, not `index.md`.
+
+## How to use what you read
+
+- A page or section headed "To write" or "To fill in" is a placeholder, not a rule. Do not treat it as "nothing applies". Fall back to the repo's own docs and code, and say in your report that the wiki page was a stub.
+- For a repo's own internals, its code and docs win over the wiki. The wiki is the authority for what spans repos: contracts between products, who owns what, shared vocabulary.
+- If a wiki page lists a known conflict between docs, do not pick a side or state either version as fact. Name the conflict and ask the owner.
+- If the wiki and the code disagree, trust the code, tell the user, and fix the page if the code is clearly right (see below).
 
 ## When to write
 
@@ -44,4 +53,4 @@ You may add a new ADR (`content/decisions/YYYY-MM-DD-slug.md`) with `status: pro
 
 ## Final report
 
-Tell the user which wiki pages you read and which you changed, with the commit SHA of each change.
+Tell the user which wiki pages you read, which of them were stubs, and which you changed, with the commit SHA of each change.
