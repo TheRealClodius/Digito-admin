@@ -33,3 +33,7 @@ Keep your edits brief and with a clear but short explanation.
 ## Language support
 
 When planning any feature, plan i18n integration also. 
+
+## Team wiki (wiki skill)
+
+Shared product, architecture, decisions and ops knowledge lives in the Digito wiki ([Goodgest/digito-wiki](https://github.com/Goodgest/digito-wiki)). Use the `wiki` skill at `.claude/skills/wiki/SKILL.md`: read the wiki live at the start of tasks that touch product behaviour, cross-repo architecture or ops, and write back durable knowledge (decisions, how things work, procedures) straight to the wiki's `main`. Never write plans, in-progress state or secrets there. This repo keeps its own branch and PR workflow.
