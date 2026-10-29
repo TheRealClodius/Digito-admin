@@ -1,17 +1,17 @@
 ---
 name: wiki
-description: Digito team wiki (TheRealClodius/digito-wiki). Load at the start of any task touching product behaviour, architecture across repos, past decisions, or ops (environments, deploys, access, runbooks), and again when you learn something durable that the team should keep. Contains instructions only, not wiki content.
+description: Digito team wiki (Goodgest/digito-wiki). Load at the start of any task touching product behaviour, architecture across repos, past decisions, or ops (environments, deploys, access, runbooks), and again when you learn something durable that the team should keep. Contains instructions only, not wiki content.
 ---
 
 # wiki: the Digito wiki
 
-The wiki is the git repo `TheRealClodius/digito-wiki`; pages are markdown under `content/`. Always read live. Never rely on a cached or remembered copy.
+The wiki is the git repo `Goodgest/digito-wiki`; pages are markdown under `content/`. Always read live. Never rely on a cached or remembered copy.
 
 ## Read first (no permission needed)
 
-1. Entry point: `gh api repos/TheRealClodius/digito-wiki/contents/content/index.md -H "Accept: application/vnd.github.raw"`
-2. If you know the page, read it with the same call and its path. List a folder (always keep the `--jq`, or you get raw JSON): `gh api repos/TheRealClodius/digito-wiki/contents/content/<folder> --jq '.[].path'`
-3. If you don't know which page holds it, or need more than three pages, shallow clone to a temp dir and grep: `d="$(mktemp -d)/digito-wiki" && git clone -q --depth 1 https://github.com/TheRealClodius/digito-wiki.git "$d" && grep -ril '<term>' "$d/content"`
+1. Entry point: `gh api repos/Goodgest/digito-wiki/contents/content/index.md -H "Accept: application/vnd.github.raw"`
+2. If you know the page, read it with the same call and its path. List a folder (always keep the `--jq`, or you get raw JSON): `gh api repos/Goodgest/digito-wiki/contents/content/<folder> --jq '.[].path'`
+3. If you don't know which page holds it, or need more than three pages, shallow clone to a temp dir and grep: `d="$(mktemp -d)/digito-wiki" && git clone -q --depth 1 https://github.com/Goodgest/digito-wiki.git "$d" && grep -ril '<term>' "$d/content"`
 
 Link paths: a wikilink `[[engineering/auth|Auth]]` is the file `content/engineering/auth.md`; a link that already starts with `content/` is that path plus `.md`. Some folder pages are `_index.md`, not `index.md`.
 
